@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import type { PlayerBridge, PlayerSnapshot } from "@/lib/player/bridge";
+import type { PlayerBridge, PlayerSnapshot, TrackInfo } from "@/lib/player/bridge";
 import type { PlayerSrc } from "@/lib/view";
 import type { Settings } from "@/lib/settings";
 import { dwarn } from "@/lib/debug";
-import { fetchAndParse, type SubCue } from "@/lib/subtitles/parser";
+import { fetchAndParse, parseSubtitle, type SubCue } from "@/lib/subtitles/parser";
 import { toSrt, toVtt } from "@/lib/subtitles/serialize";
 import { runAutoSync, type PipelineContext, type PipelineOutcome } from "@/lib/subtitles/autosync/pipeline";
 import { buildTierPorts, defaultOsConfig } from "@/lib/subtitles/autosync/context";
@@ -18,6 +18,9 @@ import {
 import { resolveSwapCues, type OsConfig } from "@/lib/subtitles/autosync/opensubtitles";
 import { type SyncTransform } from "@/lib/subtitles/autosync/fp-gate";
 import { transformCues } from "@/lib/subtitles/autosync/html5-sync";
+import { embeddedSubIndex } from "@/lib/subtitles/extract";
+import { timingAnchors, timingScore } from "@/lib/subtitles/autosync/consensus";
+import { exactAnchorTransform } from "@/lib/subtitles/autosync/smart-layer";
 import { DriftMonitor, makeTauriDriftPorts, type DriftDeps } from "@/lib/subtitles/autosync/drift-monitor";
 import { buildContext, isLoopback, outcomeScore, subLanguages, toDriftState } from "./use-auto-sync.helpers";
 
@@ -29,7 +32,7 @@ export type AutoSyncHandle = {
   applyOffer: () => void;
   revert: () => void;
   retry: () => void;
-  run: () => void;
+  run: (referenceId?: string, targetId?: string) => void;
   stop: () => void;
   feedback: (good: boolean) => void;
 };
@@ -82,12 +85,7 @@ export function useAutoSync(params: {
 
   const selected = snap.subtitleTracks.find((t) => t.selected) ?? null;
   const selectedSynced = isSyncedTrack(selected);
-  const ready =
-    engine === "mpv" &&
-    settings.subtitleAutoSync === true &&
-    snap.durationSec >= MIN_DURATION_SEC &&
-    selected?.external === true &&
-    !selectedSynced;
+  const ready = false;
   const runKey = selectedSynced ? doneKeyRef.current : ready && selected ? `${src.url}|${selected.id}` : null;
 
   const stopDrift = useCallback(() => {
@@ -99,7 +97,7 @@ export function useAutoSync(params: {
     driftRef.current = null;
   }, []);
 
-  const applyTransform = useCallback(async (b: PlayerBridge, cues: SubCue[], fmt: SubFmt, t: SyncTransform) => {
+  const applyTransform = useCallback(async (b: PlayerBridge, cues: SubCue[], fmt: SubFmt, t: SyncTransform, lang?: string) => {
     const a = appliedRef.current;
     if (t.kind === "affine" && Math.abs(t.ratio - 1) < RATIO_EPS) {
       if (Math.abs(t.offsetSec) < OFFSET_EPS && !a.transform) return;
@@ -111,7 +109,7 @@ export function useAutoSync(params: {
     const finalCues = transformCues(cues, t);
     if (finalCues.length === 0) return;
     const text = fmt === "vtt" ? toVtt(finalCues) : toSrt(finalCues);
-    await writeSyncedTrack(b, text, fmt);
+    await writeSyncedTrack(b, text, fmt, lang);
     a.transform = t;
   }, []);
 
@@ -299,9 +297,20 @@ export function useAutoSync(params: {
     retryRef.current?.();
   }, []);
 
-  const run = useCallback(() => {
-    beginRun(true);
-  }, [beginRun]);
+  const run = useCallback((referenceId?: string, targetId?: string) => {
+    if (!referenceId || !targetId) return;
+    const tracks = liveSnapRef.current.subtitleTracks, reference = tracks.find((t) => t.id === referenceId), target = tracks.find((t) => t.id === targetId), active = srcRef.current;
+    if (!reference || !target) return setStatus("error");
+    setStatus("analyzing");
+    void Promise.all([loadTrackCues(reference, tracks, active), loadTrackCues(target, tracks, active)]).then(async ([ref, cues]) => {
+      const b = bridgeRef.current, anchors = ref && cues && timingAnchors(cues, ref), transform = anchors && exactAnchorTransform(anchors);
+      if (!b || !cues || !transform) return setStatus("error");
+      const corrected = transformCues(cues, transform);
+      if (!ref || timingScore(corrected, ref) < Math.max(.55, timingScore(cues, ref) + .03)) return setStatus("error");
+      appliedRef.current = { transform: null, originalTrackId: target.id, subDelayBefore: liveSnapRef.current.subDelaySec };
+      b.setSubtitleTrack(target.id); await applyTransform(b, cues, formatOfTrack(target), transform, target.lang); setStatus("synced");
+    }).catch(() => setStatus("error"));
+  }, [applyTransform, bridgeRef]);
 
   const stop = useCallback(() => {
     activeDisposeRef.current?.();
@@ -342,12 +351,12 @@ export function useAutoSync(params: {
   return { status, offer, applyOffer, revert, retry, run, stop, feedback };
 }
 
-async function writeSyncedTrack(b: PlayerBridge, text: string, fmt: SubFmt): Promise<void> {
+async function writeSyncedTrack(b: PlayerBridge, text: string, fmt: SubFmt, lang?: string): Promise<void> {
   const pathMod = await import("@tauri-apps/api/path");
   const dir = await pathMod.join(await pathMod.tempDir(), "harbor-subs");
   const filePath = await pathMod.join(dir, `autosync-${Date.now()}.${fmt}`);
   await invoke("save_text_file", { path: filePath, contents: text });
-  await b.addSubtitle(filePath, undefined, `Synced (${fmt.toUpperCase()})`, true);
+  await b.addSubtitle(filePath, lang, `Synced (${fmt.toUpperCase()})`, true, { provider: "Community" });
   b.setSubDelay(0);
 }
 
@@ -394,3 +403,13 @@ function formatOf(b: PlayerBridge): SubFmt {
   const url = b.getSelectedTrackUrl() ?? "";
   return /\.vtt(\?|#|$)/i.test(url) ? "vtt" : "srt";
 }
+
+async function loadTrackCues(track: TrackInfo, tracks: TrackInfo[], src: PlayerSrc): Promise<SubCue[] | null> {
+  const raw = track.externalFilename ?? track.url;
+  try {
+    if (!raw) return parseSubtitle(await invoke<string>("subtitle_extract", { source: src.url, streamIndex: embeddedSubIndex(tracks, track.id), ffIndex: track.streamIndex, headers: src.headers ?? null }));
+    const cues = /^(https?|blob|data|tauri|asset):/i.test(raw) ? await fetchAndParse(raw) : parseSubtitle(await (await import("@tauri-apps/plugin-fs")).readTextFile(raw));
+    return cues.length || !track.url || track.url === raw ? cues : fetchAndParse(track.url);
+  } catch { try { return track.url && track.url !== raw ? await fetchAndParse(track.url) : null; } catch { return null; } }
+}
+function formatOfTrack(track: TrackInfo): SubFmt { return /\.vtt(\?|#|$)/i.test(track.externalFilename ?? track.url ?? "") ? "vtt" : "srt"; }

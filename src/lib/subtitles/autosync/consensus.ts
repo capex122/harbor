@@ -95,7 +95,70 @@ type Candidate = {
   isUser: boolean;
   seq: DialogueSequence;
   shingles: Set<string>;
+  cues: SubCue[];
 };
+
+const BIN_SEC = 1;
+function ranges(cues: SubCue[], from = 0, to = Infinity, shift = 0): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  for (const c of cues) {
+    const a = Math.max(from, c.start + shift), b = Math.min(to, c.end + shift);
+    if (b <= a) continue;
+    const last = out[out.length - 1];
+    if (last && a <= last[1]) last[1] = Math.max(last[1], b); else out.push([a, b]);
+  }
+  return out;
+}
+function dice(a: Array<[number, number]>, b: Array<[number, number]>): number {
+  let i = 0, j = 0, overlap = 0, total = 0;
+  for (const r of a) total += r[1] - r[0];
+  for (const r of b) total += r[1] - r[0];
+  while (i < a.length && j < b.length) {
+    overlap += Math.max(0, Math.min(a[i][1], b[j][1]) - Math.max(a[i][0], b[j][0]));
+    if (a[i][1] < b[j][1]) i++; else j++;
+  }
+  return total ? 2 * overlap / total : 0;
+}
+function windowScore(target: SubCue[], reference: SubCue[], from: number, to: number, shift: number): number {
+  return dice(ranges(target, from, to, shift), ranges(reference, from, to, 0));
+}
+export function timingScore(target: SubCue[], reference: SubCue[]): number {
+  return dice(ranges(target), ranges(reference));
+}
+export function timingAnchors(target: SubCue[], reference: SubCue[]): Array<[number, number]> | null {
+  const duration = Math.min(target.at(-1)?.end ?? 0, reference.at(-1)?.end ?? 0), window = 240, step = 120;
+  if (duration < window) return null;
+  const anchors: Array<[number, number]> = [];
+  for (let start = MAX_ANCHOR_DELTA; start + window + MAX_ANCHOR_DELTA < duration; start += step) {
+    const scores: Array<[number, number]> = [];
+    for (let shift = -MAX_ANCHOR_DELTA; shift <= MAX_ANCHOR_DELTA; shift += BIN_SEC) scores.push([windowScore(target, reference, start + shift, start + window + shift, shift), shift]);
+    scores.sort((x, y) => y[0] - x[0]);
+    const rival = scores.find((s) => Math.abs(s[1] - scores[0][1]) >= 10);
+    if (scores[0][0] < .35 || (rival && scores[0][0] - rival[0] < .02)) continue;
+    let best = scores[0];
+    for (let shift = best[1] - BIN_SEC; shift <= best[1] + BIN_SEC; shift += .1) {
+      const score = windowScore(target, reference, start + shift, start + window + shift, shift);
+      if (score > best[0]) best = [score, shift];
+    }
+    const time = start + window / 2;
+    anchors.push([time, time + best[1]]);
+  }
+  const stable = anchors.filter((a, i) => !i || i === anchors.length - 1 || Math.abs(a[1] - a[0] - (anchors[i - 1][1] - anchors[i - 1][0])) < .75 || Math.abs(a[1] - a[0] - (anchors[i + 1][1] - anchors[i + 1][0])) < .75);
+  const exact: Array<[number, number]> = stable.length ? [stable[0]] : [];
+  for (let i = 1; i < stable.length; i++) {
+    const prev = stable[i - 1], cur = stable[i], left = prev[1] - prev[0], right = cur[1] - cur[0];
+    if (Math.abs(right - left) >= 2) {
+      let cut = prev[0], score = -1;
+      for (let at = prev[0] + 10; at < cur[0] - 10; at++) {
+        const s = windowScore(target, reference, prev[0] + left, at + left, left) * (at - prev[0]) + windowScore(target, reference, at + right, cur[0] + right, right) * (cur[0] - at);
+        if (s > score) { score = s; cut = at; }
+      }
+      exact.push([cut - .001, cut - .001 + left], [cut, cut + right]);
+    }
+    exact.push(cur);
+  }
+  return exact.length >= MIN_ANCHORS ? exact : null;
+}
 
 type Cluster = { members: Candidate[]; sources: Set<string> };
 
@@ -248,6 +311,7 @@ async function fetchCandidate(r: SubResult, timeoutMs: number): Promise<Candidat
     isUser: false,
     seq,
     shingles: wordShingles(seq.lines),
+    cues: parsed,
   };
 }
 
@@ -266,6 +330,7 @@ function userCandidate(ctx: PipelineContext): Candidate | null {
     isUser: true,
     seq,
     shingles: wordShingles(seq.lines),
+    cues,
   };
 }
 

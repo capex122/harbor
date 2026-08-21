@@ -1,29 +1,15 @@
 import { SlidersHorizontal, X } from "lucide-react";
-import type { TrackInfo } from "@/lib/player/bridge";
 import { useT } from "@/lib/i18n";
-import { useAutoSyncHandle } from "@/components/player/autosync/autosync-store";
 import { HoverTooltip } from "@/components/hover-tooltip";
-import { SyncControl } from "./sync-control";
 
 type Props = {
   count: number;
-  selectedTrack: TrackInfo | null;
-  delaySec: number;
-  delayNonZero: boolean;
   onOpenStyleBar?: () => void;
   onClose: () => void;
 };
 
 export function MenuHeader(p: Props) {
   const tr = useT();
-  const autoSync = useAutoSyncHandle();
-
-  const autoSyncOn =
-    autoSync?.status === "analyzing" ||
-    autoSync?.status === "synced" ||
-    autoSync?.status === "best-effort";
-  const canAutoSync = p.selectedTrack?.external === true || autoSyncOn;
-
   return (
     <header className="flex items-center justify-between border-b border-edge-soft px-4 py-2.5">
       <div className="flex items-baseline gap-2.5">
@@ -34,13 +20,6 @@ export function MenuHeader(p: Props) {
       </div>
 
       <div className="flex items-center gap-1">
-        <SyncControl
-          canAutoSync={canAutoSync}
-          delaySec={p.delaySec}
-          delayNonZero={p.delayNonZero}
-          onClose={p.onClose}
-        />
-
         {p.onOpenStyleBar && (
           <HoverTooltip label={tr("Subtitle appearance")} side="bottom" align="end">
             <button

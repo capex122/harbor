@@ -259,6 +259,7 @@ export function createMpvBridge(mpvOptions?: MpvOptions): PlayerBridge {
             provider: extMeta?.provider,
             matchScore: extMeta?.matchScore,
             subId: extMeta?.subId,
+            streamIndex: typeof t["ff-index"] === "number" ? t["ff-index"] as number : undefined,
           };
           if (type === "audio") audio.push(info);
           else if (type === "sub") subs.push(info);

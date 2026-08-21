@@ -23,12 +23,16 @@ export function VariantRow({
   onPick,
   isSecondary,
   onPickSecondary,
+  syncOrder,
+  onSyncPick,
 }: {
   track: TrackInfo;
   selected: boolean;
   onPick: () => void;
   isSecondary?: boolean;
   onPickSecondary?: () => void;
+  syncOrder?: number;
+  onSyncPick: () => void;
 }) {
   const tr = useT();
   const { open } = useContextMenu();
@@ -39,7 +43,7 @@ export function VariantRow({
   if (track.hearingImpaired) tags.push({ label: tr("HI/SDH"), tone: "warn" });
   if (track.default) tags.push({ label: tr("Default"), tone: "default" });
   if (isImageSubTrack(track)) tags.push({ label: tr("Position and size only"), tone: "warn" });
-  const sourceLabel = isImported ? tr("Imported") : track.external ? tr("External") : tr("Embedded");
+  const sourceLabel = isImported ? tr("Imported") : track.provider === "Community" ? tr("Community") : track.external ? tr("External") : tr("Embedded");
   const codec = track.codec?.toUpperCase();
   const titleText = subtitleTrackTitle(track);
   const langName = subtitleTrackLanguageLabel(track);
@@ -158,6 +162,7 @@ export function VariantRow({
           </button>
         </HoverTooltip>
       )}
+      <button type="button" onClick={onSyncPick} aria-label={tr("Select for subtitle sync")} className={`my-1 me-1 h-7 min-w-7 rounded-full text-[11px] font-bold ring-1 ${syncOrder ? "bg-accent text-canvas ring-accent" : "text-ink-muted ring-edge hover:bg-raised"}`}>{syncOrder ?? "1·2"}</button>
     </div>
   );
 }

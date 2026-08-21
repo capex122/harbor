@@ -331,7 +331,7 @@ export async function runAutoSync(
   if (consensusRes && consensusRes.verdict === "right") {
     const fastFit = consensusAnchorFit(consensusRes);
     if (fastFit) {
-      const fastT: SyncTransform = { kind: "affine", offsetSec: fastFit.offsetSec, ratio: fastFit.ratio };
+      const fastT: SyncTransform = fastFit;
       evidence.push(consensusSignal(consensusRes, fastT));
       consensusEvidencePushed = true;
       const fastAfter = await ports.measureQuality(ctx, fastT);

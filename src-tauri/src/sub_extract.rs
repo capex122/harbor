@@ -8,10 +8,11 @@ const MAX_SRT_BYTES: usize = 4 * 1024 * 1024;
 pub async fn subtitle_extract(
     source: String,
     stream_index: Option<u32>,
+    ff_index: Option<u32>,
     headers: Option<HashMap<String, String>>,
 ) -> Result<String, String> {
     let ffmpeg = crate::transcode::locate_ffmpeg().ok_or_else(|| "ffmpeg not found".to_string())?;
-    let map = format!("0:s:{}", stream_index.unwrap_or(0));
+    let map = ff_index.map_or_else(|| format!("0:s:{}", stream_index.unwrap_or(0)), |i| format!("0:{}", i));
     let mut cmd = tokio::process::Command::new(&ffmpeg);
     cmd.arg("-nostdin").arg("-loglevel").arg("error");
     if let Some(h) = &headers {

@@ -22,6 +22,7 @@ export type TrackInfo = {
   provider?: string;
   matchScore?: number;
   subId?: string;
+  streamIndex?: number;
 };
 
 export type Chapter = {

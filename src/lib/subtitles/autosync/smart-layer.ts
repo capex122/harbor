@@ -181,12 +181,30 @@ function fuse(estimates: Estimate[]): { transform: AffineTransform; spread: numb
 const FAST_MIN_ANCHORS = 8;
 const FAST_MAX_RESIDUAL = 0.6;
 
-export function consensusAnchorFit(res: ConsensusResult): { offsetSec: number; ratio: number } | null {
+export function consensusAnchorFit(res: ConsensusResult, maxResidual = FAST_MAX_RESIDUAL): SyncTransform | null {
   if (res.verdict !== "right" || !res.textAnchors) return null;
   if (res.textAnchors.length < FAST_MIN_ANCHORS) return null;
-  const fit = robustFit(res.textAnchors);
-  if (!fit || fit.n < FAST_MIN_ANCHORS || fit.residualSec > FAST_MAX_RESIDUAL) return null;
-  return { offsetSec: fit.offsetSec, ratio: fit.ratio };
+  const anchors = res.textAnchors, offsets = anchors.map(([a, b]) => b - a), cuts: number[] = [];
+  for (let i = 3; i < offsets.length - 3; i++) if (Math.abs(robustMedian(offsets.slice(i, i + 3)) - robustMedian(offsets.slice(i - 3, i))) >= 2) cuts.push(i);
+  if (cuts.length) {
+    const bounds = [0, ...cuts.filter((v, i) => !i || v - cuts[i - 1] >= 3), anchors.length];
+    const segments = bounds.slice(0, -1).map((from, i) => { const to = bounds[i + 1], f = robustFit(anchors.slice(from, to)); return f && { fromSec: i ? anchors[from][0] : 0, toSec: to < anchors.length ? anchors[to][0] : Infinity, offsetSec: f.offsetSec, ratio: f.ratio }; }).filter((s): s is NonNullable<typeof s> => !!s);
+    if (segments.length > 1) return { kind: "piecewise", segments };
+  }
+  const fit = robustFit(anchors);
+  if (!fit || fit.n < FAST_MIN_ANCHORS || fit.residualSec > maxResidual) return null;
+  return { kind: "affine", offsetSec: fit.offsetSec, ratio: fit.ratio };
+}
+
+export function exactAnchorTransform(anchors: Anchor[]): SyncTransform | null {
+  if (anchors.length < FAST_MIN_ANCHORS) return null;
+  const sorted = [...anchors].sort((a, b) => a[0] - b[0]), segments = [];
+  for (let i = 0; i < sorted.length; i++) {
+    const [x, y] = sorted[i], next = sorted[i + 1], rawRatio = next ? (next[1] - y) / (next[0] - x) : 1;
+    const ratio = rawRatio >= .9 && rawRatio <= 1.1 ? rawRatio : 1;
+    segments.push({ fromSec: i ? x : 0, toSec: next?.[0] ?? Infinity, offsetSec: y - ratio * x, ratio });
+  }
+  return { kind: "piecewise", segments };
 }
 
 export function consensusSignal(res: ConsensusResult, lead: SyncTransform | null): SignalEvidence {

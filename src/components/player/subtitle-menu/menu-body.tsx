@@ -9,16 +9,16 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Flag } from "@/components/flag";
-import { hasImportedSubTitle, markImportedSub, useImportedSubs } from "@/lib/player/imported-subs";
+import { markImportedSub } from "@/lib/player/imported-subs";
 import { setSecondarySub } from "@/lib/player/secondary-sub";
 import { useT } from "@/lib/i18n";
 import { HoverTooltip } from "@/components/hover-tooltip";
-import { filterTracksByPreferredLanguage } from "@/lib/subtitles/language";
 import { SearchSection } from "./search-section";
 import { VariantRow } from "./variant-row";
 import { MenuHeader } from "./menu-header";
 import { pickBestMatch } from "./best-match";
 import { useSubtitleSearch } from "./subtitle-search-store";
+import { useAutoSyncHandle } from "@/components/player/autosync/autosync-store";
 import { Count, EmptyState, ImportBanner, Tab, ToggleChip } from "./menu-body-parts";
 import type { SubtitleMenuProps } from "./types";
 import { subtitleTrackLanguageLabel } from "@/lib/subtitles/track-label";
@@ -29,20 +29,10 @@ const ALL_LANGS = "__all__";
 
 export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
   const tr = useT();
-  const { tracks, selectedId, onSelect, onClose, delaySec, metaReleaseDate, onOpenStyleBar } =
+  const { tracks, selectedId, onSelect, onClose, metaReleaseDate, onOpenStyleBar } =
     props;
-  const preferredLanguages = props.preferredLanguages ?? [];
-  const importedTitles = useImportedSubs();
-  const languageTracks = useMemo(() => {
-    const filtered = filterTracksByPreferredLanguage(tracks, preferredLanguages);
-
-    const keep = new Set(filtered);
-    for (const t of tracks) {
-      const isImported = hasImportedSubTitle(t.title) || importedTitles.has(t.title ?? "");
-      if (isImported || t.id === props.selectedId || t.secondary) keep.add(t);
-    }
-    return tracks.filter((t) => keep.has(t));
-  }, [tracks, preferredLanguages, importedTitles, props.selectedId]);
+  const [syncIds, setSyncIds] = useState<string[]>([]);
+  const languageTracks = tracks;
   const groups = useMemo(() => groupByLang(languageTracks), [languageTracks]);
   const [searchSettled, setSearchSettled] = useState(false);
   const [activeLang, setActiveLang] = useState<string | null>(null);
@@ -51,6 +41,7 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
   const [forcedOnly, setForcedOnly] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [justImported, setJustImported] = useState<string | null>(null);
+  const autoSync = useAutoSyncHandle();
 
   useEffect(() => {
     if (languageTracks.length > 0) return;
@@ -93,11 +84,6 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
   const offSelected = selectedId == null;
   const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
   const [localError, setLocalError] = useState<string | null>(null);
-  const delayNonZero = delaySec !== 0;
-  const selectedTrack = useMemo(
-    () => tracks.find((t) => t.id === selectedId) ?? null,
-    [tracks, selectedId],
-  );
   const secondaryTrack = useMemo(() => tracks.find((t) => t.secondary) ?? null, [tracks]);
   const pickSecondary = props.onSelectSecondary ?? setSecondarySub;
   const search = useSubtitleSearch();
@@ -142,9 +128,6 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
     <div className="flex h-full flex-col overflow-hidden">
       <MenuHeader
         count={languageTracks.length}
-        selectedTrack={selectedTrack}
-        delaySec={delaySec}
-        delayNonZero={delayNonZero}
         onOpenStyleBar={onOpenStyleBar}
         onClose={onClose}
       />
@@ -353,6 +336,12 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
                       onPickSecondary={() =>
                         pickSecondary(t.id === secondaryTrack?.id ? null : t.id)
                       }
+                      syncOrder={syncIds.indexOf(t.id) + 1 || undefined}
+                      onSyncPick={() => {
+                        if (syncIds.includes(t.id)) return setSyncIds([]);
+                        if (!syncIds.length) return setSyncIds([t.id]);
+                        setSyncIds([syncIds[0], t.id]); autoSync?.run(syncIds[0], t.id);
+                      }}
                     />
                   ))}
                   {search && (
