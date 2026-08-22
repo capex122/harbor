@@ -19,7 +19,7 @@ import { resolveSwapCues, type OsConfig } from "@/lib/subtitles/autosync/opensub
 import { type SyncTransform } from "@/lib/subtitles/autosync/fp-gate";
 import { transformCues } from "@/lib/subtitles/autosync/html5-sync";
 import { embeddedSubIndex } from "@/lib/subtitles/extract";
-import { timingAnchors, timingScore } from "@/lib/subtitles/autosync/consensus";
+import { timingAnchors } from "@/lib/subtitles/autosync/consensus";
 import { exactAnchorTransform } from "@/lib/subtitles/autosync/smart-layer";
 import { DriftMonitor, makeTauriDriftPorts, type DriftDeps } from "@/lib/subtitles/autosync/drift-monitor";
 import { buildContext, isLoopback, outcomeScore, subLanguages, toDriftState } from "./use-auto-sync.helpers";
@@ -302,15 +302,16 @@ export function useAutoSync(params: {
     const tracks = liveSnapRef.current.subtitleTracks, reference = tracks.find((t) => t.id === referenceId), target = tracks.find((t) => t.id === targetId), active = srcRef.current;
     if (!reference || !target) return setStatus("error");
     setStatus("analyzing");
-    void Promise.all([loadTrackCues(reference, tracks, active), loadTrackCues(target, tracks, active)]).then(async ([ref, cues]) => {
+    void Promise.all([loadTrackCues(reference, tracks, active, true), loadTrackCues(target, tracks, active)]).then(async ([ref, cues]) => {
       const b = bridgeRef.current, anchors = ref && cues && timingAnchors(cues, ref), transform = anchors && exactAnchorTransform(anchors);
       if (!b || !cues || !transform) return setStatus("error");
-      const corrected = transformCues(cues, transform);
-      if (!ref || timingScore(corrected, ref) < Math.max(.55, timingScore(cues, ref) + .03)) return setStatus("error");
+      const corrected = ref && reconstructExact(cues, ref, transform);
+      if (!corrected || corrected.length < Math.max(MIN_CUES, cues.length / 2)) return setStatus("error");
       appliedRef.current = { transform: null, originalTrackId: target.id, subDelayBefore: liveSnapRef.current.subDelaySec };
-      b.setSubtitleTrack(target.id); await applyTransform(b, cues, formatOfTrack(target), transform, target.lang); setStatus("synced");
+      const fmt = formatOfTrack(target), text = fmt === "vtt" ? toVtt(corrected) : toSrt(corrected);
+      b.setSubtitleTrack(target.id); await writeSyncedTrack(b, text, fmt, target.lang); setStatus("synced");
     }).catch(() => setStatus("error"));
-  }, [applyTransform, bridgeRef]);
+  }, [bridgeRef]);
 
   const stop = useCallback(() => {
     activeDisposeRef.current?.();
@@ -404,12 +405,22 @@ function formatOf(b: PlayerBridge): SubFmt {
   return /\.vtt(\?|#|$)/i.test(url) ? "vtt" : "srt";
 }
 
-async function loadTrackCues(track: TrackInfo, tracks: TrackInfo[], src: PlayerSrc): Promise<SubCue[] | null> {
+async function loadTrackCues(track: TrackInfo, tracks: TrackInfo[], src: PlayerSrc, timestampsOnly = false): Promise<SubCue[] | null> {
   const raw = track.externalFilename ?? track.url;
   try {
-    if (!raw) return parseSubtitle(await invoke<string>("subtitle_extract", { source: src.url, streamIndex: embeddedSubIndex(tracks, track.id), ffIndex: track.streamIndex, headers: src.headers ?? null }));
+    if (!raw) return parseSubtitle(await invoke<string>("subtitle_extract", { source: src.url, streamIndex: embeddedSubIndex(tracks, track.id), ffIndex: track.streamIndex, timestampsOnly, headers: src.headers ?? null }));
     const cues = /^(https?|blob|data|tauri|asset):/i.test(raw) ? await fetchAndParse(raw) : parseSubtitle(await (await import("@tauri-apps/plugin-fs")).readTextFile(raw));
     return cues.length || !track.url || track.url === raw ? cues : fetchAndParse(track.url);
   } catch { try { return track.url && track.url !== raw ? await fetchAndParse(track.url) : null; } catch { return null; } }
 }
 function formatOfTrack(track: TrackInfo): SubFmt { return /\.vtt(\?|#|$)/i.test(track.externalFilename ?? track.url ?? "") ? "vtt" : "srt"; }
+
+function reconstructExact(cues: SubCue[], reference: SubCue[], transform: SyncTransform): SubCue[] {
+  const mapped = new Map<SubCue, string[]>();
+  for (const cue of transformCues(cues, transform)) {
+    let best: SubCue | undefined, cost = Infinity, gap = Infinity;
+    for (const ref of reference) { const overlap = Math.max(0, Math.min(cue.end, ref.end) - Math.max(cue.start, ref.start)), g = Math.max(ref.start - cue.end, cue.start - ref.end, 0), c = overlap ? -overlap : g; if (c < cost) { best = ref; cost = c; gap = g; } }
+    if (best && gap <= 3) mapped.set(best, [...(mapped.get(best) ?? []), cue.text]);
+  }
+  return reference.filter((cue) => mapped.has(cue)).map((cue) => ({ ...cue, text: mapped.get(cue)!.join("\n") }));
+}

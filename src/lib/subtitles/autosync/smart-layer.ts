@@ -197,7 +197,7 @@ export function consensusAnchorFit(res: ConsensusResult, maxResidual = FAST_MAX_
 }
 
 export function exactAnchorTransform(anchors: Anchor[]): SyncTransform | null {
-  if (anchors.length < FAST_MIN_ANCHORS) return null;
+  if (anchors.length < MIN_ANCHORS) return null;
   const sorted = [...anchors].sort((a, b) => a[0] - b[0]), segments = [];
   for (let i = 0; i < sorted.length; i++) {
     const [x, y] = sorted[i], next = sorted[i + 1], rawRatio = next ? (next[1] - y) / (next[0] - x) : 1;

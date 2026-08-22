@@ -32,7 +32,7 @@ test("pipeline starts consensus and quality probe in parallel, before hash", () 
 });
 
 test("consensus anchors produce a primary fast-apply transform", () => {
-  assert.match(smart, /export function consensusAnchorFit\(res: ConsensusResult\)/);
+  assert.match(smart, /export function consensusAnchorFit\(res: ConsensusResult,/);
   assert.match(smart, /const FAST_MIN_ANCHORS = 8;/);
   assert.match(smart, /const FAST_MAX_RESIDUAL = 0\.6;/);
   assert.match(pipeline, /const fastFit = consensusAnchorFit\(consensusRes\);/);

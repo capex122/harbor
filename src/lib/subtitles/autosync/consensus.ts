@@ -25,6 +25,7 @@ const SHINGLE_K = 3;
 const MIN_LINES = 20;
 const CLUSTER_THRESHOLD = 0.2;
 const MIN_ANCHORS = 6;
+const MIN_TIMING_ANCHORS = 3;
 const MAX_ANCHORS = 200;
 const ANCHOR_MAD_TOL = 0.6;
 const MAX_ANCHOR_DELTA = 90;
@@ -98,35 +99,30 @@ type Candidate = {
   cues: SubCue[];
 };
 
-const BIN_SEC = 1;
-function ranges(cues: SubCue[], from = 0, to = Infinity, shift = 0): Array<[number, number]> {
-  const out: Array<[number, number]> = [];
-  for (const c of cues) {
-    const a = Math.max(from, c.start + shift), b = Math.min(to, c.end + shift);
-    if (b <= a) continue;
-    const last = out[out.length - 1];
-    if (last && a <= last[1]) last[1] = Math.max(last[1], b); else out.push([a, b]);
-  }
+const BIN_SEC = 1, ACTIVITY_BIN_SEC = 5;
+function activity(cues: SubCue[], from = 0, to = Infinity, shift = 0): Set<number> {
+  const out = new Set<number>();
+  for (const c of cues) { const t = c.start + shift; if (t >= from && t < to) out.add(Math.floor(t / ACTIVITY_BIN_SEC)); }
   return out;
 }
-function dice(a: Array<[number, number]>, b: Array<[number, number]>): number {
-  let i = 0, j = 0, overlap = 0, total = 0;
-  for (const r of a) total += r[1] - r[0];
-  for (const r of b) total += r[1] - r[0];
-  while (i < a.length && j < b.length) {
-    overlap += Math.max(0, Math.min(a[i][1], b[j][1]) - Math.max(a[i][0], b[j][0]));
-    if (a[i][1] < b[j][1]) i++; else j++;
-  }
-  return total ? 2 * overlap / total : 0;
+function dice(a: Set<number>, b: Set<number>): number {
+  let overlap = 0;
+  for (const v of a) if (b.has(v)) overlap++;
+  return a.size + b.size ? 2 * overlap / (a.size + b.size) : 0;
 }
 function windowScore(target: SubCue[], reference: SubCue[], from: number, to: number, shift: number): number {
-  return dice(ranges(target, from, to, shift), ranges(reference, from, to, 0));
+  return dice(activity(target, from, to, shift), activity(reference, from, to));
+}
+function onsetScore(target: SubCue[], reference: SubCue[], from: number, to: number, shift: number): number {
+  const a = target.map((c) => c.start + shift).filter((t) => t >= from && t < to), b = reference.map((c) => c.start).filter((t) => t >= from && t < to);
+  const side = (x: number[], y: number[]) => x.reduce((sum, t) => sum + Math.max(0, 1 - Math.min(...y.map((v) => Math.abs(v - t))) / 3), 0) / x.length;
+  return a.length && b.length ? (side(a, b) + side(b, a)) / 2 : 0;
 }
 export function timingScore(target: SubCue[], reference: SubCue[]): number {
-  return dice(ranges(target), ranges(reference));
+  return dice(activity(target), activity(reference));
 }
 export function timingAnchors(target: SubCue[], reference: SubCue[]): Array<[number, number]> | null {
-  const duration = Math.min(target.at(-1)?.end ?? 0, reference.at(-1)?.end ?? 0), window = 240, step = 120;
+  const duration = Math.min(target.at(-1)?.end ?? 0, reference.at(-1)?.end ?? 0), window = duration < 1200 ? 120 : 240, step = window / 2;
   if (duration < window) return null;
   const anchors: Array<[number, number]> = [];
   for (let start = MAX_ANCHOR_DELTA; start + window + MAX_ANCHOR_DELTA < duration; start += step) {
@@ -135,9 +131,9 @@ export function timingAnchors(target: SubCue[], reference: SubCue[]): Array<[num
     scores.sort((x, y) => y[0] - x[0]);
     const rival = scores.find((s) => Math.abs(s[1] - scores[0][1]) >= 10);
     if (scores[0][0] < .35 || (rival && scores[0][0] - rival[0] < .02)) continue;
-    let best = scores[0];
-    for (let shift = best[1] - BIN_SEC; shift <= best[1] + BIN_SEC; shift += .1) {
-      const score = windowScore(target, reference, start + shift, start + window + shift, shift);
+    let best: [number, number] = [-1, scores[0][1]];
+    for (let shift = scores[0][1] - BIN_SEC; shift <= scores[0][1] + BIN_SEC; shift += .1) {
+      const score = onsetScore(target, reference, start + shift, start + window + shift, shift);
       if (score > best[0]) best = [score, shift];
     }
     const time = start + window / 2;
@@ -157,7 +153,7 @@ export function timingAnchors(target: SubCue[], reference: SubCue[]): Array<[num
     }
     exact.push(cur);
   }
-  return exact.length >= MIN_ANCHORS ? exact : null;
+  return exact.length >= MIN_TIMING_ANCHORS ? exact : null;
 }
 
 type Cluster = { members: Candidate[]; sources: Set<string> };
