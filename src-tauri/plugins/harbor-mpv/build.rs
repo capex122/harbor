@@ -19,5 +19,48 @@ fn main() {
                 std::path::Path::new(path).parent().unwrap().display()
             );
         }
+        for framework in [
+            "Libmpv",
+            "Libuchardet",
+            "Libbluray",
+            "Libavcodec",
+            "Libavdevice",
+            "Libavfilter",
+            "Libavformat",
+            "Libavutil",
+            "Libswresample",
+            "Libswscale",
+            "Libssl",
+            "Libcrypto",
+            "Libass",
+            "Libfreetype",
+            "Libfribidi",
+            "Libharfbuzz",
+            "MoltenVK",
+            "Libshaderc_combined",
+            "lcms2",
+            "Libplacebo",
+            "Libdovi",
+            "Libunibreak",
+            "gmp",
+            "nettle",
+            "hogweed",
+            "gnutls",
+            "Libdav1d",
+            "Libuavs3d",
+            "AVFoundation",
+            "CoreAudio",
+            "AudioToolbox",
+            "CoreVideo",
+            "CoreFoundation",
+            "CoreMedia",
+            "Metal",
+            "VideoToolbox",
+        ] {
+            println!("cargo:rustc-link-lib=framework={framework}");
+        }
+        for library in ["bz2", "iconv", "expat", "resolv", "xml2", "z", "c++"] {
+            println!("cargo:rustc-link-lib={library}");
+        }
     }
 }
