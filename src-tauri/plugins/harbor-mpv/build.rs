@@ -3,20 +3,29 @@ const COMMANDS: &[&str] = &["call"];
 fn main() {
     tauri_plugin::Builder::new(COMMANDS).ios_path("ios").build();
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("ios") {
+        let out_dir = std::env::var("OUT_DIR").unwrap();
         let output = std::process::Command::new("find")
             .args([
-                std::env::var("OUT_DIR").unwrap().as_str(),
-                "-type",
-                "d",
+                out_dir.as_str(),
+                "(",
                 "-path",
                 "*/ios-arm64/*.framework",
+                "-o",
+                "-path",
+                "*/ios-arm64/libMoltenVK.a",
+                ")",
+                "!",
+                "-path",
+                "*/artifacts/mpvkit/*-GPL/*",
             ])
             .output()
             .unwrap();
         for path in String::from_utf8(output.stdout).unwrap().lines() {
+            let path = std::path::Path::new(path);
             println!(
-                "cargo:rustc-link-search=framework={}",
-                std::path::Path::new(path).parent().unwrap().display()
+                "cargo:rustc-link-search={}={}",
+                if path.is_dir() { "framework" } else { "native" },
+                path.parent().unwrap().display()
             );
         }
         for framework in [
@@ -36,7 +45,6 @@ fn main() {
             "Libfreetype",
             "Libfribidi",
             "Libharfbuzz",
-            "MoltenVK",
             "Libshaderc_combined",
             "lcms2",
             "Libplacebo",
@@ -59,6 +67,7 @@ fn main() {
         ] {
             println!("cargo:rustc-link-lib=framework={framework}");
         }
+        println!("cargo:rustc-link-lib=static=MoltenVK");
         for library in ["bz2", "iconv", "expat", "resolv", "xml2", "z", "c++"] {
             println!("cargo:rustc-link-lib={library}");
         }
