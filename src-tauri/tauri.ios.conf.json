@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Harbor",
+        "width": 390,
+        "height": 844,
+        "minWidth": 320,
+        "minHeight": 480,
+        "visible": true,
+        "decorations": true,
+        "transparent": true
+      }
+    ]
+  },
+  "bundle": {
+    "externalBin": [],
+    "resources": {
+      "THIRD-PARTY-NOTICES.txt": "notices/"
+    },
+    "iOS": {
+      "minimumSystemVersion": "15.0"
+    }
+  }
+}

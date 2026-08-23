@@ -1,3 +1,14 @@
+#[cfg(not(target_os = "ios"))]
+macro_rules! desktop_app {
+    ($($item:item)*) => { $($item)* };
+}
+
+#[cfg(target_os = "ios")]
+macro_rules! desktop_app {
+    ($($item:item)*) => {};
+}
+
+desktop_app! {
 mod anime4k;
 mod asr_model;
 mod binary_lookup;
@@ -851,3 +862,10 @@ pub fn run() {
             }
         });
 }
+}
+
+#[cfg(target_os = "ios")]
+mod ios_app;
+
+#[cfg(target_os = "ios")]
+pub use ios_app::run;

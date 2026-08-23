@@ -8,7 +8,7 @@ export function isWeb(): boolean {
   return typeof window !== "undefined" && !("__TAURI_INTERNALS__" in window);
 }
 
-export type OsClass = "linux" | "macos" | "windows" | "web";
+export type OsClass = "ios" | "linux" | "macos" | "windows" | "web";
 
 function detectOs(): OsClass {
   if (!isTauri()) return "web";
@@ -16,6 +16,7 @@ function detectOs(): OsClass {
   if (platform === "linux") return "linux";
   if (platform === "macos") return "macos";
   if (platform === "windows") return "windows";
+  if (platform === "ios") return "ios";
   return "web";
 }
 
@@ -43,12 +44,19 @@ export function isWindowsDesktop(): boolean {
   return osClass() === "windows";
 }
 
+export function isIosApp(): boolean {
+  return osClass() === "ios";
+}
+
 export function isMobileDevice(): boolean {
   if (typeof navigator === "undefined" || typeof window === "undefined") return false;
   const ua = navigator.userAgent || "";
   if (/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini|iPad/i.test(ua)) return true;
   if (/Macintosh/i.test(ua) && (navigator.maxTouchPoints ?? 0) > 1) return true;
-  if ((navigator.maxTouchPoints ?? 0) > 0 && Math.min(window.innerWidth, window.innerHeight) < 640) {
+  if (
+    (navigator.maxTouchPoints ?? 0) > 0 &&
+    Math.min(window.innerWidth, window.innerHeight) < 640
+  ) {
     return true;
   }
   return false;
@@ -91,6 +99,6 @@ export function isMobileWeb(): boolean {
   } catch {
     /* ignore */
   }
-  mobileWebCache = forcedOn || (isWeb() && isMobileDevice());
+  mobileWebCache = forcedOn || isIosApp() || (isWeb() && isMobileDevice());
   return mobileWebCache;
 }

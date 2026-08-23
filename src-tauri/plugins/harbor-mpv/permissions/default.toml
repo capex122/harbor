@@ -1,0 +1,3 @@
+[default]
+description = "Allows Harbor to control its iOS MPV player."
+permissions = ["allow-call"]

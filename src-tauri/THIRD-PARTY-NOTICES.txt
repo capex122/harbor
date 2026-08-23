@@ -132,6 +132,21 @@ rust_cast  (vendored)
 
 
 ================================================================================
+SECTION C - LGPL-LICENSED iOS COMPONENTS
+================================================================================
+
+--------------------------------------------------------------------------------
+MPVKit  (iOS/iPadOS)
+--------------------------------------------------------------------------------
+  Version:   1.0.0
+  License:   GNU Lesser General Public License, version 3 (LGPLv3)
+  Source:    https://github.com/mpvkit/MPVKit
+             https://github.com/mpvkit/MPVKit/releases/tag/1.0.0
+  Note:      Harbor uses the LGPL "MPVKit" product. The GPL "MPVKit-GPL"
+             product is not linked into the iOS application.
+
+
+================================================================================
 ==                                                                            ==
 ==            WRITTEN OFFER FOR SOURCE CODE - GNU GPL v3, SECTION 6           ==
 ==                                                                            ==

@@ -1,0 +1,68 @@
+name: iOS build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/ios-build.yml
+      - src/**
+      - src-tauri/**
+      - package.json
+      - pnpm-lock.yaml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      CI: true
+      IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+      IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+      IOS_MOBILE_PROVISION: ${{ secrets.IOS_MOBILE_PROVISION }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Initialize iOS project
+        run: pnpm tauri ios init
+
+      - name: Build unsigned iOS archive
+        if: env.IOS_CERTIFICATE == ''
+        run: pnpm tauri ios build --no-sign
+
+      - name: Build signed IPA
+        if: env.IOS_CERTIFICATE != ''
+        run: pnpm tauri ios build --export-method release-testing
+
+      - name: Upload iOS build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harbor-ios
+          path: |
+            src-tauri/gen/apple/build/**/*.ipa
+            src-tauri/gen/apple/build/**/*.app
+            src-tauri/gen/apple/build/**/*.xcarchive
+          if-no-files-found: error
+          retention-days: 14

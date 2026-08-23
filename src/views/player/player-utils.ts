@@ -1,7 +1,8 @@
 import { createHtml5Bridge } from "@/lib/player/html5";
+import { createIosMpvBridge } from "@/lib/player/ios-mpv";
 import { createMpvBridge, probeMpv, type MpvRect } from "@/lib/player/mpv";
 import type { PlayerBridge } from "@/lib/player/bridge";
-import { isLinuxDesktop, isMacDesktop, isWindowsDesktop } from "@/lib/platform";
+import { isIosApp, isLinuxDesktop, isMacDesktop, isWindowsDesktop } from "@/lib/platform";
 
 export const SYNC_DRIFT_TOLERANCE_S = 0.6;
 export const SYNC_SUPPRESS_MS = 1400;
@@ -38,9 +39,10 @@ export function embedFlags(
   const hasFrame = videoWidth > 0 && videoHeight > 0;
   const macShowing = embedOn && isMacDesktop() && hasFrame;
   const linuxShowing = embedOn && isLinuxDesktop() && hasFrame;
+  const iosShowing = engine === "mpv" && isIosApp();
   return {
     mpvEmbedWindowsActive,
-    stageBg: mpvEmbedWindowsActive || macShowing || linuxShowing ? "" : "bg-black",
+    stageBg: mpvEmbedWindowsActive || macShowing || linuxShowing || iosShowing ? "" : "bg-black",
   };
 }
 
@@ -69,17 +71,23 @@ export async function pickBridge(
   },
 ): Promise<{ bridge: PlayerBridge; engine: "html5" | "mpv" }> {
   if (want === "html5") return { bridge: createHtml5Bridge(), engine: "html5" };
+  if (isIosApp()) return { bridge: createIosMpvBridge(), engine: "mpv" };
   if (want === "mpv") {
     const probe = await probeMpv();
     if (probe.available) return { bridge: createMpvBridge(mpvOpts), engine: "mpv" };
-    console.warn("[harbor] mpv requested but libmpv probe failed; falling back to in-webview html5 decode (high memory)");
+    console.warn(
+      "[harbor] mpv requested but libmpv probe failed; falling back to in-webview html5 decode (high memory)",
+    );
     return { bridge: createHtml5Bridge(), engine: "html5" };
   }
   const isDesktop = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
   if (isDesktop || notWebReady) {
     const probe = await probeMpv();
     if (probe.available) return { bridge: createMpvBridge(mpvOpts), engine: "mpv" };
-    if (isDesktop) console.warn("[harbor] desktop libmpv probe failed; falling back to in-webview html5 decode (high memory)");
+    if (isDesktop)
+      console.warn(
+        "[harbor] desktop libmpv probe failed; falling back to in-webview html5 decode (high memory)",
+      );
   }
   return { bridge: createHtml5Bridge(), engine: "html5" };
 }

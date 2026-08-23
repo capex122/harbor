@@ -1,0 +1,14 @@
+[package]
+name = "tauri-plugin-harbor-mpv"
+version = "0.1.0"
+edition = "2021"
+links = "tauri-plugin-harbor-mpv"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = "2"
+thiserror = "2"
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }
