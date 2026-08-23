@@ -29,7 +29,6 @@
         "CoreVideo",
         "CoreFoundation",
         "CoreMedia",
-        "Metal",
         "VideoToolbox",
         "gen/apple/Externals/arm64/release/libHarborMPVKit.a",
         "gen/apple/Externals/arm64/release/libbz2.tbd",
