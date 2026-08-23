@@ -131,7 +131,7 @@ private final class HarborMpvPlayer {
         try AVAudioSession.sharedInstance().setActive(true)
         guard let handle = mpv_create() else { throw failure("MPVKit could not create libmpv") }
         do {
-            var layer = view.metalLayer
+            var layer = controller.metalLayer
             try require(mpv_set_option(handle, "wid", MPV_FORMAT_INT64, &layer), "Metal surface")
             for (name, value) in [("vo", "gpu-next"), ("gpu-api", "vulkan"), ("gpu-context", "moltenvk"), ("hwdec", "videotoolbox"), ("sub-auto", "no"), ("keep-open", "yes")] {
                 try require(mpv_set_option_string(handle, name, value), name)
