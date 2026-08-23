@@ -50,8 +50,7 @@ jobs:
         run: pnpm tauri ios build --no-sign
 
       - name: Upload iOS build
-        if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: harbor-ios
           path: |
