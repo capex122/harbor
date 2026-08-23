@@ -61,10 +61,6 @@
   text-rendering: optimizeLegibility;
 }
 
-html[data-os="ios"] {
-  --harbor-safe-bottom: 0px;
-}
-
 html,
 body,
 #root {
@@ -1548,7 +1544,7 @@ html[data-theme-layout="minui"] .harbor-together-pill {
   opacity: 1;
 }
 @media (max-width: 1023px) {
-  html, body, #root { min-height: 100dvh; }
+  html, body, #root { height: 100dvh; }
   .harbor-topbar { top: env(safe-area-inset-top, 0px); }
   html [data-mobile-nav-space] .harbor-layer-active > :is(main.pt-20, main.pt-24, main.pt-28, main.pt-32),
   html [data-mobile-nav-space] [data-settings] > main,

@@ -10,6 +10,9 @@ final class HarborMpvPlugin: Plugin {
     private let player = HarborMpvPlayer()
 
     override func load(webview: WKWebView) {
+        webview.scrollView.contentInsetAdjustmentBehavior = .never
+        webview.scrollView.contentInset = .zero
+        webview.scrollView.scrollIndicatorInsets = .zero
         if let root = webview.superview ?? manager.viewController?.view {
             NSLayoutConstraint.deactivate(root.constraints.filter {
                 $0.firstItem === webview || $0.secondItem === webview
@@ -22,7 +25,7 @@ final class HarborMpvPlugin: Plugin {
                 webview.bottomAnchor.constraint(equalTo: root.bottomAnchor),
             ])
         }
-        player.install(below: webview)
+        player.install(below: webview, in: manager.viewController)
     }
 
     @objc public func call(_ invoke: Invoke) throws {
@@ -54,42 +57,49 @@ private final class HarborMetalLayer: CAMetalLayer {
     }
 }
 
-private final class HarborMpvView: UIView {
+private final class HarborMpvViewController: UIViewController {
     let metalLayer = HarborMetalLayer()
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        backgroundColor = .black
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .black
         metalLayer.contentsScale = UIScreen.main.nativeScale
         metalLayer.framebufferOnly = true
-        layer.addSublayer(metalLayer)
+        view.layer.addSublayer(metalLayer)
     }
 
-    required init?(coder: NSCoder) { nil }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        metalLayer.frame = bounds
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        metalLayer.frame = view.bounds
     }
 }
 
 private final class HarborMpvPlayer {
     private weak var webview: WKWebView?
-    private let view = HarborMpvView(frame: .zero)
+    private let controller = HarborMpvViewController()
     private var mpv: OpaquePointer?
     private var errorMessage: String?
+
+    private var view: UIView { controller.view }
 
     deinit {
         if let mpv { mpv_terminate_destroy(mpv) }
     }
 
-    func install(below webview: WKWebView) {
+    func install(below webview: WKWebView, in host: UIViewController?) {
         self.webview = webview
         webview.isOpaque = false
         webview.backgroundColor = .clear
         webview.scrollView.backgroundColor = .clear
         view.isHidden = true
-        webview.superview?.insertSubview(view, belowSubview: webview)
+        guard let parent = webview.superview else { return }
+        if let host {
+            host.addChild(controller)
+            parent.insertSubview(view, belowSubview: webview)
+            controller.didMove(toParent: host)
+        } else {
+            parent.insertSubview(view, belowSubview: webview)
+        }
     }
 
     func call(_ method: String, _ args: JSObject) throws -> JSValue {
@@ -116,6 +126,7 @@ private final class HarborMpvPlayer {
             throw failure("MPV video surface is not ready")
         }
         view.layoutIfNeeded()
+        CATransaction.flush()
         try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
         try AVAudioSession.sharedInstance().setActive(true)
         guard let handle = mpv_create() else { throw failure("MPVKit could not create libmpv") }
@@ -156,6 +167,9 @@ private final class HarborMpvPlayer {
         )
         view.frame = webview.convert(rect, to: parent)
         view.isHidden = rect.isEmpty
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+        CATransaction.flush()
     }
 
     private func addSubtitle(_ args: JSObject) {
@@ -276,7 +290,10 @@ private final class HarborMpvPlayer {
     }
 
     private func destroy() {
-        command(["stop"])
+        if let mpv {
+            mpv_terminate_destroy(mpv)
+            self.mpv = nil
+        }
         view.isHidden = true
     }
 }
