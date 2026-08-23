@@ -99,7 +99,6 @@ export function usePipelineResult({
         setResult(partial);
         setLoading(false);
         setFirstResultAt((prev) => prev ?? performance.now());
-        setPickerCache(meta, episode, partial, configHash, false);
       },
       (settled, total) => {
         if (ac.signal.aborted) return;

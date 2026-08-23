@@ -1,5 +1,6 @@
 import type { Addon } from "@/lib/addons";
 import { dlog } from "@/lib/debug";
+import { isIosApp } from "@/lib/platform";
 import type { DebridStore } from "@/lib/debrid/types";
 import { fetchAddonStreams, type StreamRequest } from "./addons";
 import type { AddonRankFn } from "./addon-priority";
@@ -249,6 +250,7 @@ async function runCorePipeline(
   trustOpts: TrustOptions,
   scoreOpts: ScoreOptions,
 ): Promise<{ picker: RankedPicker; rejected: Rejection[] } | null> {
+  if (isIosApp()) return null;
   const isTauri = typeof window !== "undefined" && ("__TAURI__" in window || "__TAURI_INTERNALS__" in window);
   if (!isTauri) return null;
   try {

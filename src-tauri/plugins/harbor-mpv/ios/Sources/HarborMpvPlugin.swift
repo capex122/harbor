@@ -10,13 +10,17 @@ final class HarborMpvPlugin: Plugin {
     private let player = HarborMpvPlayer()
 
     override func load(webview: WKWebView) {
-        if let root = manager.viewController?.view {
+        if let root = webview.superview ?? manager.viewController?.view {
             NSLayoutConstraint.deactivate(root.constraints.filter {
                 $0.firstItem === webview || $0.secondItem === webview
             })
-            webview.translatesAutoresizingMaskIntoConstraints = true
-            webview.frame = root.bounds
-            webview.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            webview.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                webview.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+                webview.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+                webview.topAnchor.constraint(equalTo: root.topAnchor),
+                webview.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+            ])
         }
         player.install(below: webview)
     }

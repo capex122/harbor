@@ -11,6 +11,8 @@ import type { CustomStreamFilter } from "@/lib/streams/custom-filters";
 import { FacetMenuRow } from "./facet-menu-row";
 import { FilterBuilder } from "./filter-builder";
 
+const PAGE_SIZE = 50;
+
 export function StremioLayout({
   streams,
   addons,
@@ -39,6 +41,7 @@ export function StremioLayout({
   const [filter, setFilter] = useState<string>("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const [facet, setFacet] = useState<FacetState>({});
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const { settings, update } = useSettings();
   const customFilters = settings.customStreamFilters;
   const activeFilterId = settings.activeStreamFilterId;
@@ -84,6 +87,7 @@ export function StremioLayout({
   useEffect(() => {
     if (filter !== "all" && addonFiltered.length === 0 && streams.length > 0) setFilter("all");
   }, [filter, addonFiltered.length, streams.length]);
+  useEffect(() => setVisibleCount(PAGE_SIZE), [filter, facet]);
   const visibleStreams = useMemo(() => {
     const filtered = addonFiltered.filter((s) => matchesFacets(s, facet));
     if (filter !== "all") return filtered;
@@ -113,6 +117,7 @@ export function StremioLayout({
     ? "All"
     : addonOptions.find((o) => o.id === filter)?.name ?? "All";
   const filterLogo = filter === "all" ? null : addonLogoMap.get(filter) ?? null;
+  const renderedStreams = visibleStreams.slice(0, visibleCount);
   return (
     <div className="flex flex-col gap-3">
       <div className="relative">
@@ -190,7 +195,7 @@ export function StremioLayout({
         }}
       />
       <div className="flex flex-col gap-2">
-        {visibleStreams.map((s, i) => (
+        {renderedStreams.map((s, i) => (
           <StremioRow
             key={`${s.url ?? s.infoHash ?? s.title}-${i}`}
             stream={s}
@@ -203,6 +208,15 @@ export function StremioLayout({
             isAnime={isAnime}
           />
         ))}
+        {visibleStreams.length > renderedStreams.length && (
+          <button
+            type="button"
+            onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+            className="rounded-xl bg-elevated/60 px-4 py-3 text-[14px] font-semibold text-ink ring-1 ring-edge-soft"
+          >
+            Show {Math.min(PAGE_SIZE, visibleStreams.length - renderedStreams.length)} more sources
+          </button>
+        )}
       </div>
       {streams.length > 0 && visibleStreams.length === 0 && (
         <div className="flex flex-col items-center gap-3 rounded-2xl bg-elevated/60 px-5 py-6 text-center ring-1 ring-edge-soft">
