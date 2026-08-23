@@ -89,6 +89,20 @@ fn main() {
         .join("Externals/arm64")
         .join(std::env::var("PROFILE").unwrap());
         std::fs::create_dir_all(&destination).unwrap();
+        let sdk = std::process::Command::new("xcrun")
+            .args(["--sdk", "iphoneos", "--show-sdk-path"])
+            .output()
+            .unwrap();
+        assert!(sdk.status.success(), "iPhoneOS SDK not found");
+        let sdk =
+            std::path::Path::new(std::str::from_utf8(&sdk.stdout).unwrap().trim()).join("usr/lib");
+        for library in ["bz2", "iconv", "expat", "resolv", "xml2", "z", "c++"] {
+            std::fs::copy(
+                sdk.join(format!("lib{library}.tbd")),
+                destination.join(format!("lib{library}.tbd")),
+            )
+            .unwrap();
+        }
         let mut command = std::process::Command::new("/usr/bin/libtool");
         command.args(["-static", "-o"]);
         command.arg(destination.join("libHarborMPVKit.a"));

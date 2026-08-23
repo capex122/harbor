@@ -26,7 +26,6 @@ jobs:
     timeout-minutes: 60
     env:
       CI: true
-      XCODE_XCCONFIG_FILE: ${{ github.workspace }}/src-tauri/ios.xcconfig
 
     steps:
       - uses: actions/checkout@v6

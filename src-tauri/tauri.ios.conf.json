@@ -22,7 +22,24 @@
     },
     "iOS": {
       "minimumSystemVersion": "15.0",
-      "frameworks": ["gen/apple/Externals/arm64/release/libHarborMPVKit.a"]
+      "frameworks": [
+        "AVFoundation",
+        "CoreAudio",
+        "AudioToolbox",
+        "CoreVideo",
+        "CoreFoundation",
+        "CoreMedia",
+        "Metal",
+        "VideoToolbox",
+        "gen/apple/Externals/arm64/release/libHarborMPVKit.a",
+        "gen/apple/Externals/arm64/release/libbz2.tbd",
+        "gen/apple/Externals/arm64/release/libiconv.tbd",
+        "gen/apple/Externals/arm64/release/libexpat.tbd",
+        "gen/apple/Externals/arm64/release/libresolv.tbd",
+        "gen/apple/Externals/arm64/release/libxml2.tbd",
+        "gen/apple/Externals/arm64/release/libz.tbd",
+        "gen/apple/Externals/arm64/release/libc++.tbd"
+      ]
     }
   }
 }

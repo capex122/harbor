@@ -1,1 +1,0 @@
-OTHER_LDFLAGS = $(inherited) -framework AVFoundation -framework CoreAudio -framework AudioToolbox -framework CoreVideo -framework CoreFoundation -framework CoreMedia -framework Metal -framework VideoToolbox -lbz2 -liconv -lexpat -lresolv -lxml2 -lz -lc++
