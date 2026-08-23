@@ -18,7 +18,13 @@ final class HarborMpvPlugin: Plugin {
         let method = payload.getString("method") ?? ""
         let args = payload.getObject("args") ?? [:]
         DispatchQueue.main.async {
-            do { invoke.resolve(try self.player.call(method, args)) }
+            do {
+                let result = try self.player.call(method, args)
+                if let value = result as? Bool { invoke.resolve(value) }
+                else if let value = result as? JSObject {
+                    invoke.resolve(value.reduce(into: JsonObject()) { $0[$1.key] = $1.value })
+                }
+            }
             catch { invoke.reject(error.localizedDescription) }
         }
     }
@@ -190,7 +196,9 @@ private final class HarborMpvPlayer {
 
     private func command(_ values: [String]) {
         guard let mpv, !values.isEmpty else { return }
-        var pointers = values.map { Optional(UnsafePointer<CChar>(strdup($0))) }
+        var pointers: [UnsafePointer<CChar>?] = values.map { value in
+            strdup(value).map { UnsafePointer($0) }
+        }
         pointers.append(nil)
         defer { pointers.dropLast().forEach { if let pointer = $0 { free(UnsafeMutablePointer(mutating: pointer)) } } }
         let result = mpv_command(mpv, &pointers)
