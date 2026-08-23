@@ -36,7 +36,7 @@ export function Sidebar() {
       <aside
         aria-hidden={chromeHidden}
         data-harbor-sidebar
-        className={`relative z-[60] hidden w-[72px] shrink-0 flex-col border-e border-edge-soft bg-canvas transition-[opacity,transform,width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] sm:flex ${
+        className={`relative z-[60] hidden w-[72px] shrink-0 flex-col border-e border-edge-soft bg-canvas transition-[opacity,transform,width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] lg:flex ${
           collapsed ? "" : "lg:w-60"
         } ${
           chromeHidden
@@ -226,11 +226,11 @@ function MobileNav({
   return (
     <nav
       aria-label={t("Navigation")}
-      className={`fixed z-[70] flex h-16 items-start rounded-[24px] border border-white/20 bg-surface/45 px-2 pt-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-[28px] backdrop-saturate-150 transition-transform sm:hidden ${hidden ? "translate-y-[calc(100%+1rem)]" : "translate-y-0"}`}
+      className={`fixed z-[70] mx-auto flex h-16 max-w-[560px] items-start rounded-[24px] border border-white/20 bg-surface/45 px-2 pt-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-[28px] backdrop-saturate-150 transition-transform lg:hidden ${hidden ? "translate-y-[calc(100%+1rem)]" : "translate-y-0"}`}
       style={{
-        bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)",
-        left: "calc(env(safe-area-inset-left, 0px) + 0.5rem)",
-        right: "calc(env(safe-area-inset-right, 0px) + 0.5rem)",
+        bottom: "max(env(safe-area-inset-bottom, 0px), 0.5rem)",
+        left: "max(env(safe-area-inset-left, 0px), 0.75rem)",
+        right: "max(env(safe-area-inset-right, 0px), 0.75rem)",
       }}
     >
       {open && <button aria-label={t("Close")} className="fixed inset-0 -z-10" onClick={() => setOpen(null)} />}

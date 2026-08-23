@@ -287,7 +287,7 @@ export const Hero = memo(function Hero({
     <section
       ref={sectionRef}
       onClick={() => openMeta({ ...meta, logo: logo ?? meta.logo })}
-      className={`harbor-hero-stage group relative cursor-pointer overflow-hidden bg-canvas ${full ? "h-[78vh] min-h-[640px] rounded-none" : "h-[560px] rounded-[28px]"}`}
+      className={`harbor-hero-stage group relative cursor-pointer overflow-hidden bg-canvas ${full ? "h-[70dvh] min-h-[460px] rounded-none lg:h-[78vh] lg:min-h-[640px]" : "h-[min(62dvh,480px)] min-h-[360px] rounded-[20px] lg:h-[560px] lg:rounded-[28px]"}`}
       style={{ isolation: "isolate" }}
     >
       {bg && loadBackdrop && (
@@ -354,7 +354,7 @@ export const Hero = memo(function Hero({
       <MetaAwardsCorner meta={meta} imdbId={resolvedImdb} />
 
       <div
-        className={`harbor-hero-content relative flex h-full flex-col p-5 sm:p-14 ${bottomAlign ? "justify-end pb-24" : "justify-center"} ${full ? "pt-28 lg:pt-32" : ""}`}
+        className={`harbor-hero-content relative flex h-full flex-col p-5 lg:p-14 ${bottomAlign ? "justify-end pb-20 lg:pb-24" : "justify-center"} ${full ? "pt-20 lg:pt-32" : ""}`}
       >
         <div className="max-w-2xl">
           {rank && (

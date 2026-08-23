@@ -74,7 +74,7 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
   return (
     <header
       data-cleannav={settings.topbarAppearance === "transparent" ? "on" : undefined}
-      className={`pointer-events-none fixed inset-x-0 top-0 ${topKind === "picker" || connecting ? "z-[130]" : "z-[55]"} h-20 max-sm:h-16`}
+      className={`harbor-topbar pointer-events-none fixed inset-x-0 top-0 ${topKind === "picker" || connecting ? "z-[130]" : "z-[55]"} h-20 max-lg:h-14`}
     >
       {settings.topbarScrollBlur && settings.topbarAppearance !== "transparent" && (
         <div
@@ -92,7 +92,7 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
       )}
       <div
           {...dragProps}
-          className={`relative z-10 grid h-full grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-8 ${
+          className={`relative z-10 grid h-full grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 lg:px-8 ${
             hybridBar ? "pt-11" : ""
           }`}
         >
@@ -100,15 +100,15 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
             {...dragProps}
             className={
               sidebarHidden
-                ? `pointer-events-auto flex h-full min-w-0 items-center justify-start gap-3 ${hideSearch && !onLiveRoot ? "max-sm:pointer-events-none" : ""}`
-                : `pointer-events-auto flex h-full min-w-0 items-center justify-start ${sidebarOffset} ${hideSearch ? "max-sm:pointer-events-none" : ""}`
+                ? `pointer-events-auto flex h-full min-w-0 items-center justify-start gap-3 ${hideSearch && !onLiveRoot ? "max-lg:pointer-events-none" : ""}`
+                : `pointer-events-auto flex h-full min-w-0 items-center justify-start ${sidebarOffset} ${hideSearch ? "max-lg:pointer-events-none" : ""}`
             }
           >
           {onLiveRoot && (
             <button
               onClick={() => setView("home")}
               aria-label={t("common.back")}
-              className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-edge-soft/60 bg-canvas/85 ps-3 pe-4 text-[13.5px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink max-sm:hidden"
+              className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-edge-soft/60 bg-canvas/85 ps-3 pe-4 text-[13.5px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink max-lg:hidden"
             >
               <ArrowLeft size={15} strokeWidth={2.2} className="dir-icon" />
               {t("common.back")}
@@ -122,13 +122,13 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
               </span>
             </div>
           )}
-            {!onLiveRoot && !connecting && <div className="max-sm:hidden"><BackChrome /></div>}
+            {!onLiveRoot && !connecting && <div className="max-lg:hidden"><BackChrome /></div>}
           </div>
           <div
             {...dragProps}
-            className={`pointer-events-auto min-w-0 max-w-full transition-[width] duration-200 ease-out ${searchWidth} ${onLiveRoot ? "max-sm:w-0" : ""}`}
+            className={`pointer-events-auto min-w-0 max-w-full transition-[width] duration-200 ease-out ${searchWidth} ${onLiveRoot ? "max-lg:w-0" : ""}`}
           >
-            {!hideSearch && !kid && !hybridBar && <div className={onLiveRoot ? "max-sm:hidden" : ""}><SearchPill /></div>}
+            {!hideSearch && !kid && !hybridBar && <div className={onLiveRoot ? "max-lg:hidden" : ""}><SearchPill /></div>}
           </div>
           <div
             {...dragProps}
@@ -143,7 +143,7 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
           {!onLiveRoot && !kid && <TogetherButton />}
           </div>
             {IS_TAURI && !settings.useNativeTitleBar && !settings.hybridTitleBar && (
-            <div className="ms-1 flex shrink-0 items-center gap-2">
+            <div className="ms-1 flex shrink-0 items-center gap-2 max-lg:hidden">
               <Control label={t("chrome.minimize")} onClick={minimize}>
                 <svg width="18" height="18" viewBox="0 0 13 13" fill="none">
                   <path d="M3 6.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />

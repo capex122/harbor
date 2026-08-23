@@ -411,9 +411,9 @@ export function Discover({ active = true }: { active?: boolean }) {
   );
 
   return (
-    <main ref={scrollCb} className="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-20 pt-28 sm:px-8 lg:px-12">
+    <main ref={scrollCb} className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-20 pt-28 lg:px-12">
       <ScrollRootContext.Provider value={scrollEl}>
-        <div {...contentDrag} className="flex flex-col gap-14">
+        <div {...contentDrag} className="flex flex-col gap-8 lg:gap-14">
           {pageRows.editMode || !hiddenFeatured ? (
             <div className="relative">
               {pageRows.editMode && (

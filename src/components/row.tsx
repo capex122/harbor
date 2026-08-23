@@ -257,7 +257,7 @@ export function Row({
     const available = container.getBoundingClientRect().width;
     if (available <= 0) return;
     const minWidth =
-      available < 640
+      available < 1024
         ? Math.min(effMin * 0.72, effShape === "portrait" ? Infinity : 126)
         : effMin;
     const fits = Math.max(1, Math.floor((available + GAP) / (minWidth + GAP)));

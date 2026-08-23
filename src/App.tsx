@@ -1235,7 +1235,7 @@ function Shell({ onReady }: { onReady?: () => void }) {
   return (
     <div data-kids={kidsTop || kid ? "on" : undefined} data-mobile-nav-space={!playerActive && !pickerTop && !chromeHidden ? "" : undefined} className="relative flex h-full bg-canvas">
       {!playerActive && !pickerTop && (
-        <div className={settingsTop || liveTop || layout !== "sidebar" ? "contents sm:hidden" : "contents"}>
+        <div className={settingsTop || liveTop || layout !== "sidebar" ? "contents lg:hidden" : "contents"}>
           <Sidebar />
         </div>
       )}

@@ -139,7 +139,7 @@ export function BigCardStack({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
-      className={`group relative block h-full min-h-[420px] w-full min-w-0 overflow-hidden rounded-2xl border border-edge-soft bg-canvas text-start transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1 ${
+      className={`group relative block h-full min-h-[260px] w-full min-w-0 overflow-hidden rounded-2xl border border-edge-soft bg-canvas text-start transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1 sm:min-h-[340px] lg:min-h-[420px] ${
         dragging ? "cursor-grabbing select-none" : "cursor-pointer"
       }`}
       style={{ isolation: "isolate", touchAction: "pan-y" }}
@@ -184,7 +184,7 @@ export function BigCardStack({
       <div
         key={`badge-${current.id}`}
         style={contentAnim}
-        className="absolute start-7 top-6 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-accent"
+        className="absolute start-5 top-5 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-accent sm:start-7 sm:top-6"
       >
         {current.providerBadge ? (
           <span
@@ -207,7 +207,7 @@ export function BigCardStack({
       </div>
       <div
         key={`meta-${current.id}`}
-        className="absolute inset-x-7 bottom-7 flex flex-col gap-3"
+        className="absolute inset-x-5 bottom-5 flex flex-col gap-2 sm:inset-x-7 sm:bottom-7 sm:gap-3"
         style={contentAnim}
       >
         <TitlePlate title={current.name} logo={logo} />
@@ -215,7 +215,7 @@ export function BigCardStack({
           {current.releaseInfo && <span>{current.releaseInfo}</span>}
         </div>
       </div>
-      <div className="pointer-events-none absolute end-7 top-6 z-10">
+      <div className="pointer-events-none absolute end-5 top-5 z-10 sm:end-7 sm:top-6">
         <MetaAwardsCorner meta={current} imdbId={resolvedImdb} />
       </div>
       {onPrev && items.length > 1 && (
@@ -254,7 +254,7 @@ function TitlePlate({ title, logo }: { title: string; logo?: string }) {
   }, [logo]);
   const showLogo = !!logo && !logoFailed;
   return (
-    <div className="relative flex min-h-[64px] flex-col justify-end">
+    <div className="relative flex min-h-[48px] flex-col justify-end sm:min-h-[64px]">
       {showLogo ? (
         <img
           src={logo}
@@ -262,18 +262,17 @@ function TitlePlate({ title, logo }: { title: string; logo?: string }) {
           decoding="async"
           onLoad={() => setLogoLoaded(true)}
           onError={() => setLogoFailed(true)}
-          className="max-h-[88px] w-auto max-w-[58%] object-contain object-left rtl:object-right drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)]"
+          className="max-h-[64px] w-auto max-w-[64%] object-contain object-left drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)] sm:max-h-[88px] sm:max-w-[58%] rtl:object-right"
           style={{
             opacity: logoLoaded ? 1 : 0,
             transition: "opacity 420ms cubic-bezier(0.32, 0.72, 0.24, 1)",
           }}
         />
       ) : (
-        <h3 className="font-display text-[42px] font-medium leading-[1.0] tracking-tight text-ink drop-shadow-[0_2px_22px_rgba(0,0,0,0.6)]">
+        <h3 className="font-display text-[30px] font-medium leading-[1.0] tracking-tight text-ink drop-shadow-[0_2px_22px_rgba(0,0,0,0.6)] sm:text-[42px]">
           {title}
         </h3>
       )}
     </div>
   );
 }
-

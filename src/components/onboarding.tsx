@@ -96,7 +96,7 @@ export function OnboardingModal() {
           <button
             onClick={finish}
             aria-label={t("Skip setup")}
-            className="absolute end-5 top-5 z-10 flex h-9 items-center justify-center rounded-full border border-edge-soft bg-canvas/45 px-4 text-[13px] font-semibold text-ink-muted transition-colors hover:bg-raised hover:text-ink"
+            className="absolute end-5 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-10 flex h-9 items-center justify-center rounded-full border border-edge-soft bg-canvas/45 px-4 text-[13px] font-semibold text-ink-muted transition-colors hover:bg-raised hover:text-ink"
           >
             {t("Skip")}
           </button>
@@ -107,7 +107,7 @@ export function OnboardingModal() {
         ) : (
           <>
             <div
-              className={`flex min-h-[440px] flex-col max-sm:min-h-0 max-sm:flex-1 max-sm:justify-start max-sm:overflow-y-auto max-sm:px-5 max-sm:pb-6 max-sm:pt-16 ${isTaste ? "px-8 pt-9 pb-3" : "justify-center px-12 py-10"}`}
+              className={`flex min-h-[440px] flex-col max-sm:min-h-0 max-sm:flex-1 max-sm:justify-start max-sm:overflow-y-auto max-sm:px-5 max-sm:pb-6 max-sm:pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] ${isTaste ? "px-8 pt-9 pb-3" : "justify-center px-12 py-10"}`}
             >
               <div key={step} className="animate-step-in">
                 {step === "language" && <LanguageStep />}
