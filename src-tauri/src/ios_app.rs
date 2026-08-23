@@ -9,6 +9,9 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_process::init())
+        .invoke_handler(tauri::generate_handler![
+            crate::stremio_auth::stremio_auth_start
+        ])
         .run(tauri::generate_context!())
         .expect("error while running Harbor on iOS");
 }

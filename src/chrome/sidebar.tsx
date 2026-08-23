@@ -228,7 +228,7 @@ function MobileNav({
       aria-label={t("Navigation")}
       className={`fixed z-[70] mx-auto flex h-16 max-w-[560px] items-start rounded-[24px] border border-white/20 bg-surface/45 px-2 pt-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-[28px] backdrop-saturate-150 transition-transform lg:hidden ${hidden ? "translate-y-[calc(100%+1rem)]" : "translate-y-0"}`}
       style={{
-        bottom: "max(env(safe-area-inset-bottom, 0px), 0.5rem)",
+        bottom: "max(var(--harbor-safe-bottom), 0.5rem)",
         left: "max(env(safe-area-inset-left, 0px), 0.75rem)",
         right: "max(env(safe-area-inset-right, 0px), 0.75rem)",
       }}

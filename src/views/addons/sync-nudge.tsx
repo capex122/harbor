@@ -44,7 +44,7 @@ export function SyncNudge({ authKey }: { authKey: string | null }) {
   return createPortal(
     <>
       <div
-        className={`fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] z-[120] w-auto transition-all duration-300 ease-out sm:inset-x-auto sm:bottom-6 sm:end-6 sm:w-[min(92vw,358px)] ${
+        className={`fixed inset-x-3 bottom-[calc(var(--harbor-safe-bottom)+5rem)] z-[120] w-auto transition-all duration-300 ease-out lg:inset-x-auto lg:bottom-6 lg:end-6 lg:w-[min(92vw,358px)] ${
           entered ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
         }`}
         role="complementary"

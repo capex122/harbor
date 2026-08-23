@@ -868,4 +868,7 @@ pub fn run() {
 mod ios_app;
 
 #[cfg(target_os = "ios")]
+mod stremio_auth;
+
+#[cfg(target_os = "ios")]
 pub use ios_app::run;

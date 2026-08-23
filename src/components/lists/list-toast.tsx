@@ -32,7 +32,7 @@ export function ListToastHost() {
   if (!toast) return null;
 
   return createPortal(
-    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] z-[220] flex justify-center px-4 animate-popover-in sm:inset-x-auto sm:bottom-6 sm:left-1/2 sm:block sm:-translate-x-1/2 sm:px-0">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--harbor-safe-bottom)+5rem)] z-[220] flex justify-center px-4 animate-popover-in lg:inset-x-auto lg:bottom-6 lg:left-1/2 lg:block lg:-translate-x-1/2 lg:px-0">
       <div className="pointer-events-auto flex max-w-full items-center gap-2.5 rounded-full border border-edge-soft bg-elevated/95 py-1.5 ps-1.5 pe-4 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.7)] backdrop-blur-md">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
           <Check size={13} strokeWidth={2.6} />

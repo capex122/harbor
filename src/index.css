@@ -53,11 +53,16 @@
 }
 
 :root {
+  --harbor-safe-bottom: env(safe-area-inset-bottom, 0px);
   color-scheme: dark;
   font-family: var(--font-sans);
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+html[data-os="ios"] {
+  --harbor-safe-bottom: 0px;
 }
 
 html,
@@ -1548,8 +1553,8 @@ html[data-theme-layout="minui"] .harbor-together-pill {
   html [data-mobile-nav-space] .harbor-layer-active > :is(main.pt-20, main.pt-24, main.pt-28, main.pt-32),
   html [data-mobile-nav-space] [data-settings] > main,
   html [data-mobile-nav-space] [data-settings] > div > [data-harbor-sidebar] { padding-top: calc(env(safe-area-inset-top, 0px) + 4.5rem) !important; }
-  [data-mobile-nav-space] :is(.harbor-layer-active main, [data-mobile-nav-scroll]) { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important; }
-  [data-mobile-nav-space] [data-mobile-nav-float] { bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important; }
+  [data-mobile-nav-space] :is(.harbor-layer-active main, [data-mobile-nav-scroll]) { padding-bottom: calc(5.5rem + var(--harbor-safe-bottom)) !important; }
+  [data-mobile-nav-space] [data-mobile-nav-float] { bottom: calc(5.5rem + var(--harbor-safe-bottom)) !important; }
 }
 @keyframes queue-in-right {
   from {

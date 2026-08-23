@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { fetch as tauriFetchImpl } from "@tauri-apps/plugin-http";
 import { TrackerBlockedError, isBlockedUrl, noteBlocked } from "./privacy/blocklist";
+import { isIosApp } from "./platform";
 
 const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
@@ -181,6 +182,11 @@ export const safeFetch: typeof fetch = (input, init) => {
     return Promise.reject(new TrackerBlockedError(host));
   }
   if (isTauri) {
+    if (isIosApp()) {
+      return normalizeAbort(
+        tauriFetchImpl(input as unknown as string, init as RequestInit) as Promise<Response>,
+      );
+    }
     if (typeof input === "string") {
       const exec = isIdempotent(init?.method)
         ? tauriHarborFetch(input, init).catch(() =>

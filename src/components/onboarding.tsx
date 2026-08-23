@@ -122,7 +122,7 @@ export function OnboardingModal() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between border-t border-edge-soft bg-canvas/40 px-8 py-5 max-sm:flex-col max-sm:items-stretch max-sm:gap-3 max-sm:px-5 max-sm:pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] max-sm:pt-3">
+            <div className="flex items-center justify-between border-t border-edge-soft bg-canvas/40 px-8 py-5 max-sm:flex-col max-sm:items-stretch max-sm:gap-3 max-sm:px-5 max-sm:pb-[calc(var(--harbor-safe-bottom)+1rem)] max-sm:pt-3">
               <div className="flex items-center gap-4">
                 {stepIdx > 1 && stepIdx < steps.length - 1 && (
                   <button

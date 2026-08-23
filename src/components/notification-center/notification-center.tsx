@@ -96,7 +96,7 @@ export function NotificationCenter({ trigger = true }: { trigger?: boolean } = {
               role="dialog"
               aria-modal="true"
               onClick={(e) => e.stopPropagation()}
-              className="harbor-together-surface absolute inset-x-2 bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] top-[calc(env(safe-area-inset-top,0px)+0.5rem)] flex w-auto flex-col overflow-hidden rounded-2xl border border-edge shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] sm:inset-x-auto sm:bottom-auto sm:end-4 sm:top-[88px] sm:max-h-[74vh] sm:w-[min(400px,calc(100vw-2rem))]"
+              className="harbor-together-surface absolute inset-x-2 bottom-[calc(var(--harbor-safe-bottom)+5rem)] top-[calc(env(safe-area-inset-top,0px)+0.5rem)] flex w-auto flex-col overflow-hidden rounded-2xl border border-edge shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] lg:inset-x-auto lg:bottom-auto lg:end-4 lg:top-[88px] lg:max-h-[74vh] lg:w-[min(400px,calc(100vw-2rem))]"
               style={{ animation: "nc-pop-in 200ms cubic-bezier(0.32,0.72,0.24,1) both" }}
             >
               <div className="flex items-center justify-between border-b border-edge-soft px-4 py-3">
