@@ -4,19 +4,6 @@ version = "0.9.117"
 description = "A Stremio client built for adventure"
 edition = "2021"
 
-[package.metadata.cargo-apple.ios]
-libraries = ["libHarborMPVKit.a"]
-frameworks = [
-  "AVFoundation",
-  "CoreAudio",
-  "AudioToolbox",
-  "CoreVideo",
-  "CoreFoundation",
-  "CoreMedia",
-  "Metal",
-  "VideoToolbox",
-]
-
 [lib]
 name = "harbor_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]

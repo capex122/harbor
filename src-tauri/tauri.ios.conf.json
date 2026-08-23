@@ -21,7 +21,8 @@
       "THIRD-PARTY-NOTICES.txt": "notices/"
     },
     "iOS": {
-      "minimumSystemVersion": "15.0"
+      "minimumSystemVersion": "15.0",
+      "frameworks": ["gen/apple/Externals/arm64/release/libHarborMPVKit.a"]
     }
   }
 }
