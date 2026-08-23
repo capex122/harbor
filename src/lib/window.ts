@@ -3,9 +3,9 @@ import { getCurrentWindow, type Window } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { getWindowFullscreen } from "@/lib/fullscreen-state";
-import { isMacDesktop } from "@/lib/platform";
+import { isIosApp, isMacDesktop } from "@/lib/platform";
 
-const win: Window | null = isTauri() ? getCurrentWindow() : null;
+const win: Window | null = isTauri() && !isIosApp() ? getCurrentWindow() : null;
 
 const IS_MAC = isMacDesktop();
 
