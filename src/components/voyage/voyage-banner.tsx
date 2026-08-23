@@ -59,10 +59,9 @@ export function VoyageBanner({ pool }: { pool: Meta[] }) {
         : t("Keep picking");
 
   return (
-    <section ref={rootRef} className="group relative min-h-[172px] w-full overflow-hidden rounded-2xl bg-canvas ring-1 ring-edge-soft">
+    <section ref={rootRef} className="group relative min-h-[300px] w-full overflow-hidden rounded-2xl bg-canvas ring-1 ring-edge-soft sm:min-h-[172px]">
       <div
-        className="absolute inset-y-0 z-0 overflow-hidden [transform:skewX(-8deg)]"
-        style={{ left: "39%", right: "-34px" }}
+        className="absolute inset-y-0 end-[-34px] start-0 top-[44%] z-0 overflow-hidden [transform:skewX(-8deg)] sm:start-[39%] sm:top-0"
       >
         <div
           className={`flex h-full items-stretch gap-2 ${reduce ? "" : "voyage-marquee"} group-hover:[animation-play-state:paused]`}
@@ -90,7 +89,7 @@ export function VoyageBanner({ pool }: { pool: Meta[] }) {
 
       <button type="button" onClick={openVoyage} aria-label={t("Open Voyages")} className="absolute inset-0 z-10 cursor-pointer" />
 
-      <div className="pointer-events-none relative z-20 flex h-full min-h-[172px] max-w-[47%] flex-col justify-center gap-2.5 p-7">
+      <div className="pointer-events-none relative z-20 flex h-full min-h-[300px] max-w-full flex-col justify-start gap-2.5 p-5 sm:min-h-[172px] sm:max-w-[47%] sm:justify-center sm:p-7">
         <span className="text-[10.5px] font-bold uppercase tracking-[0.22em]" style={{ color: accent }}>
           {t("Harbor Voyages")}
           {streak > 1 && (

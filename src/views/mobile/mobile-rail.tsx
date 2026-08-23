@@ -97,7 +97,7 @@ function RankTile({ meta, rank, onOpenDetail }: { meta: Meta; rank: number; onOp
     <button
       type="button"
       onClick={() => open(meta)}
-      className="w-[150px] shrink-0 text-start transition-transform duration-150 active:scale-[0.97]"
+      className="w-[136px] shrink-0 text-start transition-transform duration-150 active:scale-[0.97]"
     >
       <div className="relative w-full" style={{ aspectRatio: "150 / 176" }}>
         <span
@@ -135,7 +135,7 @@ export function PosterTile({ meta, onOpenDetail }: { meta: Meta; onOpenDetail?: 
     <button
       type="button"
       onClick={() => open(meta)}
-      className="w-[124px] shrink-0 text-start transition-transform duration-150 active:scale-[0.96]"
+      className="w-[112px] shrink-0 text-start transition-transform duration-150 active:scale-[0.96]"
     >
       <Poster src={src} onError={onError} seed={meta.id} ratio="portrait" lazy className="rounded-[14px]">
         {award && <AwardCorner award={award} />}
@@ -177,7 +177,7 @@ function LandscapeTile({ meta, onOpenDetail }: { meta: Meta; onOpenDetail?: Open
     <button
       type="button"
       onClick={() => open(meta)}
-      className="w-[240px] shrink-0 text-start transition-transform duration-150 active:scale-[0.97]"
+      className="w-[216px] shrink-0 text-start transition-transform duration-150 active:scale-[0.97]"
     >
       <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[14px] bg-surface ring-1 ring-edge-soft/50">
         {bg && (

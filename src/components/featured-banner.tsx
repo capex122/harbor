@@ -66,7 +66,7 @@ export function FeaturedBanner({ items }: { items: Meta[] }) {
         {t("Recommended")}
       </h2>
 
-      <div className="harbor-step grid grid-cols-[minmax(0,1fr)_320px] gap-4 motion-reduce:animate-none">
+      <div className="harbor-step grid grid-cols-1 gap-4 motion-reduce:animate-none lg:grid-cols-[minmax(0,1fr)_320px]">
         <BigCardStack items={items} active={safeActive} onPrev={goPrev} onNext={goNext} />
         <SidePanel
           meta={current}
@@ -94,7 +94,7 @@ export function FeaturedBanner({ items }: { items: Meta[] }) {
 
 function BannerSkeleton() {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-4">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="aspect-[16/9] animate-pulse rounded-2xl bg-elevated/30" />
       <div className="animate-pulse rounded-2xl bg-elevated/25" />
     </div>

@@ -104,7 +104,7 @@ export function CategorySidebar({
           )}
         </div>
       </div>
-      <div ref={listRef} className="flex-1 overflow-y-auto py-1.5">
+      <div ref={listRef} data-mobile-nav-scroll className="flex-1 overflow-y-auto py-1.5">
         {showFavs && (
           <CategoryItem
             idx={favIdx}

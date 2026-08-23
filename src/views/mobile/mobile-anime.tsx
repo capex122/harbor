@@ -374,7 +374,7 @@ function RailSkeleton({ titleW }: { titleW: string }) {
       <div className={`mx-4 h-[18px] ${titleW} rounded-md bg-elevated/45`} />
       <div className="flex gap-3 overflow-hidden px-4 pb-1">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="relative aspect-[2/3] w-[124px] shrink-0 overflow-hidden rounded-[14px] bg-elevated/40">
+          <div key={i} className="relative aspect-[2/3] w-[112px] shrink-0 overflow-hidden rounded-[14px] bg-elevated/40">
             <Shimmer />
           </div>
         ))}

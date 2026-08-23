@@ -195,11 +195,13 @@ export function Settings() {
   const [active, setActive] = useState<SectionId>(
     (settingsSectionRequest.section as SectionId | null) ?? "account",
   );
+  const [mobileNavOpen, setMobileNavOpen] = useState(!settingsSectionRequest.section);
   const [relayMode, setRelayMode] = useState<RelayMode>("panel");
   const [pendingAnchor, setPendingAnchor] = useState<string | null>(null);
   const scrollRef = useRef<HTMLElement>(null);
 
   const handleNav = (id: SectionId, anchor?: string) => {
+    setMobileNavOpen(false);
     startTransition(() => {
       setActive(id);
       setPendingAnchor(anchor ?? null);
@@ -207,7 +209,10 @@ export function Settings() {
   };
 
   useEffect(() => {
-    if (settingsSectionRequest.section) setActive(settingsSectionRequest.section as SectionId);
+    if (settingsSectionRequest.section) {
+      setActive(settingsSectionRequest.section as SectionId);
+      setMobileNavOpen(false);
+    }
   }, [settingsSectionRequest]);
 
   useEffect(() => {
@@ -296,18 +301,30 @@ export function Settings() {
   return (
     <SettingsActiveContext.Provider value={{ setActive }}>
     <div data-settings className="flex h-full bg-canvas">
-      <SettingsNav active={active} onChange={handleNav} />
+      <div className={`${mobileNavOpen ? "flex" : "hidden"} h-full w-full sm:flex sm:w-auto`}>
+        <SettingsNav active={active} onChange={handleNav} />
+      </div>
       <main
         ref={scrollRef}
-        className="flex-1 overflow-y-auto pt-28 pb-16"
+        className={`${mobileNavOpen ? "hidden sm:block" : "block"} flex-1 overflow-y-auto pt-24 pb-16 sm:pt-28`}
       >
         <div
           data-tauri-drag-region
-          className={wide ? "mx-auto flex w-full max-w-[1500px] flex-col gap-8 px-8" : "mx-auto flex max-w-3xl flex-col gap-10 px-12"}
+          className={wide ? "mx-auto flex w-full max-w-[1500px] flex-col gap-8 px-5 sm:px-8" : "mx-auto flex max-w-3xl flex-col gap-8 px-5 sm:gap-10 sm:px-12"}
         >
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            className="flex h-10 w-fit items-center gap-2 rounded-full border border-edge-soft px-4 text-[13px] font-semibold text-ink-muted sm:hidden"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="dir-icon">
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+            {t("All settings")}
+          </button>
           {!wide && !(active === "relay" && relayMode !== "panel") && (
             <header className="flex flex-col gap-2">
-              <h1 className="font-display text-[44px] font-medium leading-[1.05] tracking-tight text-ink">
+              <h1 className="font-display text-[34px] font-medium leading-[1.05] tracking-tight text-ink sm:text-[44px]">
                 {t(SECTION_META[active].label)}
               </h1>
               <p className="text-[15px] text-ink-muted">{t(SECTION_META[active].sub)}</p>
@@ -416,8 +433,8 @@ export function Settings() {
           </Suspense>
         </div>
       </main>
-      <BackToTop scrollRef={scrollRef} />
-      <SettingsJumpBar scrollRef={scrollRef} activeSection={active} />
+      {!mobileNavOpen && <BackToTop scrollRef={scrollRef} />}
+      {!mobileNavOpen && <SettingsJumpBar scrollRef={scrollRef} activeSection={active} />}
     </div>
     </SettingsActiveContext.Provider>
   );

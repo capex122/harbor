@@ -354,7 +354,7 @@ export const Hero = memo(function Hero({
       <MetaAwardsCorner meta={meta} imdbId={resolvedImdb} />
 
       <div
-        className={`harbor-hero-content relative flex h-full flex-col p-14 ${bottomAlign ? "justify-end pb-24" : "justify-center"} ${full ? "pt-28 lg:pt-32" : ""}`}
+        className={`harbor-hero-content relative flex h-full flex-col p-5 sm:p-14 ${bottomAlign ? "justify-end pb-24" : "justify-center"} ${full ? "pt-28 lg:pt-32" : ""}`}
       >
         <div className="max-w-2xl">
           {rank && (
@@ -437,7 +437,7 @@ export const Hero = memo(function Hero({
             {meta.runtime && <Stat label={t("Runtime")} value={meta.runtime} />}
           </div>
           <div
-            className="mt-9 flex gap-3"
+            className="mt-9 flex flex-wrap gap-3"
             onMouseEnter={() => setOverControls(true)}
             onMouseLeave={() => setOverControls(false)}
           >
@@ -446,7 +446,7 @@ export const Hero = memo(function Hero({
                 e.stopPropagation();
                 openMeta({ ...meta, logo: logo ?? meta.logo });
               }}
-              className={`flex h-12 items-center gap-2.5 ${actionRadius} bg-ink px-7 text-[15px] font-semibold text-canvas shadow-[0_8px_24px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.65),inset_0_-1px_0_rgba(0,0,0,0.18)] transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98]`}
+              className={`flex h-12 items-center gap-2.5 ${actionRadius} bg-ink px-6 text-[15px] font-semibold text-canvas shadow-[0_8px_24px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.65),inset_0_-1px_0_rgba(0,0,0,0.18)] transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98] sm:px-7`}
             >
               <Play size={18} fill="currentColor" />
               {t("Play")}
@@ -457,7 +457,7 @@ export const Hero = memo(function Hero({
                   e.stopPropagation();
                   openMeta({ ...meta, logo: logo ?? meta.logo });
                 }}
-                className={`flex h-12 items-center gap-2.5 ${actionRadius} border border-edge bg-canvas/55 px-6 text-[15px] font-medium text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors duration-200 hover:border-ink-subtle hover:bg-canvas/75`}
+                className={`flex h-12 items-center gap-2.5 ${actionRadius} border border-edge bg-canvas/55 px-5 text-[15px] font-medium text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors duration-200 hover:border-ink-subtle hover:bg-canvas/75 sm:px-6`}
               >
                 <Info size={18} strokeWidth={2} />
                 {t("More info")}
@@ -475,7 +475,7 @@ export const Hero = memo(function Hero({
                     imdbId: resolvedImdb,
                   });
                 }}
-                className={`flex h-12 items-center gap-2.5 ${actionRadius} border border-edge bg-canvas/55 px-6 text-[15px] font-medium text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors duration-200 hover:border-ink-subtle hover:bg-canvas/75`}
+                className={`flex h-12 items-center gap-2.5 ${actionRadius} border border-edge bg-canvas/55 px-5 text-[15px] font-medium text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors duration-200 hover:border-ink-subtle hover:bg-canvas/75 sm:px-6`}
               >
                 {inWatchlist ? (
                   <Check size={18} strokeWidth={2.4} />
@@ -525,7 +525,7 @@ function HeroTitlePlate({
             else onLoad();
           }}
           onError={onError}
-          className="max-h-[120px] w-auto max-w-[460px] object-contain object-left rtl:object-right drop-shadow-[0_6px_22px_rgba(0,0,0,0.45)]"
+          className="max-h-[120px] w-auto max-w-full object-contain object-left rtl:object-right sm:max-w-[460px] drop-shadow-[0_6px_22px_rgba(0,0,0,0.45)]"
           style={{
             opacity: loaded ? 1 : 0,
             transition: "opacity 360ms cubic-bezier(0.32, 0.72, 0.24, 1)",
@@ -533,7 +533,7 @@ function HeroTitlePlate({
         />
       ) : resolved ? (
         <h2
-          className="font-display text-[68px] font-medium leading-[0.98] tracking-tight text-ink"
+          className="font-display text-[44px] font-medium leading-[0.98] tracking-tight text-ink sm:text-[68px]"
           style={{ animation: "harbor-fade-in 420ms cubic-bezier(0.32, 0.72, 0.24, 1) both" }}
         >
           {name}

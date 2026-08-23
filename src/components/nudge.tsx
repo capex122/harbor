@@ -16,18 +16,20 @@ export function TmdbNudge({ suppress }: { suppress?: boolean } = {}) {
   if (settings.tmdbKey || isDismissed(KEY) || suppress) return null;
 
   return (
-    <div className="group animate-nudge-in flex items-center gap-4 rounded-2xl border border-edge-soft bg-elevated/95 px-5 py-4 backdrop-blur-md shadow-[0_18px_50px_-20px_rgba(0,0,0,0.6)]">
-      <img
-        src={tmdbLogo}
-        alt="TMDB"
-        className="h-10 w-10 shrink-0 rounded-full object-cover"
-        draggable={false}
-      />
-      <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-medium text-ink">{t("Add a TMDB key for the full Harbor")}</p>
-        <p className="text-[12.5px] text-ink-subtle">
-          {t("Free key unlocks Trending, In Theaters, and per-service catalogs. 60 seconds.")}
-        </p>
+    <div className="group animate-nudge-in relative flex items-center gap-4 rounded-2xl border border-edge-soft bg-elevated/95 px-5 py-4 backdrop-blur-md shadow-[0_18px_50px_-20px_rgba(0,0,0,0.6)] max-sm:flex-col max-sm:items-stretch max-sm:gap-3 max-sm:pe-12">
+      <div className="flex items-center gap-3">
+        <img
+          src={tmdbLogo}
+          alt="TMDB"
+          className="h-10 w-10 shrink-0 rounded-full object-cover"
+          draggable={false}
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-[13.5px] font-medium text-ink">{t("Add a TMDB key for the full Harbor")}</p>
+          <p className="text-[12.5px] text-ink-subtle">
+            {t("Free key unlocks Trending, In Theaters, and per-service catalogs. 60 seconds.")}
+          </p>
+        </div>
       </div>
       <button
         onClick={() => openSettings("library")}
@@ -39,7 +41,7 @@ export function TmdbNudge({ suppress }: { suppress?: boolean } = {}) {
       <button
         onClick={() => dismiss(KEY)}
         aria-label={t("Dismiss")}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink max-sm:absolute max-sm:end-2 max-sm:top-2"
       >
         <X size={15} />
       </button>

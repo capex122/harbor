@@ -1233,9 +1233,11 @@ function Shell({ onReady }: { onReady?: () => void }) {
   const peopleAlive = useIdleEvict(peopleTop);
 
   return (
-    <div data-kids={kidsTop || kid ? "on" : undefined} className="relative flex h-full">
-      {!settingsTop && !playerActive && !liveTop && !pickerTop && layout === "sidebar" && (
-        <Sidebar />
+    <div data-kids={kidsTop || kid ? "on" : undefined} data-mobile-nav-space={!playerActive && !pickerTop && !chromeHidden ? "" : undefined} className="relative flex h-full bg-canvas">
+      {!playerActive && !pickerTop && (
+        <div className={settingsTop || liveTop || layout !== "sidebar" ? "contents sm:hidden" : "contents"}>
+          <Sidebar />
+        </div>
       )}
       {!settingsTop && !playerActive && !liveTop && !pickerTop && layout === "dracula" && (
         <DraculaSidebar />

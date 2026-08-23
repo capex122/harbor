@@ -33,8 +33,8 @@ export function PlaylistEmpty({
 function Intro({ onContinue }: { onContinue: () => void }) {
   const t = useT();
   return (
-    <div className="relative flex min-h-full flex-col px-12 py-20">
-      <div className="mx-auto flex w-full max-w-[820px] flex-1 flex-col justify-center gap-14">
+    <div className="relative flex min-h-0 flex-col px-5 pt-4 sm:min-h-full sm:px-12 sm:py-20">
+      <div className="mx-auto flex w-full max-w-[820px] flex-1 flex-col justify-start gap-8 sm:justify-center sm:gap-14">
         <header className="flex flex-col gap-6">
           <span className="text-[11px] font-bold uppercase tracking-[0.42em] text-ink-subtle">
             {t("Live TV")}
@@ -201,8 +201,8 @@ function Form({
   };
 
   return (
-    <div className="relative flex min-h-full flex-col px-12 py-20">
-      <div className="mx-auto flex w-full max-w-[640px] flex-1 flex-col justify-center gap-8">
+    <div className="relative flex min-h-0 flex-col px-5 pt-4 sm:min-h-full sm:px-12 sm:py-20">
+      <div className="mx-auto flex w-full max-w-[640px] flex-1 flex-col justify-start gap-8 sm:justify-center">
         <button
           onClick={onBack}
           className="group inline-flex h-11 items-center gap-2 self-start rounded-full border border-edge-soft bg-elevated/60 ps-3.5 pe-5 text-[14px] font-semibold text-ink-muted transition-all duration-150 ease-out hover:border-edge hover:bg-elevated hover:text-ink active:scale-[0.97]"

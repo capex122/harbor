@@ -1553,7 +1553,7 @@ export function SettingsNav({
     <nav
       data-harbor-sidebar
       data-tv-scroll-focus
-      className="relative flex w-72 shrink-0 flex-col bg-surface pt-24 shadow-[1px_0_0_var(--color-edge)]"
+      className="relative flex w-full shrink-0 flex-col bg-surface pt-24 shadow-[1px_0_0_var(--color-edge)] sm:w-72"
     >
       <div data-tauri-drag-region className="h-3 shrink-0" />
       {showBack && (
@@ -1611,7 +1611,7 @@ export function SettingsNav({
           )}
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-3 pb-8">
+      <div data-mobile-nav-scroll className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-3 pb-8">
         {matches && (
           <div className="flex flex-col gap-1">
             {matches.length === 0 && (!optionMatches || optionMatches.length === 0) && (

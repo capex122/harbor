@@ -256,7 +256,11 @@ export function Row({
     rtlRef.current = getComputedStyle(container).direction === "rtl";
     const available = container.getBoundingClientRect().width;
     if (available <= 0) return;
-    const fits = Math.max(1, Math.floor((available + GAP) / (effMin + GAP)));
+    const minWidth =
+      available < 640
+        ? Math.min(effMin * 0.72, effShape === "portrait" ? Infinity : 126)
+        : effMin;
+    const fits = Math.max(1, Math.floor((available + GAP) / (minWidth + GAP)));
     const raw = (available - (fits - 1) * GAP) / fits;
     setCellWidth((Math.ceil(raw * 64) + 1) / 64);
   };

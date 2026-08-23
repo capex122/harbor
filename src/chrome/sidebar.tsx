@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, Lock } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { HarborMark } from "@/components/icons/harbor-mark";
 import { ProfileChip } from "@/chrome/sidebar/profile-chip";
 import { useT } from "@/lib/i18n";
@@ -11,7 +11,7 @@ import { useActiveKid } from "@/lib/profiles";
 import { useView, type View } from "@/lib/view";
 import { KidsSidebarDoodles } from "./kids-sidebar-doodles";
 import { CollapseToggle } from "@/chrome/sidebar/collapse-toggle";
-import { NAV_ITEMS, applyNavCustomization, type NavItem } from "@/chrome/nav-items";
+import { NAV_ITEMS, applyNavCustomization, type NavItem, type NavItemId } from "@/chrome/nav-items";
 
 const PRIMARY_IDS = new Set(["home", "discover", "catalogs", "movies", "shows", "kids", "anime", "live", "vod"]);
 
@@ -36,7 +36,7 @@ export function Sidebar() {
       <aside
         aria-hidden={chromeHidden}
         data-harbor-sidebar
-        className={`relative z-[60] flex w-[72px] shrink-0 flex-col border-e border-edge-soft bg-canvas transition-[opacity,transform,width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`relative z-[60] hidden w-[72px] shrink-0 flex-col border-e border-edge-soft bg-canvas transition-[opacity,transform,width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] sm:flex ${
           collapsed ? "" : "lg:w-60"
         } ${
           chromeHidden
@@ -47,7 +47,7 @@ export function Sidebar() {
         {kid && <KidsSidebarDoodles />}
         <div
           data-tauri-drag-region
-          className={`flex shrink-0 items-center justify-center gap-0.5 px-3 text-ink ${
+          className={`flex shrink-0 items-center justify-center gap-0.5 px-2 text-ink sm:px-3 ${
             collapsed ? "" : "lg:justify-start lg:px-7"
           } ${hybridBar ? "h-12" : "h-20"}`}
         >
@@ -115,7 +115,7 @@ export function Sidebar() {
           hiddenTabs={hiddenTabs}
           onPinNav={(v) => setPendingPinView(v)}
         />
-        <div className={`relative p-2 ${collapsed ? "" : "lg:p-4"}`}>
+        <div className={`relative p-1.5 sm:p-2 ${collapsed ? "" : "lg:p-4"}`}>
           <div
             aria-hidden
             className={`pointer-events-none absolute inset-x-2 top-0 h-px bg-gradient-to-r from-transparent via-edge-soft/55 to-transparent ${
@@ -146,6 +146,14 @@ export function Sidebar() {
           )}
         </div>
       </aside>
+      <MobileNav
+        view={view}
+        setView={setView}
+        locked={locked}
+        hiddenTabs={hiddenTabs}
+        hidden={chromeHidden}
+        onPinNav={setPendingPinView}
+      />
       {pendingPinView && (
         <ParentalPinModal
           mode={{
@@ -161,6 +169,133 @@ export function Sidebar() {
         />
       )}
     </>
+  );
+}
+
+const MOBILE_NAV: Array<{ id: NavItemId; label?: string; menu?: NavItemId[] }> = [
+  { id: "discover", menu: ["movies", "shows"] },
+  { id: "live", menu: ["catalogs", "collections"] },
+  { id: "home" },
+  { id: "manga", menu: ["anime"] },
+  { id: "library", label: "Library", menu: ["calendar", "addons", "settings"] },
+];
+
+function MobileNav({
+  view,
+  setView,
+  locked,
+  hiddenTabs,
+  hidden,
+  onPinNav,
+}: {
+  view: View;
+  setView: (view: View) => void;
+  locked: boolean;
+  hiddenTabs: Record<LockableTab, boolean>;
+  hidden: boolean;
+  onPinNav: (view: View) => void;
+}) {
+  const t = useT();
+  const [open, setOpen] = useState<NavItemId | null>(null);
+  const timer = useRef<number | null>(null);
+  const held = useRef(false);
+  const item = (id: NavItemId) => NAV_ITEMS.find((it) => it.id === id)!;
+  const activeGroup = (id: NavItemId) => {
+    const nav = MOBILE_NAV.find((it) => it.id === id)!;
+    return [id, ...(nav.menu ?? [])].some((key) => item(key).view === view);
+  };
+  const go = (id: NavItemId) => {
+    const target = item(id);
+    setOpen(null);
+    if (target.pinGated && locked) onPinNav(target.view);
+    else setView(target.view);
+  };
+  const press = (id: NavItemId, hasMenu: boolean) => {
+    held.current = false;
+    if (!hasMenu) return;
+    timer.current = window.setTimeout(() => {
+      held.current = true;
+      setOpen(id);
+    }, 450);
+  };
+  const release = () => {
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = null;
+  };
+
+  return (
+    <nav
+      aria-label={t("Navigation")}
+      className={`fixed z-[70] flex h-16 items-start rounded-[24px] border border-white/20 bg-surface/45 px-2 pt-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-[28px] backdrop-saturate-150 transition-transform sm:hidden ${hidden ? "translate-y-[calc(100%+1rem)]" : "translate-y-0"}`}
+      style={{
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)",
+        left: "calc(env(safe-area-inset-left, 0px) + 0.5rem)",
+        right: "calc(env(safe-area-inset-right, 0px) + 0.5rem)",
+      }}
+    >
+      {open && <button aria-label={t("Close")} className="fixed inset-0 -z-10" onClick={() => setOpen(null)} />}
+      {MOBILE_NAV.map((nav, index) => {
+        const current = item(nav.id);
+        const active = activeGroup(nav.id);
+        const isHome = nav.id === "home";
+        const menu = nav.menu?.filter((id) => {
+          const option = item(id);
+          return !(locked && option.parentalKey && hiddenTabs[option.parentalKey]);
+        });
+        return (
+          <div key={nav.id} className="relative flex min-w-0 flex-1 justify-center">
+            {open === nav.id && menu && (
+              <div
+                className={`absolute bottom-[calc(100%+14px)] flex min-w-36 flex-col gap-1 rounded-2xl border border-edge bg-elevated/95 p-1.5 shadow-[0_18px_46px_rgba(0,0,0,0.55)] backdrop-blur-xl ${index === 0 ? "start-0" : index === MOBILE_NAV.length - 1 ? "end-0" : "start-1/2 -translate-x-1/2"}`}
+              >
+                {menu.map((id) => {
+                  const option = item(id);
+                  const selected = option.view === view;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => go(id)}
+                      className={`flex h-11 items-center gap-3 rounded-xl px-3 text-start text-[13px] font-semibold transition-colors ${selected ? "bg-raised text-ink" : "text-ink-muted hover:bg-raised/70 hover:text-ink"}`}
+                    >
+                      <span className="shrink-0">{option.render(selected)}</span>
+                      {t(option.label)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <button
+              onPointerDown={() => press(nav.id, !!menu?.length)}
+              onPointerUp={release}
+              onPointerCancel={release}
+              onPointerLeave={(event: ReactPointerEvent<HTMLButtonElement>) => {
+                if (event.pointerType === "mouse") release();
+              }}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                if (menu?.length) setOpen(nav.id);
+              }}
+              onClick={() => {
+                if (held.current) {
+                  held.current = false;
+                  return;
+                }
+                go(nav.id);
+              }}
+              aria-label={t(nav.label ?? current.label)}
+              aria-haspopup={menu?.length ? "menu" : undefined}
+              aria-expanded={open === nav.id || undefined}
+              className={`flex min-w-0 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-all active:scale-95 ${isHome ? "-translate-y-3" : "h-14"} ${active ? "text-accent" : "text-ink-subtle"}`}
+            >
+              <span className={isHome ? "flex h-14 w-14 items-center justify-center rounded-full bg-ink text-canvas shadow-[0_8px_24px_rgba(0,0,0,0.38)]" : "flex h-8 items-center justify-center"}>
+                {current.render(active)}
+              </span>
+              {!isHome && <span className="max-w-full truncate">{t(nav.label ?? current.label)}</span>}
+            </button>
+          </div>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -236,7 +371,7 @@ function ScrollableNav({
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div
         ref={ref}
-        className="flex flex-1 flex-col overflow-y-auto px-4 pt-3 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex flex-1 flex-col overflow-y-auto px-2 pt-3 pb-6 sm:px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="flex flex-col gap-1.5">
           {primary.map((item) => (

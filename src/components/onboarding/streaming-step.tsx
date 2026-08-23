@@ -23,7 +23,7 @@ export function StreamingStep() {
           )}
         </p>
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {(Object.keys(SERVICES) as StreamingService[]).map((svc) => {
           const on = settings.streaming[svc];
           return (

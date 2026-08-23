@@ -44,13 +44,13 @@ export function SyncNudge({ authKey }: { authKey: string | null }) {
   return createPortal(
     <>
       <div
-        className={`fixed bottom-6 end-6 z-[120] w-[min(92vw,358px)] transition-all duration-300 ease-out ${
+        className={`fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] z-[120] w-auto transition-all duration-300 ease-out sm:inset-x-auto sm:bottom-6 sm:end-6 sm:w-[min(92vw,358px)] ${
           entered ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
         }`}
         role="complementary"
         aria-label={t("Sync across your devices")}
       >
-        <div className="relative rounded-2xl border border-edge-soft bg-elevated/95 p-5 shadow-[0_24px_60px_-16px_rgba(0,0,0,0.65)] backdrop-blur-xl">
+        <div className="relative rounded-2xl border border-edge-soft bg-elevated/95 p-4 shadow-[0_24px_60px_-16px_rgba(0,0,0,0.65)] backdrop-blur-xl sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <img
               src={stremioWordmark}
@@ -71,7 +71,7 @@ export function SyncNudge({ authKey }: { authKey: string | null }) {
           <h3 className="mt-3.5 text-[15px] font-semibold tracking-tight text-ink">
             {t("Sync across your devices")}
           </h3>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-ink-muted">
+          <p className="mt-1 text-[12.5px] leading-relaxed text-ink-muted max-sm:hidden">
             {t(
               "Anything you install here saves to your Stremio account, so your addons are ready when you open Stremio on your phone.",
             )}

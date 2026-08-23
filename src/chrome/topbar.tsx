@@ -58,13 +58,13 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
   const layout = kid ? "sidebar" : preview ? preview.layout : activeLayout(settings.theme);
   const onLiveRoot = topKind === "live";
   const sidebarHidden = connecting || view === "settings" || onLiveRoot || topKind === "picker";
-  const hideSearch = view === "addons" || connecting || topKind === "picker";
+  const hideSearch = view === "addons" || view === "settings" || connecting || topKind === "picker";
   const sidebarOffset =
     layout === "stremio"
       ? "ps-[80px]"
       : settings.sidebarCollapsed
-        ? "ps-[84px]"
-        : "ps-[84px] lg:ps-[260px]";
+        ? "sm:ps-[84px]"
+        : "sm:ps-[84px] lg:ps-[260px]";
   const searchWidth = canGoBack
     ? "w-[14rem] sm:w-[18rem] lg:w-[22rem] xl:w-[24rem]"
     : "w-[14rem] sm:w-[20rem] lg:w-[24rem] xl:w-[28rem] hover:w-[18rem] sm:hover:w-[24rem] lg:hover:w-[28rem] xl:hover:w-[34rem] focus-within:w-[18rem] sm:focus-within:w-[24rem] lg:focus-within:w-[28rem] xl:focus-within:w-[34rem]";
@@ -74,7 +74,7 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
   return (
     <header
       data-cleannav={settings.topbarAppearance === "transparent" ? "on" : undefined}
-      className={`pointer-events-none fixed inset-x-0 top-0 ${topKind === "picker" || connecting ? "z-[130]" : "z-[55]"} h-20`}
+      className={`pointer-events-none fixed inset-x-0 top-0 ${topKind === "picker" || connecting ? "z-[130]" : "z-[55]"} h-20 max-sm:h-16`}
     >
       {settings.topbarScrollBlur && settings.topbarAppearance !== "transparent" && (
         <div
@@ -100,15 +100,15 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
             {...dragProps}
             className={
               sidebarHidden
-                ? "pointer-events-auto flex h-full min-w-0 items-center justify-start gap-3"
-                : `pointer-events-auto flex h-full min-w-0 items-center justify-start ${sidebarOffset}`
+                ? `pointer-events-auto flex h-full min-w-0 items-center justify-start gap-3 ${hideSearch && !onLiveRoot ? "max-sm:pointer-events-none" : ""}`
+                : `pointer-events-auto flex h-full min-w-0 items-center justify-start ${sidebarOffset} ${hideSearch ? "max-sm:pointer-events-none" : ""}`
             }
           >
           {onLiveRoot && (
             <button
               onClick={() => setView("home")}
               aria-label={t("common.back")}
-              className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-edge-soft/60 bg-canvas/85 ps-3 pe-4 text-[13.5px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink"
+              className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-edge-soft/60 bg-canvas/85 ps-3 pe-4 text-[13.5px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink max-sm:hidden"
             >
               <ArrowLeft size={15} strokeWidth={2.2} className="dir-icon" />
               {t("common.back")}
@@ -122,13 +122,13 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
               </span>
             </div>
           )}
-            {!onLiveRoot && !connecting && <BackChrome />}
+            {!onLiveRoot && !connecting && <div className="max-sm:hidden"><BackChrome /></div>}
           </div>
           <div
             {...dragProps}
-            className={`pointer-events-auto min-w-0 max-w-full transition-[width] duration-200 ease-out ${searchWidth}`}
+            className={`pointer-events-auto min-w-0 max-w-full transition-[width] duration-200 ease-out ${searchWidth} ${onLiveRoot ? "max-sm:w-0" : ""}`}
           >
-            {!hideSearch && !kid && !hybridBar && <SearchPill />}
+            {!hideSearch && !kid && !hybridBar && <div className={onLiveRoot ? "max-sm:hidden" : ""}><SearchPill /></div>}
           </div>
           <div
             {...dragProps}

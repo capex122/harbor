@@ -19,7 +19,7 @@ export function DiscoverPane({
   onRefetch?: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col gap-7 sm:gap-12">
       <SyncNudge authKey={authKey} />
       <ElfHostedBundleCard />
       <AddonSpotlight installedIds={installedIds} onOpen={onOpen} onChange={onRefetch} />

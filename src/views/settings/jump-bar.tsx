@@ -152,7 +152,7 @@ export function SettingsJumpBar({
   };
 
   return (
-    <div className="pointer-events-none fixed bottom-5 left-[calc(50%+144px)] z-30 flex -translate-x-1/2 justify-center px-4 rtl:left-[calc(50%-144px)]">
+    <div data-mobile-nav-float className="pointer-events-none fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 justify-center px-4 sm:left-[calc(50%+144px)] rtl:left-1/2 sm:rtl:left-[calc(50%-144px)]">
       <div
         ref={railRef}
         onPointerDown={onPointerDown}
@@ -160,7 +160,7 @@ export function SettingsJumpBar({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         onWheel={onWheel}
-        className={`pointer-events-auto flex max-w-[min(640px,72vw)] select-none items-center gap-1 overflow-x-auto rounded-full border border-edge bg-surface/85 px-1.5 py-1.5 shadow-[0_10px_34px_rgba(0,0,0,0.4)] backdrop-blur-xl [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+        className={`pointer-events-auto flex max-w-[calc(100vw-2rem)] select-none items-center gap-1 overflow-x-auto rounded-full border border-edge bg-surface/85 px-1.5 py-1.5 shadow-[0_10px_34px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:max-w-[min(640px,72vw)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
       >
         <span className="shrink-0 ps-2.5 pe-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
           {t("On this page")}

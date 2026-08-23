@@ -286,8 +286,8 @@ export function AddonsView() {
         onClose={() => setAgeGateOpen(false)}
         onPass={() => update({ showAdultAddons: true })}
       />
-      <header className="shrink-0 px-12 pt-20 pb-3">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+      <header className="shrink-0 px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:px-12 sm:pt-20">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 max-sm:flex-col max-sm:items-stretch">
           <nav className="flex flex-wrap items-center gap-1">
             {(["discover", "browse", "installed"] as Tab[]).map((tabId) => {
               const active = tab === tabId;
@@ -344,11 +344,11 @@ export function AddonsView() {
               return <span key={tabId}>{btn}</span>;
             })}
           </nav>
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="min-w-0 max-w-72 flex-1">
+          <div className="flex min-w-0 flex-1 items-center gap-3 max-sm:grid max-sm:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="min-w-0 max-w-72 flex-1 max-sm:col-span-2 max-sm:max-w-none">
               <SearchBar value={query} onChange={setQuery} />
             </div>
-            <div className="min-w-0 flex-[1.4]">
+            <div className="min-w-0 flex-[1.4] max-sm:order-2 max-sm:col-span-2">
               <AddByUrlBar
                 onSubmit={async (raw) => {
                   setInstallModal({ kind: "install", url: raw });
@@ -365,7 +365,7 @@ export function AddonsView() {
                 }
               }}
               title={settings.showAdultAddons ? t("Hide adult addons") : t("Show adult addons")}
-              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[11.5px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[11.5px] font-semibold uppercase tracking-[0.14em] transition-colors max-sm:order-3 max-sm:justify-self-start ${
                 settings.showAdultAddons
                   ? "border-ink bg-ink/10 text-ink"
                   : "border-edge-soft text-ink-subtle hover:border-edge hover:text-ink-muted"
@@ -396,7 +396,7 @@ export function AddonsView() {
             {tab === "browse" && (
               <button
                 onClick={() => setFiltersOpen((v) => !v)}
-                className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-edge-soft px-3 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-subtle transition-colors hover:border-edge hover:text-ink-muted"
+                className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-edge-soft px-3 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-subtle transition-colors hover:border-edge hover:text-ink-muted max-sm:order-3 max-sm:justify-self-start"
               >
                 <ChevronRight
                   size={13}
@@ -472,7 +472,7 @@ export function AddonsView() {
 
       <ScrollToTop scrollRef={scrollRef} />
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-12 pb-20 pt-6">
+      <div ref={scrollRef} data-mobile-nav-scroll className="flex-1 overflow-y-auto px-4 pb-20 pt-6 sm:px-12">
         {loading && allAddons.length === 0 ? (
           <div className="flex h-full items-center justify-center py-24">
             <HarborLoader size="lg" caption={t("Loading the catalog")} keyed />

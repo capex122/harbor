@@ -124,7 +124,7 @@ export function MatchDetailView({ game }: { game: SportsGame }) {
       </div>
 
       {/* Content */}
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col overflow-y-auto px-6 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div data-mobile-nav-scroll className="mx-auto flex w-full max-w-4xl flex-1 flex-col overflow-y-auto px-6 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
             <span className="h-6 w-6 animate-spin rounded-full border-2 border-ink-subtle border-t-transparent" />

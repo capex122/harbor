@@ -23,6 +23,7 @@ export function BackToTop({
 
   return (
     <button
+      data-mobile-nav-float
       onClick={() =>
         scrollRef.current?.scrollTo({
           top: 0,

@@ -100,7 +100,7 @@ export function MobileCatalogGrid({
 
   return (
     <>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(102px,1fr))] gap-x-3 gap-y-5 px-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(92px,1fr))] gap-x-2.5 gap-y-4 px-4">
         {items.map((m) => (
           <GridPoster key={m.id} meta={m} onOpen={onOpenDetail} />
         ))}
@@ -176,7 +176,7 @@ function MoreSpinner() {
 function GridSkeleton() {
   return (
     <div
-      className="grid grid-cols-[repeat(auto-fill,minmax(102px,1fr))] gap-x-3 gap-y-5 px-4"
+      className="grid grid-cols-[repeat(auto-fill,minmax(92px,1fr))] gap-x-2.5 gap-y-4 px-4"
       aria-hidden
     >
       {Array.from({ length: 18 }).map((_, i) => (

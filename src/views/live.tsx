@@ -245,7 +245,7 @@ export function LiveView({ active }: { active: boolean }) {
 
   if (sources.length === 0) {
     return (
-      <main data-rail-flush className="relative flex min-h-0 flex-1 flex-col overflow-y-auto pt-20">
+      <main data-rail-flush className="relative min-h-0 flex-1 overflow-y-auto pt-20">
         <PlaylistEmpty onSave={(entry) => addPlaylist(entry)} />
       </main>
     );
@@ -339,7 +339,7 @@ export function LiveView({ active }: { active: boolean }) {
             />
           </div>
         ) : (
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 pt-5">
+        <div ref={scrollRef} data-mobile-nav-scroll className="flex-1 overflow-y-auto px-6 pt-5">
           {state.kind === "error" ? (
             <ErrorBlock
               message={state.message}
