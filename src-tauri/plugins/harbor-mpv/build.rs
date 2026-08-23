@@ -22,11 +22,19 @@ fn main() {
             .unwrap();
         for path in String::from_utf8(output.stdout).unwrap().lines() {
             let path = std::path::Path::new(path);
-            println!(
-                "cargo:rustc-link-search={}={}",
-                if path.is_dir() { "framework" } else { "native" },
-                path.parent().unwrap().display()
-            );
+            if path.is_dir() {
+                println!(
+                    "cargo:rustc-link-search=framework={}",
+                    path.parent().unwrap().display()
+                );
+            } else {
+                std::fs::copy(
+                    path,
+                    std::path::Path::new(&out_dir).join("libHarborMoltenVK.a"),
+                )
+                .unwrap();
+                println!("cargo:rustc-link-search=native={out_dir}");
+            }
         }
         for framework in [
             "Libmpv",
@@ -67,7 +75,7 @@ fn main() {
         ] {
             println!("cargo:rustc-link-lib=framework={framework}");
         }
-        println!("cargo:rustc-link-lib=static=MoltenVK");
+        println!("cargo:rustc-link-lib=static=HarborMoltenVK");
         for library in ["bz2", "iconv", "expat", "resolv", "xml2", "z", "c++"] {
             println!("cargo:rustc-link-lib={library}");
         }
