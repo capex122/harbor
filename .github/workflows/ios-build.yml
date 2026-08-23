@@ -2,7 +2,9 @@ name: iOS build
 
 on:
   workflow_dispatch:
-  pull_request:
+  push:
+    branches:
+      - harbor-ios-exp
     paths:
       - .github/workflows/ios-build.yml
       - src/**
@@ -23,9 +25,6 @@ jobs:
     timeout-minutes: 60
     env:
       CI: true
-      IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
-      IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-      IOS_MOBILE_PROVISION: ${{ secrets.IOS_MOBILE_PROVISION }}
 
     steps:
       - uses: actions/checkout@v6
@@ -47,13 +46,8 @@ jobs:
       - name: Initialize iOS project
         run: pnpm tauri ios init
 
-      - name: Build unsigned iOS archive
-        if: env.IOS_CERTIFICATE == ''
+      - name: Build unsigned iOS IPA
         run: pnpm tauri ios build --no-sign
-
-      - name: Build signed IPA
-        if: env.IOS_CERTIFICATE != ''
-        run: pnpm tauri ios build --export-method release-testing
 
       - name: Upload iOS build
         if: always()
