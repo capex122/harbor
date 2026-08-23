@@ -25,7 +25,7 @@ import { flushCloudSync } from "@/views/player/hooks/use-stremio-sync";
 import { startWriteQueueFlusher } from "@/lib/stremio-write-queue";
 import { setNativeMemoryActive } from "@/lib/native-memory";
 import { useOverlayPinned } from "@/lib/overlay-pin";
-import { isMobileWeb, isRemoteRoute } from "@/lib/platform";
+import { isMobileDevice, isMobileWeb, isRemoteRoute } from "@/lib/platform";
 import { makeSafeTauriUnlisten } from "@/lib/tauri-unlisten";
 import { activeLayout } from "@/lib/theme";
 import { useThemePreview } from "@/lib/theme-preview";
@@ -1152,6 +1152,34 @@ function Shell({ onReady }: { onReady?: () => void }) {
   const mangaTop = topKind === "manga";
   const peopleTop = topKind === "people";
   const matchDetailTop = topKind === "match-detail";
+
+  useEffect(() => {
+    if (!detailTop || !isMobileDevice()) return;
+    let startX = 0;
+    let startY = 0;
+    const start = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      startX = touch && touch.clientX <= 24 ? touch.clientX : -1;
+      startY = touch?.clientY ?? 0;
+    };
+    const end = (e: TouchEvent) => {
+      const touch = e.changedTouches[0];
+      if (
+        startX >= 0 &&
+        touch &&
+        touch.clientX - startX > 72 &&
+        Math.abs(touch.clientY - startY) < 64
+      )
+        goBack();
+      startX = -1;
+    };
+    window.addEventListener("touchstart", start, { passive: true });
+    window.addEventListener("touchend", end, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", start);
+      window.removeEventListener("touchend", end);
+    };
+  }, [detailTop, goBack]);
 
   const [immersive, setImmersive] = useState(false);
   useEffect(() => {

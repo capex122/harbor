@@ -11,10 +11,10 @@ export function createIosMpvBridge(): PlayerBridge {
   let resize: ResizeObserver | null = null;
   const listeners = new Set<(value: PlayerSnapshot) => void>();
   const emit = () => listeners.forEach((listener) => listener(snapshot));
-  const updateGeometry = () => {
+  const updateGeometry = async () => {
     if (!host) return;
     const { x, y, width, height } = host.getBoundingClientRect();
-    void call("show", { x, y, width, height });
+    await call("show", { x, y, width, height });
   };
   const poll = async () => {
     try {
@@ -45,6 +45,7 @@ export function createIosMpvBridge(): PlayerBridge {
     async load(source: PlayerSource) {
       snapshot = { ...emptySnapshot, status: "loading" };
       emit();
+      await updateGeometry();
       await call("load", source as unknown as Record<string, unknown>);
       window.clearInterval(timer);
       timer = window.setInterval(poll, 250);

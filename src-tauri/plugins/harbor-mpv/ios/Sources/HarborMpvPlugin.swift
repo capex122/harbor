@@ -10,6 +10,14 @@ final class HarborMpvPlugin: Plugin {
     private let player = HarborMpvPlayer()
 
     override func load(webview: WKWebView) {
+        if let root = manager.viewController?.view {
+            NSLayoutConstraint.deactivate(root.constraints.filter {
+                $0.firstItem === webview || $0.secondItem === webview
+            })
+            webview.translatesAutoresizingMaskIntoConstraints = true
+            webview.frame = root.bounds
+            webview.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        }
         player.install(below: webview)
     }
 
@@ -100,16 +108,25 @@ private final class HarborMpvPlayer {
 
     private func ensureMpv() throws {
         guard mpv == nil else { return }
+        guard view.window != nil, view.bounds.width > 1, view.bounds.height > 1 else {
+            throw failure("MPV video surface is not ready")
+        }
+        view.layoutIfNeeded()
         try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
         try AVAudioSession.sharedInstance().setActive(true)
         guard let handle = mpv_create() else { throw failure("MPVKit could not create libmpv") }
-        mpv = handle
-        var layer = view.metalLayer
-        check(mpv_set_option(handle, "wid", MPV_FORMAT_INT64, &layer))
-        for (name, value) in [("vo", "gpu-next"), ("gpu-api", "vulkan"), ("gpu-context", "moltenvk"), ("hwdec", "videotoolbox"), ("sub-auto", "no"), ("keep-open", "yes")] {
-            check(mpv_set_option_string(handle, name, value))
+        do {
+            var layer = view.metalLayer
+            try require(mpv_set_option(handle, "wid", MPV_FORMAT_INT64, &layer), "Metal surface")
+            for (name, value) in [("vo", "gpu-next"), ("gpu-api", "vulkan"), ("gpu-context", "moltenvk"), ("hwdec", "videotoolbox"), ("sub-auto", "no"), ("keep-open", "yes")] {
+                try require(mpv_set_option_string(handle, name, value), name)
+            }
+            try require(mpv_initialize(handle), "MPV initialization")
+            mpv = handle
+        } catch {
+            mpv_destroy(handle)
+            throw error
         }
-        check(mpv_initialize(handle))
     }
 
     private func load(_ args: JSObject) throws {
@@ -242,6 +259,12 @@ private final class HarborMpvPlayer {
 
     private func check(_ result: Int32) {
         if result < 0 { errorMessage = String(cString: mpv_error_string(result)) }
+    }
+
+    private func require(_ result: Int32, _ operation: String) throws {
+        if result < 0 {
+            throw failure("\(operation) failed: \(String(cString: mpv_error_string(result)))")
+        }
     }
 
     private func failure(_ message: String) -> NSError {
