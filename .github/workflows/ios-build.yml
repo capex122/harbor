@@ -47,6 +47,9 @@ jobs:
       - name: Initialize iOS project
         run: pnpm tauri ios init
 
+      - name: Apply Harbor iOS icon
+        run: pnpm tauri icon src-tauri/icons/icon.png --ios-color "#1a212c"
+
       - name: Build unsigned iOS IPA
         run: pnpm tauri ios build --no-sign
 

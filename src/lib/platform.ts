@@ -99,6 +99,6 @@ export function isMobileWeb(): boolean {
   } catch {
     /* ignore */
   }
-  mobileWebCache = forcedOn || isIosApp() || (isWeb() && isMobileDevice());
+  mobileWebCache = forcedOn || (isWeb() && isMobileDevice());
   return mobileWebCache;
 }
