@@ -137,7 +137,7 @@ private final class HarborVlcPlayer: NSObject, VLCMediaPlayerDelegate {
     private func setProperty(_ args: JSObject) {
         guard let name = args.getString("name"), let value = args.getValue("value") else { return }
         switch name {
-        case "volume": player.audio?.volume = (value as? NSNumber)?.intValue ?? 100
+        case "volume": player.audio?.volume = Int32((value as? NSNumber)?.intValue ?? 100)
         case "mute": player.audio?.isMuted = (value as? Bool) == true
         case "speed": player.rate = (value as? NSNumber)?.floatValue ?? 1
         case "aid": select(value, in: player.audioTracks)
@@ -152,7 +152,7 @@ private final class HarborVlcPlayer: NSObject, VLCMediaPlayerDelegate {
         }
     }
 
-    private func select(_ value: JSValue, in tracks: [VLCMediaPlayerTrack]) {
+    private func select(_ value: JSValue, in tracks: [VLCMediaPlayer.Track]) {
         let id = String(describing: value)
         tracks.first { $0.trackId == id }?.isSelectedExclusively = true
     }
@@ -198,7 +198,7 @@ private final class HarborVlcPlayer: NSObject, VLCMediaPlayerDelegate {
         return result
     }
 
-    private func tracks(_ tracks: [VLCMediaPlayerTrack], kind: String) -> JSArray {
+    private func tracks(_ tracks: [VLCMediaPlayer.Track], kind: String) -> JSArray {
         tracks.map {
             ["id": $0.trackId, "label": $0.trackName, "lang": $0.language ?? "",
              "kind": kind, "selected": $0.isSelected] as JSObject
