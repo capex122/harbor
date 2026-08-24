@@ -49,16 +49,19 @@ func initPlugin() -> Plugin { HarborMpvPlugin() }
 private final class HarborVlcPlayer: NSObject, VLCMediaPlayerDelegate {
     private weak var webview: WKWebView?
     private let view = UIView()
-    private let player = VLCMediaPlayer(options: ["--no-video-title-show"])
+    private lazy var player: VLCMediaPlayer = {
+        let player = VLCMediaPlayer(options: ["--no-video-title-show"])
+        player.drawable = view
+        player.delegate = self
+        player.timeChangeUpdateInterval = 0.25
+        return player
+    }()
     private var buffering = false
     private var errorMessage: String?
 
     override init() {
         super.init()
         view.backgroundColor = .black
-        player.drawable = view
-        player.delegate = self
-        player.timeChangeUpdateInterval = 0.25
     }
 
     func install(below webview: WKWebView) {
