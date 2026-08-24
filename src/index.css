@@ -61,6 +61,10 @@
   text-rendering: optimizeLegibility;
 }
 
+html[data-os="ios"] {
+  --harbor-safe-bottom: 0px;
+}
+
 html,
 body,
 #root {

@@ -7,12 +7,12 @@ let package = Package(
     products: [.library(name: "tauri-plugin-harbor-mpv", type: .static, targets: ["tauri-plugin-harbor-mpv"])],
     dependencies: [
         .package(name: "Tauri", path: "../.tauri/tauri-api"),
-        .package(url: "https://github.com/mpvkit/MPVKit.git", from: "1.0.0")
+        .package(url: "https://github.com/videolan/vlckit.git", exact: "4.0.0-a23")
     ],
     targets: [
         .target(
             name: "tauri-plugin-harbor-mpv",
-            dependencies: [.byName(name: "Tauri"), .product(name: "MPVKit", package: "MPVKit")],
+            dependencies: [.byName(name: "Tauri"), .product(name: "VLCKit", package: "vlckit")],
             path: "Sources"
         )
     ]

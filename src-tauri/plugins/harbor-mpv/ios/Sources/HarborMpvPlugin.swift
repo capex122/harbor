@@ -1,13 +1,12 @@
 import AVFoundation
-import Libmpv
-import QuartzCore
 import SwiftRs
 import Tauri
 import UIKit
+import VLCKit
 import WebKit
 
 final class HarborMpvPlugin: Plugin {
-    private let player = HarborMpvPlayer()
+    private let player = HarborVlcPlayer()
 
     override func load(webview: WKWebView) {
         webview.scrollView.contentInsetAdjustmentBehavior = .never
@@ -25,7 +24,7 @@ final class HarborMpvPlugin: Plugin {
                 webview.bottomAnchor.constraint(equalTo: root.bottomAnchor),
             ])
         }
-        player.install(below: webview, in: manager.viewController)
+        player.install(below: webview)
     }
 
     @objc public func call(_ invoke: Invoke) throws {
@@ -39,8 +38,7 @@ final class HarborMpvPlugin: Plugin {
                 else if let value = result as? JSObject {
                     invoke.resolve(value.reduce(into: JsonObject()) { $0[$1.key] = $1.value })
                 }
-            }
-            catch { invoke.reject(error.localizedDescription) }
+            } catch { invoke.reject(error.localizedDescription) }
         }
     }
 }
@@ -48,58 +46,28 @@ final class HarborMpvPlugin: Plugin {
 @_cdecl("init_plugin_harbor_mpv")
 func initPlugin() -> Plugin { HarborMpvPlugin() }
 
-private final class HarborMetalLayer: CAMetalLayer {
-    override var drawableSize: CGSize {
-        get { super.drawableSize }
-        set {
-            if newValue.width > 1 && newValue.height > 1 { super.drawableSize = newValue }
-        }
-    }
-}
-
-private final class HarborMpvViewController: UIViewController {
-    let metalLayer = HarborMetalLayer()
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .black
-        metalLayer.contentsScale = UIScreen.main.nativeScale
-        metalLayer.framebufferOnly = true
-        view.layer.addSublayer(metalLayer)
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        metalLayer.frame = view.bounds
-    }
-}
-
-private final class HarborMpvPlayer {
+private final class HarborVlcPlayer: NSObject, VLCMediaPlayerDelegate {
     private weak var webview: WKWebView?
-    private let controller = HarborMpvViewController()
-    private var mpv: OpaquePointer?
+    private let view = UIView()
+    private let player = VLCMediaPlayer(options: ["--no-video-title-show"])
+    private var buffering = false
     private var errorMessage: String?
 
-    private var view: UIView { controller.view }
-
-    deinit {
-        if let mpv { mpv_terminate_destroy(mpv) }
+    override init() {
+        super.init()
+        view.backgroundColor = .black
+        player.drawable = view
+        player.delegate = self
+        player.timeChangeUpdateInterval = 0.25
     }
 
-    func install(below webview: WKWebView, in host: UIViewController?) {
+    func install(below webview: WKWebView) {
         self.webview = webview
         webview.isOpaque = false
         webview.backgroundColor = .clear
         webview.scrollView.backgroundColor = .clear
         view.isHidden = true
-        guard let parent = webview.superview else { return }
-        if let host {
-            host.addChild(controller)
-            parent.insertSubview(view, belowSubview: webview)
-            controller.didMove(toParent: host)
-        } else {
-            parent.insertSubview(view, belowSubview: webview)
-        }
+        if let parent = webview.superview { parent.insertSubview(view, belowSubview: webview) }
     }
 
     func call(_ method: String, _ args: JSObject) throws -> JSValue {
@@ -107,193 +75,160 @@ private final class HarborMpvPlayer {
         case "show": show(args); return [:] as JSObject
         case "hide": view.isHidden = true; return [:] as JSObject
         case "load": try load(args); return [:] as JSObject
-        case "play": setFlag("pause", false); return [:] as JSObject
-        case "pause": setFlag("pause", true); return [:] as JSObject
-        case "seek": command(["seek", numberString(args, "seconds"), "absolute", "exact"]); return [:] as JSObject
+        case "play": player.play(); return [:] as JSObject
+        case "pause": player.pause(); return [:] as JSObject
+        case "seek": player.time = VLCTime(number: NSNumber(value: seconds(args, "seconds") * 1000)); return [:] as JSObject
         case "setProperty": setProperty(args); return [:] as JSObject
-        case "command": command((args.getArray("values") ?? []).map { String(describing: $0) }); return [:] as JSObject
-        case "addSubtitle": addSubtitle(args); return true
+        case "command": command(args); return [:] as JSObject
+        case "addSubtitle": return addSubtitle(args)
         case "snapshot": return snapshot()
-        case "stop": command(["stop"]); view.isHidden = true; return [:] as JSObject
-        case "destroy": destroy(); return [:] as JSObject
-        default: throw failure("Unknown MPV operation: \(method)")
-        }
-    }
-
-    private func ensureMpv() throws {
-        guard mpv == nil else { return }
-        guard view.window != nil, view.bounds.width > 1, view.bounds.height > 1 else {
-            throw failure("MPV video surface is not ready")
-        }
-        view.layoutIfNeeded()
-        CATransaction.flush()
-        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
-        try AVAudioSession.sharedInstance().setActive(true)
-        guard let handle = mpv_create() else { throw failure("MPVKit could not create libmpv") }
-        do {
-            var layer = controller.metalLayer
-            try require(mpv_set_option(handle, "wid", MPV_FORMAT_INT64, &layer), "Metal surface")
-            for (name, value) in [("vo", "gpu-next"), ("gpu-api", "vulkan"), ("gpu-context", "moltenvk"), ("hwdec", "videotoolbox"), ("sub-auto", "no"), ("keep-open", "yes")] {
-                try require(mpv_set_option_string(handle, name, value), name)
-            }
-            try require(mpv_initialize(handle), "MPV initialization")
-            mpv = handle
-        } catch {
-            mpv_destroy(handle)
-            throw error
+        case "stop": player.stop(); view.isHidden = true; return [:] as JSObject
+        case "destroy": player.stop(); player.media = nil; view.isHidden = true; return [:] as JSObject
+        default: throw failure("Unknown player operation: \(method)")
         }
     }
 
     private func load(_ args: JSObject) throws {
-        try ensureMpv()
-        guard let url = args.getString("url"), !url.isEmpty else { throw failure("Missing media URL") }
+        guard let value = args.getString("url"), let url = URL(string: value) else {
+            throw failure("Missing media URL")
+        }
+        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+        try AVAudioSession.sharedInstance().setActive(true)
+        guard let media = VLCMedia(url: url) else { throw failure("VLCKit could not open the media URL") }
+        if let headers = args.getObject("headers") {
+            for (name, value) in headers { addHeader(String(describing: name), String(describing: value), to: media) }
+        }
+        let start = seconds(args, "startAtSec")
+        if start > 0 { media.addOption(":start-time=\(start)") }
         errorMessage = nil
-        if let headers = args.getObject("headers"), !headers.isEmpty {
-            let fields = headers.map { "\($0.key): \($0.value)" }.joined(separator: ",")
-            check(mpv_set_property_string(mpv, "http-header-fields", fields))
-        }
-        command(["loadfile", url, "replace", "start=\(numberString(args, "startAtSec"))"])
-        for item in args.getArray("subtitles") ?? [] {
-            if let subtitle = item as? JSObject { addSubtitle(subtitle) }
-        }
+        player.media = media
         view.isHidden = false
+        player.play()
+        for item in args.getArray("subtitles") ?? [] {
+            if let subtitle = item as? JSObject { _ = addSubtitle(subtitle) }
+        }
     }
 
     private func show(_ args: JSObject) {
         guard let webview, let parent = webview.superview else { return }
         let rect = CGRect(
-            x: numberPoint(args, "x"), y: numberPoint(args, "y"),
-            width: numberPoint(args, "width"), height: numberPoint(args, "height")
+            x: point(args, "x"), y: point(args, "y"),
+            width: point(args, "width"), height: point(args, "height")
         )
         view.frame = webview.convert(rect, to: parent)
         view.isHidden = rect.isEmpty
-        view.setNeedsLayout()
-        view.layoutIfNeeded()
-        CATransaction.flush()
     }
 
-    private func addSubtitle(_ args: JSObject) {
-        guard let url = args.getString("url") else { return }
-        command(["sub-add", url, args.getBool("select") == true ? "select" : "auto", args.getString("title") ?? "", args.getString("lang") ?? ""])
+    private func addSubtitle(_ args: JSObject) -> Bool {
+        guard let value = args.getString("url"), let url = URL(string: value) else { return false }
+        return player.addPlaybackSlave(url, type: .subtitle, enforce: args.getBool("select") == true) == 0
+    }
+
+    private func addHeader(_ name: String, _ value: String, to media: VLCMedia) {
+        switch name.lowercased() {
+        case "user-agent": media.addOption(":http-user-agent=\(value)")
+        case "referer", "referrer": media.addOption(":http-referrer=\(value)")
+        case "origin": media.addOption(":http-origin=\(value)")
+        case "cookie": media.addOption(":http-cookie=\(value)")
+        default: break
+        }
     }
 
     private func setProperty(_ args: JSObject) {
         guard let name = args.getString("name"), let value = args.getValue("value") else { return }
-        if let value = value as? Bool { setFlag(name, value) }
-        else if let value = value as? NSNumber {
-            var number = value.doubleValue
-            mpv_set_property(mpv, name, MPV_FORMAT_DOUBLE, &number)
-        } else {
-            mpv_set_property_string(mpv, name, String(describing: value))
+        switch name {
+        case "volume": player.audio?.volume = (value as? NSNumber)?.intValue ?? 100
+        case "mute": player.audio?.isMuted = (value as? Bool) == true
+        case "speed": player.rate = (value as? NSNumber)?.floatValue ?? 1
+        case "aid": select(value, in: player.audioTracks)
+        case "sid": selectSubtitle(value, secondary: false)
+        case "secondary-sid": selectSubtitle(value, secondary: true)
+        case "sub-visibility": if (value as? Bool) == false { player.deselectAllTextTracks() }
+        case "sub-delay": player.currentVideoSubTitleDelay = Int(((value as? NSNumber)?.doubleValue ?? 0) * 1_000_000)
+        case "audio-delay": player.currentAudioPlaybackDelay = Int(((value as? NSNumber)?.doubleValue ?? 0) * 1_000_000)
+        case "video-aspect-override": player.videoAspectRatio = value as? String
+        case "video-zoom": player.scaleFactor = max(0, 1 + ((value as? NSNumber)?.floatValue ?? 0))
+        default: break
         }
+    }
+
+    private func select(_ value: JSValue, in tracks: [VLCMediaPlayerTrack]) {
+        let id = String(describing: value)
+        tracks.first { $0.trackId == id }?.isSelectedExclusively = true
+    }
+
+    private func selectSubtitle(_ value: JSValue, secondary: Bool) {
+        let id = String(describing: value)
+        guard id != "no", let track = player.textTracks.first(where: { $0.trackId == id }) else {
+            if !secondary { player.deselectAllTextTracks() }
+            return
+        }
+        if secondary {
+            player.selectTextTracks(player.textTracks.filter(\.isSelected) + [track])
+        } else {
+            player.selectTextTracks([track])
+        }
+    }
+
+    private func command(_ args: JSObject) {
+        guard let command = args.getArray("values")?.first as? String else { return }
+        if command == "frame-step" { player.gotoNextFrame() }
+        else if command == "frame-back-step" { player.gotoPreviousFrame() }
     }
 
     private func snapshot() -> JSObject {
-        let idle = flag("idle-active")
-        let paused = flag("pause")
+        let position = Double(player.time.value?.int64Value ?? 0) / 1000
+        let duration = Double(player.media?.length.value?.int64Value ?? 0) / 1000
         var result: JSObject = [
-            "status": idle ? "idle" : (paused ? "paused" : "playing"),
-            "positionSec": double("time-pos"), "durationSec": double("duration"),
-            "bufferedSec": double("demuxer-cache-duration"), "buffering": flag("paused-for-cache"),
-            "volume": double("volume") / 100, "muted": flag("mute"), "rate": double("speed", fallback: 1),
-            "audioTracks": tracks("audio"), "subtitleTracks": tracks("sub"),
-            "chapters": [] as JSArray, "subDelaySec": double("sub-delay"), "audioDelaySec": double("audio-delay"),
-            "subText": string("sub-text") ?? "", "subStartSec": double("sub-start"),
-            "secondarySubText": string("secondary-sub-text") ?? "", "audioNormalize": false,
-            "videoWidth": double("dwidth"), "videoHeight": double("dheight"),
-            "hdrGamma": string("video-params/gamma") ?? ""
+            "status": status(), "positionSec": position, "durationSec": duration,
+            "bufferedSec": 0, "buffering": buffering,
+            "volume": Double(player.audio?.volume ?? 100) / 100,
+            "muted": player.audio?.isMuted ?? false, "rate": Double(player.rate),
+            "audioTracks": tracks(player.audioTracks, kind: "audio"),
+            "subtitleTracks": tracks(player.textTracks, kind: "subtitle"),
+            "chapters": [] as JSArray,
+            "subDelaySec": Double(player.currentVideoSubTitleDelay) / 1_000_000,
+            "audioDelaySec": Double(player.currentAudioPlaybackDelay) / 1_000_000,
+            "subText": "", "subStartSec": 0, "secondarySubText": "", "audioNormalize": false,
+            "videoWidth": Double(player.videoSize.width), "videoHeight": Double(player.videoSize.height),
+            "hdrGamma": ""
         ]
-        if let errorMessage {
-            result["errorMessage"] = errorMessage
-            result["errorCode"] = "decode"
-        } else {
-            result["errorMessage"] = NSNull()
-            result["errorCode"] = NSNull()
-        }
+        result["errorMessage"] = errorMessage ?? NSNull()
+        result["errorCode"] = errorMessage == nil ? NSNull() : "decode"
         return result
     }
 
-    private func tracks(_ wanted: String) -> JSArray {
-        let count = Int(integer("track-list/count"))
-        return (0..<count).compactMap { index -> JSValue? in
-            let base = "track-list/\(index)/"
-            guard string(base + "type") == wanted else { return nil }
-            let id = string(base + "id") ?? "\(index)"
-            let lang = string(base + "lang") ?? ""
-            let title = string(base + "title") ?? lang
-            return [
-                "id": id, "label": title.isEmpty ? "\(wanted) \(id)" : title,
-                "lang": lang, "kind": wanted == "audio" ? "audio" : "subtitle",
-                "selected": flag(base + "selected")
-            ] as JSObject
+    private func tracks(_ tracks: [VLCMediaPlayerTrack], kind: String) -> JSArray {
+        tracks.map {
+            ["id": $0.trackId, "label": $0.trackName, "lang": $0.language ?? "",
+             "kind": kind, "selected": $0.isSelected] as JSObject
         }
     }
 
-    private func command(_ values: [String]) {
-        guard let mpv, !values.isEmpty else { return }
-        var pointers: [UnsafePointer<CChar>?] = values.map { value in
-            strdup(value).map { UnsafePointer($0) }
-        }
-        pointers.append(nil)
-        defer { pointers.dropLast().forEach { if let pointer = $0 { free(UnsafeMutablePointer(mutating: pointer)) } } }
-        let result = mpv_command(mpv, &pointers)
-        if result < 0 { errorMessage = String(cString: mpv_error_string(result)) }
-    }
-
-    private func string(_ name: String) -> String? {
-        guard let value = mpv_get_property_string(mpv, name) else { return nil }
-        defer { mpv_free(value) }
-        return String(cString: value)
-    }
-
-    private func double(_ name: String, fallback: Double = 0) -> Double {
-        var value = fallback
-        return mpv_get_property(mpv, name, MPV_FORMAT_DOUBLE, &value) < 0 ? fallback : value
-    }
-
-    private func integer(_ name: String) -> Int64 {
-        var value: Int64 = 0
-        return mpv_get_property(mpv, name, MPV_FORMAT_INT64, &value) < 0 ? 0 : value
-    }
-
-    private func flag(_ name: String) -> Bool {
-        var value: Int32 = 0
-        mpv_get_property(mpv, name, MPV_FORMAT_FLAG, &value)
-        return value != 0
-    }
-
-    private func setFlag(_ name: String, _ value: Bool) {
-        var flag: Int32 = value ? 1 : 0
-        mpv_set_property(mpv, name, MPV_FORMAT_FLAG, &flag)
-    }
-
-    private func numberString(_ args: JSObject, _ key: String) -> String {
-        String((args.getValue(key) as? NSNumber)?.doubleValue ?? 0)
-    }
-
-    private func numberPoint(_ args: JSObject, _ key: String) -> CGFloat {
-        CGFloat((args.getValue(key) as? NSNumber)?.doubleValue ?? 0)
-    }
-
-    private func check(_ result: Int32) {
-        if result < 0 { errorMessage = String(cString: mpv_error_string(result)) }
-    }
-
-    private func require(_ result: Int32, _ operation: String) throws {
-        if result < 0 {
-            throw failure("\(operation) failed: \(String(cString: mpv_error_string(result)))")
+    private func status() -> String {
+        switch player.state {
+        case .opening: return "loading"
+        case .playing: return "playing"
+        case .paused: return "paused"
+        case .error: return "error"
+        default: return "idle"
         }
     }
+
+    func mediaPlayerStateChanged(_ newState: VLCMediaPlayerState) {
+        buffering = newState == .opening
+        if newState == .error { errorMessage = "VLCKit could not play this stream" }
+    }
+
+    func mediaPlayerBufferingChanged(_ progress: Float) { buffering = progress < 1 }
+
+    private func seconds(_ args: JSObject, _ key: String) -> Double {
+        (args.getValue(key) as? NSNumber)?.doubleValue ?? 0
+    }
+
+    private func point(_ args: JSObject, _ key: String) -> CGFloat { CGFloat(seconds(args, key)) }
 
     private func failure(_ message: String) -> NSError {
-        NSError(domain: "HarborMpv", code: 2, userInfo: [NSLocalizedDescriptionKey: message])
-    }
-
-    private func destroy() {
-        if let mpv {
-            mpv_terminate_destroy(mpv)
-            self.mpv = nil
-        }
-        view.isHidden = true
+        NSError(domain: "HarborVlc", code: 2, userInfo: [NSLocalizedDescriptionKey: message])
     }
 }

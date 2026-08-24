@@ -136,14 +136,12 @@ SECTION C - LGPL-LICENSED iOS COMPONENTS
 ================================================================================
 
 --------------------------------------------------------------------------------
-MPVKit  (iOS/iPadOS)
+VLCKit  (iOS/iPadOS)
 --------------------------------------------------------------------------------
-  Version:   1.0.0
-  License:   GNU Lesser General Public License, version 3 (LGPLv3)
-  Source:    https://github.com/mpvkit/MPVKit
-             https://github.com/mpvkit/MPVKit/releases/tag/1.0.0
-  Note:      Harbor uses the LGPL "MPVKit" product. The GPL "MPVKit-GPL"
-             product is not linked into the iOS application.
+  Version:   4.0.0-a23
+  License:   GNU Lesser General Public License, version 2.1 or later
+  Source:    https://github.com/videolan/vlckit
+             https://github.com/videolan/vlckit/releases/tag/4.0.0-a23
 
 
 ================================================================================
