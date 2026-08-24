@@ -52,6 +52,8 @@ jobs:
 
       - name: Build unsigned iOS IPA
         run: pnpm tauri ios build --no-sign
+        env:
+          XCODE_XCCONFIG_FILE: ${{ github.workspace }}/src-tauri/ios-frameworks.xcconfig
 
       - name: Upload iOS build
         uses: actions/upload-artifact@v6

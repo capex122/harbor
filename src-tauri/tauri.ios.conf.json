@@ -31,7 +31,7 @@
         "CoreFoundation",
         "CoreMedia",
         "VideoToolbox",
-        "gen/apple/Externals/arm64/release/VLCKit.framework"
+        "VLCKit"
       ]
     }
   }
