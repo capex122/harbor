@@ -51,7 +51,7 @@ jobs:
         working-directory: src-tauri/gen/apple
         run: |
           grep -q 'LIBRARY_SEARCH_PATHS\[arch=arm64\]:' project.yml
-          awk '{ print; if ($0 ~ /LIBRARY_SEARCH_PATHS\[arch=arm64\]:/) print "        FRAMEWORK_SEARCH_PATHS[arch=arm64]: $(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION)" }' project.yml > project.yml.tmp
+          awk '{ if ($0 ~ /^      - sdk: CoreGraphics.framework$/) print "      - framework: Externals/arm64/release/VLCKit.framework\n        embed: true\n        link: false"; print; if ($0 ~ /LIBRARY_SEARCH_PATHS\[arch=arm64\]:/) print "        FRAMEWORK_SEARCH_PATHS[arch=arm64]: $(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION)" }' project.yml > project.yml.tmp
           mv project.yml.tmp project.yml
           xcodegen generate
 
@@ -60,6 +60,19 @@ jobs:
 
       - name: Build unsigned iOS IPA
         run: pnpm tauri ios build --no-sign
+
+      - name: Verify VLCKit is embedded
+        run: |
+          ipa=$(find src-tauri/gen/apple/build -name '*.ipa' -print -quit)
+          test -n "$ipa"
+          unpacked=$(mktemp -d)
+          unzip -q "$ipa" -d "$unpacked"
+          app=$(find "$unpacked/Payload" -maxdepth 1 -name '*.app' -print -quit)
+          test -n "$app"
+          executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Info.plist")
+          test -f "$app/Frameworks/VLCKit.framework/VLCKit"
+          otool -L "$app/$executable" | grep -q '@rpath/VLCKit.framework/VLCKit'
+          lipo -info "$app/Frameworks/VLCKit.framework/VLCKit" | grep -q arm64
 
       - name: Upload iOS build
         uses: actions/upload-artifact@v6
