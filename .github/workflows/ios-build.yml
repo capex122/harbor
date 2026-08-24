@@ -47,13 +47,20 @@ jobs:
       - name: Initialize iOS project
         run: pnpm tauri ios init
 
+      - name: Configure VLCKit linker path
+        working-directory: src-tauri/gen/apple
+        run: |
+          grep -q 'LIBRARY_SEARCH_PATHS\[arch=arm64\]:' project.yml
+          awk '{ print; if ($0 ~ /LIBRARY_SEARCH_PATHS\[arch=arm64\]:/) print "        FRAMEWORK_SEARCH_PATHS[arch=arm64]: $(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION)" }' project.yml > project.yml.tmp
+          mv project.yml.tmp project.yml
+          xcodegen generate
+          xcodebuild -project harbor.xcodeproj -target harbor_iOS -configuration Release -showBuildSettings | grep 'FRAMEWORK_SEARCH_PATHS = .*Externals/arm64/Release'
+
       - name: Apply Harbor iOS icon
         run: pnpm tauri icon src-tauri/icons/icon.png --ios-color "#1a212c"
 
       - name: Build unsigned iOS IPA
         run: pnpm tauri ios build --no-sign
-        env:
-          XCODE_XCCONFIG_FILE: ${{ github.workspace }}/src-tauri/ios-frameworks.xcconfig
 
       - name: Upload iOS build
         uses: actions/upload-artifact@v6
