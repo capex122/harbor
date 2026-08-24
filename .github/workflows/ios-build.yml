@@ -54,7 +54,7 @@ jobs:
           awk '{ print; if ($0 ~ /LIBRARY_SEARCH_PATHS\[arch=arm64\]:/) print "        FRAMEWORK_SEARCH_PATHS[arch=arm64]: $(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION)" }' project.yml > project.yml.tmp
           mv project.yml.tmp project.yml
           xcodegen generate
-          xcodebuild -project harbor.xcodeproj -target harbor_iOS -configuration Release -showBuildSettings | grep 'FRAMEWORK_SEARCH_PATHS = .*Externals/arm64/Release'
+          xcodebuild -project harbor.xcodeproj -target harbor_iOS -configuration release -showBuildSettings | grep 'FRAMEWORK_SEARCH_PATHS = .*Externals/arm64/release'
 
       - name: Apply Harbor iOS icon
         run: pnpm tauri icon src-tauri/icons/icon.png --ios-color "#1a212c"
