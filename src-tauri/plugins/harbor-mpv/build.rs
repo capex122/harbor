@@ -4,8 +4,14 @@ fn main() {
     tauri_plugin::Builder::new(COMMANDS).ios_path("ios").build();
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("ios") {
         let out_dir = std::env::var("OUT_DIR").unwrap();
+        let slice = if std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("sim") {
+            "ios-arm64_x86_64-simulator"
+        } else {
+            "ios-arm64"
+        };
+        let pattern = format!("*/{slice}/VLCKit.framework");
         let output = std::process::Command::new("find")
-            .args([out_dir.as_str(), "-path", "*/ios-arm64*/VLCKit.framework"])
+            .args([out_dir.as_str(), "-path", &pattern])
             .output()
             .unwrap();
         let framework = String::from_utf8(output.stdout)
