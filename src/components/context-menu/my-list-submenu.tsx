@@ -44,7 +44,14 @@ export function MyListSubmenu({ item, onClose }: { item: ListItemInput; onClose:
   };
 
   const toggleDefault = () => {
-    local.toggle({ id: item.id, type: item.type, name: item.name, poster: item.poster });
+    local.toggle({
+      id: item.id,
+      type: item.type,
+      name: item.name,
+      poster: item.poster,
+      addonOrigin: item.addonOrigin,
+      videos: item.videos,
+    });
     emitListToast(inDefault ? t("Removed from My List") : t("Added to My List"));
   };
   const toggleCustom = (listId: string, name: string) => {
@@ -53,10 +60,21 @@ export function MyListSubmenu({ item, onClose }: { item: ListItemInput; onClose:
   };
 
   return (
-    <div className="relative" onMouseEnter={show} onMouseLeave={hide}>
+    <div
+      className="relative"
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onFocusCapture={show}
+      onBlurCapture={(event) => {
+        const next = event.relatedTarget;
+        if (!(next instanceof Node) || !event.currentTarget.contains(next)) hide();
+      }}
+    >
       <button
         ref={rowRef}
         role="menuitem"
+        aria-haspopup="menu"
+        aria-expanded={open}
         onClick={show}
         className={`flex h-9 w-full items-center gap-2.5 rounded-lg px-3 text-start text-[13px] transition-colors hover:bg-raised ${
           anyIn ? "text-accent" : "text-ink"
@@ -71,6 +89,7 @@ export function MyListSubmenu({ item, onClose }: { item: ListItemInput; onClose:
 
       {open && (
         <div
+          role="menu"
           onMouseEnter={show}
           onMouseLeave={hide}
           style={{ width: FLYOUT_WIDTH }}
@@ -79,7 +98,12 @@ export function MyListSubmenu({ item, onClose }: { item: ListItemInput; onClose:
           } ${openUp ? "bottom-0" : "top-0"}`}
         >
           <div className="max-h-[248px] overflow-y-auto">
-            <ListRow label={t("My List")} checked={inDefault} count={local.count} onClick={toggleDefault} />
+            <ListRow
+              label={t("My List")}
+              checked={inDefault}
+              count={local.count}
+              onClick={toggleDefault}
+            />
             {lists.map((l) => (
               <ListRow
                 key={l.id}

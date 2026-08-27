@@ -1,6 +1,8 @@
 import { useT } from "@/lib/i18n";
+import { useGamepadCursorVisibilityHold } from "@/lib/gamepad/use-cursor-visibility-hold";
 
 export function NoAudioWarning(props: { onUseMpv: () => void; onDismiss: () => void }) {
+  useGamepadCursorVisibilityHold();
   const t = useT();
   return (
     <div className="pointer-events-auto absolute inset-x-0 bottom-32 z-30 mx-auto flex max-w-md flex-col items-center gap-3 rounded-2xl border border-white/15 bg-black/75 px-6 py-5 text-center text-white backdrop-blur-xl">
@@ -26,6 +28,7 @@ export function NoAudioWarning(props: { onUseMpv: () => void; onDismiss: () => v
 }
 
 export function HeaderWarning(props: { onPickAnother: () => void }) {
+  useGamepadCursorVisibilityHold();
   const t = useT();
   return (
     <div className="pointer-events-auto absolute inset-x-0 bottom-32 z-30 mx-auto flex max-w-md flex-col items-center gap-3 rounded-2xl border border-white/15 bg-black/75 px-6 py-5 text-center text-white backdrop-blur-xl">

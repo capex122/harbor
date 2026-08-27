@@ -4,6 +4,10 @@ import { HarborMark } from "@/components/icons/harbor-mark";
 import { dispatchTvNav, tvHover } from "@/lib/keyboard-navigation";
 import { getLiveGamepad, subscribeLiveGamepad, useLiveButtons } from "@/lib/gamepad/live";
 import { useGamepad } from "@/lib/gamepad/use-gamepad";
+import {
+  GAMEPAD_CURSOR_HOLD_ATTRIBUTE,
+  shouldShowGamepadCursor,
+} from "@/lib/gamepad/cursor-visibility";
 import { useSettings } from "@/lib/settings";
 
 function hoverCss(rules: CSSRuleList): string {
@@ -198,15 +202,16 @@ export function GamepadRunner() {
         hit.dispatchEvent(new PointerEvent("pointerout", { bubbles: true }));
         hit.dispatchEvent(new MouseEvent("mouseout", { bubbles: true }));
       }
-      const opacity =
-        active.current &&
-        !idle &&
-        !(
-          document.documentElement.hasAttribute("data-player-chrome-mounted") &&
-          !document.documentElement.hasAttribute("data-player-chrome-visible")
-        )
-          ? "1"
-          : "0";
+      const root = document.documentElement;
+      const opacity = shouldShowGamepadCursor({
+        active: active.current,
+        idle,
+        playerChromeMounted: root.hasAttribute("data-player-chrome-mounted"),
+        playerChromeVisible: root.hasAttribute("data-player-chrome-visible"),
+        visibilityHeld: root.hasAttribute(GAMEPAD_CURSOR_HOLD_ATTRIBUTE),
+      })
+        ? "1"
+        : "0";
       if (cursor.current && cursor.current.style.opacity !== opacity)
         cursor.current.style.opacity = opacity;
       if (Math.abs(ly) >= deadzone) {
@@ -245,7 +250,11 @@ export function GamepadRunner() {
     const observer = new MutationObserver(request);
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-player-chrome-mounted", "data-player-chrome-visible"],
+      attributeFilter: [
+        "data-player-chrome-mounted",
+        "data-player-chrome-visible",
+        GAMEPAD_CURSOR_HOLD_ATTRIBUTE,
+      ],
     });
     return () => {
       wake.current = () => {};

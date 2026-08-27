@@ -1,5 +1,5 @@
 import { ChevronDown, Download, ExternalLink, Loader2, Play, Zap } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type RefObject } from "react";
 import { AddonLogo, AddonLogoStack } from "@/components/addon-logo";
 import { CopyLinkButton, resolveStreamLink } from "@/components/player/copy-link-button";
 import { FlagStack } from "@/components/flag";
@@ -21,6 +21,8 @@ import {
   torrentFilename,
 } from "./picker-utils";
 
+const STREAM_PAGE_SIZE = 15;
+
 export function SourceDrawer({
   open,
   onToggle,
@@ -35,6 +37,8 @@ export function SourceDrawer({
   resolvingId,
   showName,
   episode,
+  absoluteEpisode,
+  scrollRef,
 }: {
   open: boolean;
   onToggle: () => void;
@@ -49,16 +53,39 @@ export function SourceDrawer({
   resolvingId: string | null;
   showName: string;
   episode?: PlayEpisode;
+  absoluteEpisode?: number | null;
+  scrollRef: RefObject<HTMLElement | null>;
 }) {
   const [addonFilter, setAddonFilter] = useState("all");
+  const [visibleCount, setVisibleCount] = useState(STREAM_PAGE_SIZE);
   const addonOptions = useMemo(() => buildAddonOptions(streams), [streams]);
   const shown = useMemo(
-    () => (addonFilter === "all" ? streams : streams.filter((s) => addonInstanceKey(s) === addonFilter)),
+    () =>
+      addonFilter === "all" ? streams : streams.filter((s) => addonInstanceKey(s) === addonFilter),
     [streams, addonFilter],
   );
   useEffect(() => {
-    if (addonFilter !== "all" && !addonOptions.some((o) => o.id === addonFilter)) setAddonFilter("all");
+    if (addonFilter !== "all" && !addonOptions.some((o) => o.id === addonFilter))
+      setAddonFilter("all");
   }, [addonOptions, addonFilter]);
+  useEffect(() => {
+    setVisibleCount(STREAM_PAGE_SIZE);
+  }, [addonFilter, open]);
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!open || !root || visibleCount >= shown.length) return;
+
+    const onScroll = () => {
+      const remaining = root.scrollHeight - root.scrollTop - root.clientHeight;
+      if (remaining > 320) return;
+      setVisibleCount((count) =>
+        count === visibleCount ? Math.min(count + STREAM_PAGE_SIZE, shown.length) : count,
+      );
+    };
+    root.addEventListener("scroll", onScroll, { passive: true });
+    return () => root.removeEventListener("scroll", onScroll);
+  }, [open, scrollRef, shown.length, visibleCount]);
+  const visibleStreams = shown.slice(0, visibleCount);
   return (
     <div className="flex flex-col gap-4">
       <button
@@ -82,7 +109,12 @@ export function SourceDrawer({
       </button>
       {open && addonOptions.length > 1 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <AddonPill active={addonFilter === "all"} onClick={() => setAddonFilter("all")} label="All" count={streams.length} />
+          <AddonPill
+            active={addonFilter === "all"}
+            onClick={() => setAddonFilter("all")}
+            label="All"
+            count={streams.length}
+          />
           {addonOptions.map((o) => (
             <AddonPill
               key={o.id}
@@ -96,7 +128,7 @@ export function SourceDrawer({
       )}
       {open && (
         <ul className="overflow-hidden rounded-2xl border border-edge-soft/60 bg-canvas/80">
-          {shown.slice(0, 80).map((s, i) => (
+          {visibleStreams.map((s, i) => (
             <SourceRow
               key={`${s.addonId}-${s.infoHash ?? s.url ?? i}`}
               stream={s}
@@ -108,6 +140,7 @@ export function SourceDrawer({
               divider={i > 0}
               showName={showName}
               episode={episode}
+              absoluteEpisode={absoluteEpisode}
             />
           ))}
         </ul>
@@ -152,6 +185,7 @@ function SourceRow({
   divider,
   showName,
   episode,
+  absoluteEpisode,
 }: {
   stream: ScoredStream;
   debrids: ReturnType<typeof useDebridClients>;
@@ -162,6 +196,7 @@ function SourceRow({
   divider: boolean;
   showName: string;
   episode?: PlayEpisode;
+  absoluteEpisode?: number | null;
 }) {
   const { settings } = useSettings();
   const cachedDebrids = debrids.filter((d) => stream.cached[d.slug]);
@@ -169,7 +204,7 @@ function SourceRow({
   const addonCached = anyStreamCached(stream);
   const summary = streamSummaryParts(stream);
   const link = resolveStreamLink(stream);
-  const title = displayTitle(stream, showName, episode);
+  const title = displayTitle(stream, showName, episode, absoluteEpisode);
   const fname = settings.pickerShowFilename ? torrentFilename(stream) : "";
 
   return (
@@ -198,63 +233,65 @@ function SourceRow({
             />
             <span className="truncate">
               {contributorLabel(stream)}
-              {summary.length > 0 && <span className="text-ink-subtle/60"> · {summary.join(" · ")}</span>}
+              {summary.length > 0 && (
+                <span className="text-ink-subtle/60"> · {summary.join(" · ")}</span>
+              )}
             </span>
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2 pt-0.5">
           <div className="flex items-center gap-3">
-          {link && <CopyLinkButton url={link} />}
-          <HostMatchChip match={match} />
-          {stream.audioLanguages.filter((l) => l.toLowerCase() !== "unknown").length > 0 && (
-            <FlagStack
-              languages={stream.audioLanguages.filter((l) => l.toLowerCase() !== "unknown")}
-              size="md"
-              max={4}
-            />
-          )}
-          {libraryDebrids.length > 0 ? (
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-accent">
-              <Zap size={12} fill="currentColor" strokeWidth={0} />
-              In {libraryDebrids.map((d) => d.name).join(" + ")}
-            </span>
-          ) : cachedDebrids.length > 0 ? (
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-              <Zap size={11} strokeWidth={2} />
-              Cached on {cachedDebrids.map((d) => d.name).join(" + ")}
-            </span>
-          ) : addonCached ? (
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-              <Zap size={11} strokeWidth={2} />
-              Cached
-            </span>
-          ) : !stream.url && !stream.infoHash && (stream.externalUrl || stream.ytId) ? (
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
-              <ExternalLink size={11} strokeWidth={2.2} />
-              External
-            </span>
-          ) : !stream.url ? (
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
-              <Download size={11} strokeWidth={2.2} />
-              {debrids.length === 0 && stream.infoHash ? "Stream" : "Cache"}
-            </span>
-          ) : null}
-          {resolving ? (
-            <Loader2 size={16} className="animate-spin text-ink-muted" />
-          ) : !stream.url && !stream.infoHash && (stream.externalUrl || stream.ytId) ? (
-            <ExternalLink
-              size={14}
-              strokeWidth={2.2}
-              className="text-ink-muted/50 transition-all group-hover:text-ink"
-            />
-          ) : (
-            <Play
-              size={15}
-              fill="currentColor"
-              strokeWidth={0}
-              className="text-ink-muted/50 transition-all group-hover:translate-x-0.5 group-hover:text-ink"
-            />
-          )}
+            {link && <CopyLinkButton url={link} />}
+            <HostMatchChip match={match} />
+            {stream.audioLanguages.filter((l) => l.toLowerCase() !== "unknown").length > 0 && (
+              <FlagStack
+                languages={stream.audioLanguages.filter((l) => l.toLowerCase() !== "unknown")}
+                size="md"
+                max={4}
+              />
+            )}
+            {libraryDebrids.length > 0 ? (
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-accent">
+                <Zap size={12} fill="currentColor" strokeWidth={0} />
+                In {libraryDebrids.map((d) => d.name).join(" + ")}
+              </span>
+            ) : cachedDebrids.length > 0 ? (
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                <Zap size={11} strokeWidth={2} />
+                Cached on {cachedDebrids.map((d) => d.name).join(" + ")}
+              </span>
+            ) : addonCached ? (
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                <Zap size={11} strokeWidth={2} />
+                Cached
+              </span>
+            ) : !stream.url && !stream.infoHash && (stream.externalUrl || stream.ytId) ? (
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
+                <ExternalLink size={11} strokeWidth={2.2} />
+                External
+              </span>
+            ) : !stream.url ? (
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
+                <Download size={11} strokeWidth={2.2} />
+                {debrids.length === 0 && stream.infoHash ? "Stream" : "Cache"}
+              </span>
+            ) : null}
+            {resolving ? (
+              <Loader2 size={16} className="animate-spin text-ink-muted" />
+            ) : !stream.url && !stream.infoHash && (stream.externalUrl || stream.ytId) ? (
+              <ExternalLink
+                size={14}
+                strokeWidth={2.2}
+                className="text-ink-muted/50 transition-all group-hover:text-ink"
+              />
+            ) : (
+              <Play
+                size={15}
+                fill="currentColor"
+                strokeWidth={0}
+                className="text-ink-muted/50 transition-all group-hover:translate-x-0.5 group-hover:text-ink"
+              />
+            )}
           </div>
           {tierChipBadges(stream).length > 0 && (
             <div className="flex max-w-[320px] flex-wrap items-center justify-end gap-1.5">

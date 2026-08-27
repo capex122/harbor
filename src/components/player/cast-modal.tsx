@@ -3,6 +3,7 @@ import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useSta
 import type { Meta } from "@/lib/cinemeta";
 import { useT } from "@/lib/i18n";
 import { useQueue } from "@/lib/queue";
+import { useGamepadCursorVisibilityHold } from "@/lib/gamepad/use-cursor-visibility-hold";
 import type { PlayEpisode } from "@/lib/view";
 import { EpisodePicker } from "./cast-modal/episode-picker";
 import { ExitConfirm, SKIP_EXIT_CONFIRM_KEY } from "./cast-modal/exit-confirm";
@@ -43,6 +44,7 @@ export function CastModal({
   onPlay?: (m: Meta, episode?: PlayEpisode) => void;
   currentEpisode?: PlayEpisode | null;
 }) {
+  useGamepadCursorVisibilityHold(open);
   const t = useT();
   const queue = useQueue();
   const [stack, setStack] = useState<StackView[]>([{ kind: "title", meta }]);

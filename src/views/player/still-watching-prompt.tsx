@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useT } from "@/lib/i18n";
+import { useGamepadCursorVisibilityHold } from "@/lib/gamepad/use-cursor-visibility-hold";
 
 const TIMEOUT_SEC = 45;
 
@@ -14,6 +15,7 @@ export function StillWatchingPrompt({
   onContinue: () => void;
   onExit: () => void;
 }) {
+  useGamepadCursorVisibilityHold();
   const t = useT();
   const [secs, setSecs] = useState(TIMEOUT_SEC);
   const [entered, setEntered] = useState(false);

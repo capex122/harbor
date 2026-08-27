@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useT } from "@/lib/i18n";
+import { useGamepadCursorVisibilityHold } from "@/lib/gamepad/use-cursor-visibility-hold";
 import {
   closeLeaveConfirm,
   getLeaveConfirm,
@@ -9,6 +10,7 @@ import {
 export function LeaveConfirmModal() {
   const t = useT();
   const state = useSyncExternalStore(subscribeLeaveConfirm, getLeaveConfirm);
+  useGamepadCursorVisibilityHold(state.open);
   const [remember, setRemember] = useState(false);
 
   useEffect(() => {

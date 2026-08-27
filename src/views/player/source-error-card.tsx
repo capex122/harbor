@@ -1,5 +1,6 @@
 import { ListVideo, RotateCcw, ServerCrash, WifiOff } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { useGamepadCursorVisibilityHold } from "@/lib/gamepad/use-cursor-visibility-hold";
 import type { SourceError } from "./hooks/use-auto-retry";
 
 const STATUS_TEXT: Record<number, string> = {
@@ -58,6 +59,7 @@ export function SourceErrorCard({
   onChoose: () => void;
   onRetry: () => void;
 }) {
+  useGamepadCursorVisibilityHold();
   const t = useT();
   const info = describe(error);
   const codeLabel = error.status === 0 ? t("No response") : `HTTP ${error.status}`;

@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type RefObject } from "react";
 import { addonLogoSrc, resolveAddonLogo } from "@/components/addon-logo";
 import type { Addon } from "@/lib/addons";
 import type { ScoredStream } from "@/lib/streams/types";
@@ -10,6 +10,8 @@ import { useSettings } from "@/lib/settings";
 import type { CustomStreamFilter } from "@/lib/streams/custom-filters";
 import { FacetMenuRow } from "./facet-menu-row";
 import { FilterBuilder } from "./filter-builder";
+
+const STREAM_PAGE_SIZE = 15;
 
 export function StremioLayout({
   streams,
@@ -23,6 +25,7 @@ export function StremioLayout({
   download = false,
   downloadStateFor,
   isAnime = false,
+  scrollRef,
 }: {
   streams: ScoredStream[];
   addons: Addon[] | null;
@@ -35,6 +38,7 @@ export function StremioLayout({
   download?: boolean;
   downloadStateFor?: (stream: ScoredStream) => "idle" | "preparing" | "queued";
   isAnime?: boolean;
+  scrollRef: RefObject<HTMLElement | null>;
 }) {
   const [filter, setFilter] = useState<string>("all");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -45,6 +49,7 @@ export function StremioLayout({
   const setActiveFilterId = (id: string | null) => update({ activeStreamFilterId: id });
   const [builderOpen, setBuilderOpen] = useState(false);
   const [editingFilter, setEditingFilter] = useState<CustomStreamFilter | null>(null);
+  const [visibleCount, setVisibleCount] = useState(STREAM_PAGE_SIZE);
   const addonLogoMap = useMemo(() => {
     const m = new Map<string, string | null>();
     for (const a of addons ?? []) {
@@ -109,6 +114,26 @@ export function StremioLayout({
       return 0;
     });
   }, [addonFiltered, facet, filter, addonRank, preserveOrder]);
+  useEffect(() => {
+    setVisibleCount(STREAM_PAGE_SIZE);
+  }, [filter, facet]);
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root || visibleCount >= visibleStreams.length) return;
+
+    const onScroll = () => {
+      const remaining = root.scrollHeight - root.scrollTop - root.clientHeight;
+      if (remaining > 320) return;
+      setVisibleCount((count) =>
+        count === visibleCount
+          ? Math.min(count + STREAM_PAGE_SIZE, visibleStreams.length)
+          : count,
+      );
+    };
+    root.addEventListener("scroll", onScroll, { passive: true });
+    return () => root.removeEventListener("scroll", onScroll);
+  }, [scrollRef, visibleCount, visibleStreams.length]);
+  const renderedStreams = visibleStreams.slice(0, visibleCount);
   const filterLabel = filter === "all"
     ? "All"
     : addonOptions.find((o) => o.id === filter)?.name ?? "All";
@@ -190,7 +215,7 @@ export function StremioLayout({
         }}
       />
       <div className="flex flex-col gap-2">
-        {visibleStreams.map((s, i) => (
+        {renderedStreams.map((s, i) => (
           <StremioRow
             key={`${s.url ?? s.infoHash ?? s.title}-${i}`}
             stream={s}
