@@ -197,7 +197,7 @@ function NavRow({
         />
       )}
       <span className={`relative ${gated ? "opacity-70" : ""} ${active ? "drop-shadow-[0_0_8px_var(--color-accent-soft)]" : ""}`}>
-        {item.render(false)}
+        {item.render(active)}
         {gated && (
           <span
             className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-canvas text-ink-subtle"

@@ -75,7 +75,7 @@ export function RoyalTopbar() {
             />
           )}
           <span className="grid h-[18px] w-[18px] place-items-center [&>*]:!h-[18px] [&>*]:!w-[18px] [&>*]:!p-0 [&_svg]:h-[18px] [&_svg]:w-[18px]">
-            {item.render(false)}
+            {item.render(active)}
           </span>
           <span className="hidden xl:inline">{label}</span>
         </button>

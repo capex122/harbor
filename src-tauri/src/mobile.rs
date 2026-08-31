@@ -15,9 +15,9 @@
 // thumbnails, transcode, DVR, subtitle extract, autosync or trailers.
 
 use crate::{
-    crash_report, diagnostics, download, fonts, gamepad, http_fetch, local_lib, power, proc_mem,
-    settings_store, stream_proxy, streams, stremio_auth, temp_prune, torrent_engine, transcode,
-    web_server,
+    crash_report, diagnostics, download, ebook_tts, fonts, gamepad, http_fetch, local_lib, power,
+    proc_mem, settings_store, stream_proxy, streams, stremio_auth, temp_prune, torrent_engine,
+    transcode, web_server,
 };
 
 // Desktop answers this from dlna.rs, but that module is #[cfg(desktop)] because
@@ -29,11 +29,15 @@ use crate::{
 fn lan_ip() -> Option<String> {
     use std::net::{IpAddr, UdpSocket};
     for target in ["1.1.1.1:80", "8.8.8.8:80", "192.168.1.1:80"] {
-        let Ok(sock) = UdpSocket::bind("0.0.0.0:0") else { continue };
+        let Ok(sock) = UdpSocket::bind("0.0.0.0:0") else {
+            continue;
+        };
         if sock.connect(target).is_err() {
             continue;
         }
-        let Ok(addr) = sock.local_addr() else { continue };
+        let Ok(addr) = sock.local_addr() else {
+            continue;
+        };
         if let IpAddr::V4(v4) = addr.ip() {
             if !v4.is_loopback() && !v4.is_unspecified() {
                 return Some(v4.to_string());
@@ -124,6 +128,9 @@ pub fn run() {
             fonts::install_sub_font,
             fonts::remove_sub_font,
             fonts::list_sub_fonts,
+            ebook_tts::ebook_tts_synthesize,
+            ebook_tts::ebook_tts_cancel,
+            ebook_tts::ebook_tts_voices,
             gamepad::gamepad_list,
             gamepad::gamepad_set_enabled,
             gamepad::gamepad_set_background_input,

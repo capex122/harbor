@@ -36,6 +36,41 @@ export type DownloadItem = {
   bytesPerSec: number;
   error: string | null;
   startedAt: number;
+  kind?: "video" | "ebook";
+  format?: "epub" | "pdf";
+  author?: string | null;
+  publishedYear?: number | null;
+  summary?: string | null;
+  phaseLabel?: string | null;
+  etaSeconds?: number | null;
+  canPause?: boolean;
+};
+
+export type ManagedDownloadProgress = {
+  receivedBytes: number;
+  totalBytes: number | null;
+  ratio: number;
+  bytesPerSec: number;
+  etaSeconds?: number | null;
+  label?: string | null;
+};
+
+type ManagedDownloadRunner = (
+  signal: AbortSignal,
+  onProgress: (progress: ManagedDownloadProgress) => void,
+) => Promise<void>;
+
+export type ManagedDownloadArgs = {
+  metaId: string;
+  title: string;
+  subtitle?: string | null;
+  poster?: string | null;
+  path: string;
+  format: "epub" | "pdf";
+  author?: string | null;
+  publishedYear?: number | null;
+  summary?: string | null;
+  run: ManagedDownloadRunner;
 };
 
 type EnqueueArgs = {
@@ -52,6 +87,8 @@ const handles = new Map<string, DownloadHandle>();
 const completions = new Map<string, Promise<void>>();
 const requestHeaders = new Map<string, Record<string, string>>();
 const speed = new Map<string, { bytes: number; at: number }>();
+const managedControllers = new Map<string, AbortController>();
+const managedRunners = new Map<string, ManagedDownloadRunner>();
 const listeners = new Set<() => void>();
 
 let snapshot: DownloadItem[] = [];
@@ -305,6 +342,8 @@ export async function enqueueDownload(args: EnqueueArgs): Promise<string> {
     bytesPerSec: 0,
     error: null,
     startedAt: Date.now(),
+    kind: "video",
+    canPause: true,
   };
   items.set(id, item);
   if (headers && Object.keys(headers).length > 0) requestHeaders.set(id, headers);
@@ -312,6 +351,98 @@ export async function enqueueDownload(args: EnqueueArgs): Promise<string> {
 
   beginDownload(id);
   return id;
+}
+
+export function enqueueManagedDownload(args: ManagedDownloadArgs): string {
+  const existing = [...items.values()].find(
+    (item) =>
+      item.kind === "ebook" &&
+      item.metaId === args.metaId &&
+      item.format === args.format &&
+      (item.status === "downloading" || item.status === "paused"),
+  );
+  if (existing) return existing.id;
+  const id = randomId();
+  items.set(id, {
+    id,
+    metaId: args.metaId,
+    title: args.title,
+    subtitle: args.subtitle ?? null,
+    poster: args.poster ?? null,
+    season: null,
+    episode: null,
+    streamLabel: args.format.toUpperCase(),
+    url: `harbor-ebook://${encodeURIComponent(args.metaId)}/${args.format}`,
+    path: args.path,
+    status: "downloading",
+    receivedBytes: 0,
+    totalBytes: null,
+    ratio: 0,
+    bytesPerSec: 0,
+    error: null,
+    startedAt: Date.now(),
+    kind: "ebook",
+    format: args.format,
+    author: args.author ?? null,
+    publishedYear: args.publishedYear ?? null,
+    summary: args.summary ?? null,
+    phaseLabel: "Queued",
+    etaSeconds: null,
+    canPause: false,
+  });
+  managedRunners.set(id, args.run);
+  rebuild();
+  beginManagedDownload(id);
+  return id;
+}
+
+function beginManagedDownload(id: string): void {
+  const item = items.get(id);
+  const run = managedRunners.get(id);
+  if (!item || !run || managedControllers.has(id)) return;
+  const controller = new AbortController();
+  managedControllers.set(id, controller);
+  const completion = run(controller.signal, (progress) => {
+    if (items.get(id)?.status !== "downloading") return;
+    patch(id, {
+      receivedBytes: progress.receivedBytes,
+      totalBytes: progress.totalBytes,
+      ratio: Math.max(0, Math.min(1, progress.ratio)),
+      bytesPerSec: progress.bytesPerSec,
+      etaSeconds: progress.etaSeconds ?? null,
+      phaseLabel: progress.label ?? null,
+    });
+  })
+    .then(() => {
+      if (items.get(id)?.status === "downloading")
+        patch(id, {
+          status: "done",
+          ratio: 1,
+          bytesPerSec: 0,
+          etaSeconds: 0,
+          phaseLabel: item.format === "pdf" ? "Print dialog opened" : "Saved",
+        });
+    })
+    .catch((error: unknown) => {
+      if (error instanceof Error && error.name === "AbortError") {
+        if (items.get(id)?.status === "downloading")
+          patch(id, { status: "canceled", bytesPerSec: 0, etaSeconds: null });
+        return;
+      }
+      if (items.get(id)?.status === "canceled") return;
+      patch(id, {
+        status: "error",
+        error: error instanceof Error ? error.message : "Download failed",
+        bytesPerSec: 0,
+        etaSeconds: null,
+      });
+    })
+    .finally(() => {
+      managedControllers.delete(id);
+      managedRunners.delete(id);
+      if (completions.get(id) === completion) completions.delete(id);
+    });
+  completions.set(id, completion);
 }
 
 function beginDownload(id: string): void {
@@ -374,6 +505,7 @@ export function cancelDownload(id: string): void {
   if (!item || (item.status !== "downloading" && item.status !== "paused")) return;
   const wasPaused = item.status === "paused";
   patch(id, { status: "canceled", bytesPerSec: 0 });
+  managedControllers.get(id)?.abort();
   requestHeaders.delete(id);
   handles.get(id)?.abort();
   if (wasPaused) releaseDownloadTorrent(item);
@@ -383,7 +515,7 @@ export function cancelDownload(id: string): void {
 export function pauseDownload(id: string): void {
   const item = items.get(id);
   const handle = handles.get(id);
-  if (!item || item.status !== "downloading" || !handle) return;
+  if (!item || item.canPause === false || item.status !== "downloading" || !handle) return;
   patch(id, { status: "paused", bytesPerSec: 0 });
   handle.abort();
   const engine = downloadTorrentRef(item);
@@ -407,6 +539,9 @@ export function removeDownload(id: string): void {
   completions.delete(id);
   requestHeaders.delete(id);
   speed.delete(id);
+  managedControllers.get(id)?.abort();
+  managedControllers.delete(id);
+  managedRunners.delete(id);
   if (items.delete(id)) rebuild();
   if (item) {
     releaseDownloadTorrent(item);

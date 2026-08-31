@@ -100,6 +100,23 @@ export default defineConfig(({ mode }) => {
           "**/target/**",
         ],
       },
+      proxy: Object.fromEntries(
+        [
+          "graphql.anilist.co",
+          "openlibrary.org",
+          "covers.openlibrary.org",
+          "www.googleapis.com",
+          "www.wikidata.org",
+          "api.deepseek.com",
+        ].map((host) => [
+          `/api-proxy/${host}`,
+          {
+            target: `https://${host}`,
+            changeOrigin: true,
+            rewrite: (path: string) => path.replace(`/api-proxy/${host}`, ""),
+          },
+        ]),
+      ),
     },
     resolve: {
       alias: { "@": "/src" },

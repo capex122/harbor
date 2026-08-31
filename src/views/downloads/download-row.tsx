@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Check, FolderOpen, Trash2 } from "lucide-react";
+import { BookOpen, Check, FileText, FolderOpen, Trash2 } from "lucide-react";
 import { Play } from "@/components/icons/play-filled";
 import { DownloadCancelIcon, DownloadPauseResumeIcon } from "@/components/download-action-icons";
 import { Poster, usePosterChain } from "@/components/poster";
@@ -24,6 +24,7 @@ export function DownloadRow({ d, compact = false }: { d: DownloadItem; compact?:
     d.poster ?? undefined,
     d.season != null ? "series" : "movie",
   );
+  const isEBook = d.kind === "ebook";
   const pct = Math.round(d.ratio * 100);
   const downloading = d.status === "downloading";
   const active = downloading || d.status === "paused";
@@ -49,7 +50,12 @@ export function DownloadRow({ d, compact = false }: { d: DownloadItem; compact?:
       <div
         className={`${compact ? "h-[44px] w-[30px]" : "h-[68px] w-[46px]"} shrink-0 overflow-hidden rounded-lg`}
       >
-        <Poster src={poster.src} onError={poster.onError} seed={d.metaId} ratio="portrait" />
+        <Poster
+          src={isEBook ? (d.poster ?? undefined) : poster.src}
+          onError={isEBook ? undefined : poster.onError}
+          seed={d.metaId}
+          ratio="portrait"
+        />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex min-w-0 items-baseline gap-2">
@@ -70,6 +76,7 @@ export function DownloadRow({ d, compact = false }: { d: DownloadItem; compact?:
             </div>
             <div className="flex flex-wrap items-center gap-x-2 text-[11.5px] tabular-nums text-ink-muted">
               <span>{d.status === "paused" ? "Paused" : `${pct}%`}</span>
+              {d.phaseLabel && <span className="text-ink-subtle">· {d.phaseLabel}</span>}
               {d.totalBytes != null && (
                 <span className="text-ink-subtle">
                   {fmtBytes(d.receivedBytes)} / {fmtBytes(d.totalBytes)}
@@ -85,7 +92,7 @@ export function DownloadRow({ d, compact = false }: { d: DownloadItem; compact?:
               <>
                 <Check size={13} className="text-accent" strokeWidth={2.6} />
                 <span className="text-ink-muted">
-                  Saved{d.streamLabel ? ` · ${d.streamLabel}` : ""}
+                  {d.phaseLabel || "Saved"}{d.streamLabel ? ` · ${d.streamLabel}` : ""}
                   {d.totalBytes ? ` · ${fmtBytes(d.totalBytes)}` : ""}
                 </span>
               </>
@@ -103,15 +110,17 @@ export function DownloadRow({ d, compact = false }: { d: DownloadItem; compact?:
       <div className="flex shrink-0 items-center gap-1">
         {active && (
           <>
-            <RowBtn
-              label={d.status === "paused" ? "Resume download" : "Pause download"}
-              onClick={() => {
-                if (d.status === "paused") void resumeDownload(d.id);
-                else pauseDownload(d.id);
-              }}
-            >
-              <DownloadPauseResumeIcon paused={d.status === "paused"} size={16} />
-            </RowBtn>
+            {d.canPause !== false && (
+              <RowBtn
+                label={d.status === "paused" ? "Resume download" : "Pause download"}
+                onClick={() => {
+                  if (d.status === "paused") void resumeDownload(d.id);
+                  else pauseDownload(d.id);
+                }}
+              >
+                <DownloadPauseResumeIcon paused={d.status === "paused"} size={16} />
+              </RowBtn>
+            )}
             <RowBtn label="Cancel download" onClick={() => cancelDownload(d.id)} cancel>
               <DownloadCancelIcon size={16} />
             </RowBtn>
@@ -121,12 +130,20 @@ export function DownloadRow({ d, compact = false }: { d: DownloadItem; compact?:
           <>
             {d.status === "done" && (
               <>
-                <RowBtn label="Play" onClick={playLocal}>
-                  <Play size={16} strokeWidth={2.2} fill="currentColor" />
-                </RowBtn>
-                <RowBtn label="Show in folder" onClick={() => void revealDownload(d.id)}>
-                  <FolderOpen size={16} strokeWidth={2} />
-                </RowBtn>
+                {!isEBook && (
+                  <RowBtn label="Play" onClick={playLocal}>
+                    <Play size={16} strokeWidth={2.2} fill="currentColor" />
+                  </RowBtn>
+                )}
+                {isEBook && d.format === "pdf" ? (
+                  <span className="flex h-9 w-9 items-center justify-center text-ink-subtle" title="PDF print dialog opened">
+                    <FileText size={16} />
+                  </span>
+                ) : (
+                  <RowBtn label="Show in folder" onClick={() => void revealDownload(d.id)}>
+                    {isEBook ? <BookOpen size={16} strokeWidth={2} /> : <FolderOpen size={16} strokeWidth={2} />}
+                  </RowBtn>
+                )}
               </>
             )}
             <DeleteButton onClick={() => removeDownload(d.id)} />

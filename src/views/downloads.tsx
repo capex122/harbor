@@ -82,7 +82,7 @@ export function DownloadsView({ active = false }: { active?: boolean }) {
   );
   const subtitle =
     items.length === 0
-      ? "Saved movies and episodes for offline watching"
+      ? "Saved movies, episodes, and eBooks for offline use"
       : [
           `${items.length} item${items.length === 1 ? "" : "s"}`,
           counts.active - paused > 0 ? `${counts.active - paused} downloading` : null,
@@ -186,7 +186,7 @@ function EmptyState() {
       <div className="flex flex-col gap-1.5">
         <p className="text-[15px] font-semibold text-ink">No downloads yet</p>
         <p className="max-w-[340px] text-[13.5px] leading-relaxed text-ink-muted">
-          Open any movie or show, hover an episode, and click the download icon. Pick the exact source you want and it saves here for offline watching.
+          Download a movie, episode, or eBook and it will appear here with its progress and offline status.
         </p>
       </div>
       <button

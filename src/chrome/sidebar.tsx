@@ -362,7 +362,7 @@ function NavItem({
       data-active={active ? "" : undefined}
       aria-label={gated ? t("chrome.lockedRequiresPin", { label: text }) : text}
       title={gated ? t("chrome.lockedShort", { label: text }) : text}
-      className={`relative flex items-center justify-center gap-4 transition-colors duration-150 ${
+      className={`group relative flex items-center justify-center gap-4 transition-colors duration-150 ${
         big ? "h-[68px] rounded-2xl text-[20px] font-bold" : "h-14 rounded-lg text-[16px]"
       } ${collapsed ? "" : big ? "lg:justify-start lg:px-5" : "lg:justify-start lg:px-4"} ${
         collapsed
@@ -375,7 +375,7 @@ function NavItem({
       }`}
     >
       <span className={`relative ${big ? "scale-110" : ""} ${gated ? "opacity-70" : ""}`}>
-        {render(hovered)}
+        {render(Boolean(active || hovered))}
         {gated && (
           <span className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-canvas text-ink-subtle ring-1 ring-edge">
             <Lock size={9} strokeWidth={2.4} />

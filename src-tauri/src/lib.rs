@@ -10,6 +10,7 @@ mod cast_subs;
 mod crash_report;
 mod diagnostics;
 mod download;
+mod ebook_tts;
 mod fonts;
 mod gamepad;
 mod http_fetch;
@@ -31,13 +32,15 @@ mod web_server;
 // alias emitted by tauri-build, so on Windows, macOS and Linux the predicate
 // is a compile-time true and the compiler sees exactly the tree it saw before.
 #[cfg(desktop)]
-mod anime4k;
-#[cfg(desktop)]
 mod airplay;
+#[cfg(desktop)]
+mod anime4k;
 #[cfg(desktop)]
 mod asr_model;
 #[cfg(desktop)]
 mod browser;
+#[cfg(desktop)]
+mod captions;
 #[cfg(desktop)]
 mod cast;
 #[cfg(desktop)]
@@ -46,6 +49,7 @@ mod cast_server;
 mod cf_relay;
 #[cfg(desktop)]
 mod cf_solver;
+mod discord_auth;
 #[cfg(desktop)]
 mod discord_rp;
 #[cfg(desktop)]
@@ -64,18 +68,15 @@ mod hdr_overlay;
 mod installer_handoff;
 #[cfg(desktop)]
 mod media_controls;
-#[cfg(desktop)]
-mod captions;
-mod discord_auth;
 mod modal_overlay;
 #[cfg(desktop)]
 mod mpv;
-#[cfg(desktop)]
-mod multiview;
-#[cfg(target_os = "macos")]
-mod mpv_render_mac;
 #[cfg(target_os = "linux")]
 mod mpv_render_linux;
+#[cfg(target_os = "macos")]
+mod mpv_render_mac;
+#[cfg(desktop)]
+mod multiview;
 #[cfg(desktop)]
 mod pip;
 #[cfg(target_os = "macos")]
@@ -142,7 +143,8 @@ pub(crate) fn shutdown_services(app: &tauri::AppHandle) {
 }
 
 #[cfg(desktop)]
-pub static CLOSE_FLUSH_DONE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+pub static CLOSE_FLUSH_DONE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
 #[cfg(desktop)]
 static CLOSE_IN_PROGRESS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 // Maximised windows are clamped to the work area so they never cover the taskbar.
@@ -230,10 +232,20 @@ fn make_main_transparent(app: &tauri::AppHandle) {
         let controller = webview.controller();
         match controller.cast::<ICoreWebView2Controller2>() {
             Ok(controller2) => {
-                let color = COREWEBVIEW2_COLOR { A: 0, R: 0, G: 0, B: 0 };
+                let color = COREWEBVIEW2_COLOR {
+                    A: 0,
+                    R: 0,
+                    G: 0,
+                    B: 0,
+                };
                 match controller2.SetDefaultBackgroundColor(color) {
-                    Ok(()) => eprintln!("[harbor::transparent] SetDefaultBackgroundColor OK (alpha=0)"),
-                    Err(e) => eprintln!("[harbor::transparent] SetDefaultBackgroundColor FAILED: {:?}", e),
+                    Ok(()) => {
+                        eprintln!("[harbor::transparent] SetDefaultBackgroundColor OK (alpha=0)")
+                    }
+                    Err(e) => eprintln!(
+                        "[harbor::transparent] SetDefaultBackgroundColor FAILED: {:?}",
+                        e
+                    ),
                 }
             }
             Err(e) => eprintln!("[harbor::transparent] cast to Controller2 FAILED: {:?}", e),
@@ -318,7 +330,12 @@ fn install_maximize_guard(app: &tauri::AppHandle) {
         return;
     };
     unsafe {
-        let _ = SetWindowSubclass(hwnd, Some(maxguard_subclass_proc), HARBOR_MAXGUARD_SUBCLASS_ID, 0);
+        let _ = SetWindowSubclass(
+            hwnd,
+            Some(maxguard_subclass_proc),
+            HARBOR_MAXGUARD_SUBCLASS_ID,
+            0,
+        );
     }
     eprintln!("[harbor::maxguard] WM_GETMINMAXINFO work-area guard installed");
 }
@@ -515,12 +532,16 @@ fn ensure_window_on_screen(app: &tauri::AppHandle) {
     let cx = mp.x + (ms.width as i32 - ww).max(0) / 2;
     let cy = mp.y + (ms.height as i32 - wh).max(0) / 2;
     let _ = window.set_position(tauri::PhysicalPosition::new(cx, cy));
-    eprintln!("[harbor::window] launched off-screen; recentered to {},{}", cx, cy);
+    eprintln!(
+        "[harbor::window] launched off-screen; recentered to {},{}",
+        cx, cy
+    );
 }
 
 #[cfg(desktop)]
 const MEDIA_EXTS: &[&str] = &[
-    "mkv", "mp4", "avi", "mov", "webm", "m4v", "ts", "m2ts", "mpg", "mpeg", "wmv", "flv", "ogv", "3gp",
+    "mkv", "mp4", "avi", "mov", "webm", "m4v", "ts", "m2ts", "mpg", "mpeg", "wmv", "flv", "ogv",
+    "3gp",
 ];
 
 #[cfg(desktop)]
@@ -786,6 +807,9 @@ pub fn run() {
             fonts::install_sub_font,
             fonts::remove_sub_font,
             fonts::list_sub_fonts,
+            ebook_tts::ebook_tts_synthesize,
+            ebook_tts::ebook_tts_cancel,
+            ebook_tts::ebook_tts_voices,
             harbor_flush_done,
             harbor_startup_ready,
             close_aux_windows,

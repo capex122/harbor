@@ -205,7 +205,7 @@ function NavPill({
         />
       )}
       <span className={`relative ${gated ? "opacity-70" : ""}`}>
-        {item.render(false)}
+        {item.render(active)}
         {gated && (
           <span className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-canvas text-ink-subtle ring-1 ring-edge">
             <Lock size={9} strokeWidth={2.4} />

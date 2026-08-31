@@ -8,6 +8,7 @@ const en: Record<string, string> = {
   "nav.kids": "Watch",
   "nav.anime": "Anime",
   "nav.manga": "Manga",
+  "nav.ebook": "eBook",
   "nav.live": "Live TV",
   "nav.playlists": "Playlists",
   "nav.calendar": "Calendar",
@@ -107,7 +108,8 @@ const en: Record<string, string> = {
   "Open on Trakt": "Open on Trakt",
 
   "AniList Comments": "AniList Comments",
-  "Connect your AniList account to see forum threads and comments.": "Connect your AniList account to see forum threads and comments.",
+  "Connect your AniList account to see forum threads and comments.":
+    "Connect your AniList account to see forum threads and comments.",
   "Connect AniList": "Connect AniList",
   "Could not find this title on AniList.": "Could not find this title on AniList.",
   "New thread": "New thread",
@@ -125,7 +127,8 @@ const en: Record<string, string> = {
   "Loading more": "Loading more",
   "Failed to post comment": "Failed to post comment",
   "Show AniList comments": "Show AniList comments",
-  "Show forum threads and comments from AniList on anime detail pages.": "Show forum threads and comments from AniList on anime detail pages.",
+  "Show forum threads and comments from AniList on anime detail pages.":
+    "Show forum threads and comments from AniList on anime detail pages.",
   "Comments on anime pages are blurred until you reveal them, even if they are not tagged as spoilers.":
     "Comments on anime pages are blurred until you reveal them, even if they are not tagged as spoilers.",
 
@@ -170,10 +173,13 @@ const en: Record<string, string> = {
   "Focus GIF URL": "Focus GIF URL",
   "Addon not installed": "Addon not installed",
   "This section depends on the addon": "This section depends on the addon",
-  "You must install this addon in your Stremio account first so Harbor can fetch its works.": "You must install this addon in your Stremio account first so Harbor can fetch its works.",
+  "You must install this addon in your Stremio account first so Harbor can fetch its works.":
+    "You must install this addon in your Stremio account first so Harbor can fetch its works.",
   "Missing TMDB Key": "Missing TMDB Key",
-  "This section relies on TMDB discovery features.": "This section relies on TMDB discovery features.",
-  "Please add your TMDB API key in the Library & Metadata settings to view this folder.": "Please add your TMDB API key in the Library & Metadata settings to view this folder.",
+  "This section relies on TMDB discovery features.":
+    "This section relies on TMDB discovery features.",
+  "Please add your TMDB API key in the Library & Metadata settings to view this folder.":
+    "Please add your TMDB API key in the Library & Metadata settings to view this folder.",
   "OK": "OK",
   "Loading...": "Loading...",
 
@@ -188,11 +194,15 @@ const en: Record<string, string> = {
   "Harbor": "Harbor",
   "TMDB": "TMDB",
   "IMDb": "IMDb",
-  "Our all-time ranking of a body of work, fully explained.": "Our all-time ranking of a body of work, fully explained.",
-  "Who is breaking out this week. Live, with weekly movement.": "Who is breaking out this week. Live, with weekly movement.",
+  "Our all-time ranking of a body of work, fully explained.":
+    "Our all-time ranking of a body of work, fully explained.",
+  "Who is breaking out this week. Live, with weekly movement.":
+    "Who is breaking out this week. Live, with weekly movement.",
   "Steady popularity across TMDB right now.": "Steady popularity across TMDB right now.",
-  "Built from IMDb's public datasets. Career ratings volume.": "Built from IMDb's public datasets. Career ratings volume.",
-  "A blend of the sources above by percentile. Degrades gracefully when one is missing.": "A blend of the sources above by percentile. Degrades gracefully when one is missing.",
+  "Built from IMDb's public datasets. Career ratings volume.":
+    "Built from IMDb's public datasets. Career ratings volume.",
+  "A blend of the sources above by percentile. Degrades gracefully when one is missing.":
+    "A blend of the sources above by percentile. Degrades gracefully when one is missing.",
 
   "Actors": "Actors",
   "Directors": "Directors",
@@ -215,7 +225,8 @@ const en: Record<string, string> = {
   "Consensus #1": "Consensus #1",
   "View {name}": "View {name}",
   "How this is ranked": "How this is ranked",
-  "Ranked #1 of {total} for {acclaimed} acclaimed titles and {awards} major awards.": "Ranked #1 of {total} for {acclaimed} acclaimed titles and {awards} major awards.",
+  "Ranked #1 of {total} for {acclaimed} acclaimed titles and {awards} major awards.":
+    "Ranked #1 of {total} for {acclaimed} acclaimed titles and {awards} major awards.",
   "Up {n} spots this week": "Up {n} spots this week",
   "New to the chart": "New to the chart",
 
@@ -252,11 +263,14 @@ const en: Record<string, string> = {
   "Widen the department or country to see more.": "Widen the department or country to see more.",
   "Clear filters": "Clear filters",
   "Couldn't load rankings": "Couldn't load rankings",
-  "Something went wrong reaching the ranking feed.": "Something went wrong reaching the ranking feed.",
+  "Something went wrong reaching the ranking feed.":
+    "Something went wrong reaching the ranking feed.",
   "Add a TMDB key to load rankings": "Add a TMDB key to load rankings",
-  "Trending and Top on TMDB read live data, which needs your own TMDB key.": "Trending and Top on TMDB read live data, which needs your own TMDB key.",
+  "Trending and Top on TMDB read live data, which needs your own TMDB key.":
+    "Trending and Top on TMDB read live data, which needs your own TMDB key.",
   "Open settings": "Open settings",
-  "All-time body of work, not who is trending. Trending and Top on TMDB are the live tabs.": "All-time body of work, not who is trending. Trending and Top on TMDB are the live tabs.",
+  "All-time body of work, not who is trending. Trending and Top on TMDB are the live tabs.":
+    "All-time body of work, not who is trending. Trending and Top on TMDB are the live tabs.",
 };
 
 export default en;

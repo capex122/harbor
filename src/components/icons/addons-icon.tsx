@@ -1,5 +1,3 @@
-import { NavGlyph } from "./nav-glyph";
-
-export function AddonsIcon(_props: { active?: boolean }) {
-  return <NavGlyph name="addons" className="h-[26px] w-[26px] p-[2px]" />;
+export function AddonsIcon({ active = false }: { active?: boolean }) {
+  return <svg className={`harbor-addons-nav-icon ${active ? "is-active" : ""}`} width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden style={{ overflow: "visible" }}><g stroke="currentColor" strokeWidth="1.65" strokeLinejoin="round" fill="currentColor" fillOpacity="0.12"><rect x="3" y="3" width="8" height="8" rx="1.4" data-addon-block="1" /><rect x="13" y="3" width="8" height="8" rx="1.4" data-addon-block="2" /><rect x="13" y="13" width="8" height="8" rx="1.4" data-addon-block="3" /><rect x="3" y="13" width="8" height="8" rx="1.4" data-addon-block="4" /></g></svg>;
 }

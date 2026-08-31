@@ -1382,18 +1382,47 @@ main[data-kids="on"]::-webkit-scrollbar-thumb:hover {
   30% { transform: translateY(0); opacity: 1; }
 }
 
-.animate-block-1 { animation: harbor-block-drop 1.2s var(--ease-out) backwards; animation-delay: 0s; }
-.animate-block-2 { animation: harbor-block-drop 1.2s var(--ease-out) backwards; animation-delay: 0.12s; }
-.animate-block-3 { animation: harbor-block-drop 1.2s var(--ease-out) backwards; animation-delay: 0.24s; }
-.animate-block-4 { animation: harbor-block-drop 1.2s var(--ease-out) backwards; animation-delay: 0.36s; }
+.harbor-addons-nav-icon.is-active [data-addon-block="1"],
+[data-active] .harbor-addons-nav-icon [data-addon-block="1"],
+.group:hover .harbor-addons-nav-icon [data-addon-block="1"] { animation: harbor-block-drop 1.2s var(--ease-out) both; animation-delay: 0s; }
+.harbor-addons-nav-icon.is-active [data-addon-block="2"],
+[data-active] .harbor-addons-nav-icon [data-addon-block="2"],
+.group:hover .harbor-addons-nav-icon [data-addon-block="2"] { animation: harbor-block-drop 1.2s var(--ease-out) both; animation-delay: 0.12s; }
+.harbor-addons-nav-icon.is-active [data-addon-block="3"],
+[data-active] .harbor-addons-nav-icon [data-addon-block="3"],
+.group:hover .harbor-addons-nav-icon [data-addon-block="3"] { animation: harbor-block-drop 1.2s var(--ease-out) both; animation-delay: 0.24s; }
+.harbor-addons-nav-icon.is-active [data-addon-block="4"],
+[data-active] .harbor-addons-nav-icon [data-addon-block="4"],
+.group:hover .harbor-addons-nav-icon [data-addon-block="4"] { animation: harbor-block-drop 1.2s var(--ease-out) both; animation-delay: 0.36s; }
+
+[data-active] .harbor-addons-nav-icon [data-addon-block] {
+  animation-iteration-count: infinite;
+}
 
 @keyframes harbor-gear-spin {
   from { transform: rotate(0deg); }
-  to { transform: none; }
+  to { transform: rotate(360deg); }
 }
 
-.animate-gear-spin {
-  animation: harbor-gear-spin 1.6s var(--ease-out) backwards;
+.harbor-settings-nav-icon.is-active,
+[data-active] .harbor-settings-nav-icon,
+.group:hover .harbor-settings-nav-icon {
+  animation: harbor-gear-spin 1.6s var(--ease-out) both;
+}
+
+[data-active] .harbor-settings-nav-icon {
+  animation-iteration-count: infinite;
+}
+
+@keyframes harbor-download-arrow {
+  0%, 100% { transform: translateY(-1px); }
+  55% { transform: translateY(2.5px); }
+}
+
+.animate-download-arrow {
+  animation: harbor-download-arrow 700ms var(--ease-out) infinite;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .download-pause-resume-icon {

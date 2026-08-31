@@ -4,6 +4,7 @@ const chrome: Record<string, string> = {
   "nav.movies": "أفلام",
   "nav.shows": "مسلسلات",
   "nav.anime": "أنمي",
+  "nav.ebook": "الكتب الإلكترونية",
   "nav.live": "البث المباشر",
   "nav.playlists": "قوائم التشغيل",
   "nav.calendar": "التقويم",
@@ -70,6 +71,7 @@ const chrome: Record<string, string> = {
   "arabic.row.trending": "الرائج بالعربية",
 
   "Board": "اللوحة",
+  "eBook": "كتاب إلكتروني",
   "Playlists": "قوائم التشغيل",
   "Library": "المكتبة",
   "My Library": "مكتبتي",
@@ -90,14 +92,12 @@ const chrome: Record<string, string> = {
   "Type the same 4-digit PIN again.": "اكتب رمز PIN نفسه المكوّن من 4 أرقام مرة أخرى.",
   "Profile PIN": "رمز PIN للملف الشخصي",
 
-  "Couldn't find a Trakt avatar on your account.":
-    "تعذّر العثور على صورة رمزية من Trakt في حسابك.",
+  "Couldn't find a Trakt avatar on your account.": "تعذّر العثور على صورة رمزية من Trakt في حسابك.",
   "Couldn't reach Trakt.": "تعذّر الوصول إلى Trakt.",
   "Couldn't find an AniList avatar on your account.":
     "تعذّر العثور على صورة رمزية من AniList في حسابك.",
   "Couldn't reach AniList.": "تعذّر الوصول إلى AniList.",
-  "Couldn't find a Simkl avatar on your account.":
-    "تعذّر العثور على صورة رمزية من Simkl في حسابك.",
+  "Couldn't find a Simkl avatar on your account.": "تعذّر العثور على صورة رمزية من Simkl في حسابك.",
   "Couldn't reach Simkl.": "تعذّر الوصول إلى Simkl.",
 
   "Set a PIN for {name}": "تعيين رمز PIN لـ {name}",
@@ -105,8 +105,7 @@ const chrome: Record<string, string> = {
   "Pick a 4-digit PIN. You'll be asked for it before this profile opens.":
     "اختر رمز PIN مكوّنًا من 4 أرقام. سيُطلب منك إدخاله قبل فتح هذا الملف الشخصي.",
   "Enter current PIN": "أدخل رمز PIN الحالي",
-  "Confirm your current PIN, then pick a new one.":
-    "أكّد رمز PIN الحالي، ثم اختر رمزًا جديدًا.",
+  "Confirm your current PIN, then pick a new one.": "أكّد رمز PIN الحالي، ثم اختر رمزًا جديدًا.",
   "Confirm your current PIN to remove the lock.": "أكّد رمز PIN الحالي لإزالة القفل.",
 
   "Use Trakt avatar": "استخدام صورة Trakt الرمزية",
@@ -142,8 +141,7 @@ const chrome: Record<string, string> = {
   "Sidebar access": "الوصول إلى الشريط الجانبي",
   "No locks. All sidebar tabs open without a PIN.":
     "لا أقفال. تُفتح جميع تبويبات الشريط الجانبي دون رمز PIN.",
-  "{n} tabs require this profile's PIN.":
-    "{n} تبويبات تتطلب رمز PIN لهذا الملف الشخصي.",
+  "{n} tabs require this profile's PIN.": "{n} تبويبات تتطلب رمز PIN لهذا الملف الشخصي.",
   "Lock sidebar tabs": "قفل تبويبات الشريط الجانبي",
   "Locks only activate once a PIN is set.": "تُفعَّل الأقفال فقط بعد تعيين رمز PIN.",
   "No tabs selected": "لم يتم تحديد أي تبويبات",

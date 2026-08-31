@@ -154,7 +154,7 @@ function RailTab({
       }`}
     >
       <span className={`relative flex h-7 w-7 items-center justify-center ${gated ? "opacity-70" : ""}`}>
-        {render(hovered)}
+        {render(Boolean(active || hovered))}
         {gated && (
           <span className="absolute -bottom-1 -end-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-canvas text-white/55 ring-1 ring-white/15">
             <Lock size={8} strokeWidth={2.4} />
