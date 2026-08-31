@@ -41,9 +41,7 @@ import {
 } from "@/lib/ebook/extensions";
 import {
   addEBookFolder,
-  addEBookHtmlSource,
   listEBookSources,
-  parseEBookSourceConfig,
   removeEBookSource,
   subscribeEBookSources,
   type EBookSource,
@@ -62,36 +60,7 @@ import {
   testEBookTranslationSettings,
   type EBookTranslationSettings,
 } from "@/lib/ebook/translation";
-
-const EXAMPLE = `{
-  "name": "My eBook Source",
-  "baseUrl": "https://example.test",
-  "popularPath": "/ebooks?sort=popular&page={page}",
-  "searchPath": "/search?q={query}&page={page}",
-  "list": {
-    "item": "article.ebook",
-    "title": "a.title",
-    "link": "a.title@href",
-    "cover": "img@src"
-  },
-  "detail": {
-    "title": "h1",
-    "cover": "img.cover@src",
-    "description": ".description",
-    "author": ".author",
-    "status": ".status"
-  },
-  "chapters": {
-    "item": "a.chapter",
-    "link": "@href",
-    "title": ".name",
-    "chapter": "@data-number",
-    "volume": ".volume",
-    "date": "time@datetime",
-    "views": ".views"
-  },
-  "content": { "body": ".chapter-content" }
-}`;
+import { openUrl } from "@/lib/window";
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -400,7 +369,20 @@ function Translation() {
           </button>
         </div>
         <p className="text-[12.5px] leading-relaxed text-ink-subtle">
-          Uses your DeepSeek account and the selected DeepSeek model.
+          Use your API key to Translate Chapters to Your Language. Get a key from the{" "}
+          <a
+            href="https://platform.deepseek.com/"
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => {
+              event.preventDefault();
+              void openUrl("https://platform.deepseek.com/");
+            }}
+            className="font-medium text-accent underline decoration-accent/45 underline-offset-2 transition-colors hover:text-ink"
+          >
+            DeepSeek Platform
+          </a>
+          .
         </p>
         </div>
       </div>
@@ -563,77 +545,6 @@ function LocalFolder() {
       </div>
       {tutorial && <LocalFolderTutorial onClose={() => setTutorial(false)} onChoose={choose} />}
     </>
-  );
-}
-
-function CustomSource() {
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [added, setAdded] = useState(false);
-  const add = () => {
-    try {
-      if (!addEBookHtmlSource(parseEBookSourceConfig(value)))
-        throw new Error("Could not save source");
-      setError(null);
-      setAdded(true);
-      window.setTimeout(() => {
-        setAdded(false);
-        setOpen(false);
-        setValue("");
-      }, 650);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Invalid source config");
-    }
-  };
-  return (
-    <div className={`${CARD} overflow-hidden ${open ? "xl:col-span-2" : ""}`}>
-      <button
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        className="flex w-full items-center gap-4 px-5 py-4 text-start active:scale-[0.99]"
-      >
-        <span className="grid h-12 w-12 place-items-center rounded-xl bg-canvas text-ink-muted ring-1 ring-edge-soft">
-          <FileText size={20} />
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-[16px] font-semibold text-ink">Custom source</span>
-          <span className="text-[13px] text-ink-muted">
-            Connect a server-rendered eBook site with JSON selectors
-          </span>
-        </span>
-        <span className="grid h-9 w-9 place-items-center rounded-lg bg-raised text-ink-muted ring-1 ring-edge-soft">
-          <Plus size={18} className={`transition-transform ${open ? "rotate-45" : ""}`} />
-        </span>
-      </button>
-      {open && (
-        <div className="harbor-rise flex flex-col gap-3 border-t border-edge-soft p-5">
-          <p className="text-[13px] leading-relaxed text-ink-muted">
-            Harbor performs plain HTTP requests and CSS-selector parsing. It does not bypass logins,
-            paywalls, or access controls.
-          </p>
-          <textarea
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            placeholder={EXAMPLE}
-            spellCheck={false}
-            className="h-64 w-full resize-y rounded-xl border border-edge bg-canvas p-4 font-mono text-[12.5px] leading-relaxed text-ink outline-none placeholder:text-ink-subtle/65 focus:border-accent/55"
-          />
-          <button
-            type="button"
-            onClick={() => setValue(EXAMPLE)}
-            className="self-start text-[12.5px] font-medium text-accent"
-          >
-            Use template
-          </button>
-          {error && <p className="text-[13px] font-medium text-danger">{error}</p>}
-          <button type="button" onClick={add} className={PRIMARY_BTN}>
-            {added ? <Check size={18} /> : <Plus size={18} />}
-            {added ? "Source added" : "Add source"}
-          </button>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -1113,9 +1024,8 @@ export function EBookSourcesView({ onBack }: { onBack: () => void }) {
             )}
             <div className="flex flex-col gap-3">
               <SectionLabel>Bring your own</SectionLabel>
-              <div className="grid gap-3 xl:grid-cols-2">
+              <div className="grid gap-3">
                 <LocalFolder />
-                <CustomSource />
               </div>
             </div>
           </WorkspaceSection>

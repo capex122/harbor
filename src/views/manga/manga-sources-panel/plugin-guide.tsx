@@ -145,7 +145,7 @@ const EBOOK_EXAMPLE_REPO = `{
     {
       "id": "example-source",
       "name": "Example eBook Source",
-      "version": "1.6.0",
+      "version": "1.7.0",
       "lang": "en",
       "nsfw": false,
       "icon": "https://example-ebook-host.test/icon.png",
@@ -441,6 +441,32 @@ async function grpcMessages(methodPath, requestBytes, decodeMessage) {
 function cardToSummary(el) {`,
     )
     .replace(
+      "function cardToSummary(el) {",
+      `// Harbor passes only tag IDs declared by tags(). Translate reserved IDs
+// to the real query parameters supported by the source.
+function browseQuery(tagId) {
+  const params = new URLSearchParams();
+  if (tagId?.startsWith("status:")) params.set("status", tagId.slice(7));
+  if (tagId?.startsWith("sort:")) params.set("sort", tagId.slice(5));
+  const query = params.toString();
+  return query ? "&" + query : "";
+}
+
+function cardToSummary(el) {`,
+    )
+    .replace(
+      `    const query = tagId ? "&genre=" + encodeURIComponent(tagId) : "";
+    const doc = await getDoc("/browse?sort=popular&page=" + page + query);`,
+      `    const filters = browseQuery(tagId);
+    const doc = await getDoc("/browse?page=" + page + filters);`,
+    )
+    .replace(
+      `    const tag = tagId ? "&genre=" + encodeURIComponent(tagId) : "";
+    const doc = await getDoc("/search?q=" + encodeURIComponent(query) + "&page=" + page + tag);`,
+      `    const filters = browseQuery(tagId);
+    const doc = await getDoc("/search?q=" + encodeURIComponent(query) + "&page=" + page + filters);`,
+    )
+    .replace(
       '  const href = link.attr("href") || "";',
       `  const rawTitle = (link.attr("title") || el.querySelector(".title")?.text() || "").trim();
   const href = link.attr("href") || "";`,
@@ -464,6 +490,12 @@ function cardToSummary(el) {`,
     .replace(
       '    cover: abs(img?.attr("data-src") || img?.attr("src")),',
       `    cover: abs(img?.attr("data-src") || img?.attr("src")),
+    status: el.attr("data-status") || undefined,
+    originalLanguage: el.attr("data-original-language") || undefined,
+    genres: (el.attr("data-genres") || "").split("|").filter(Boolean),
+    chapters: Number(el.attr("data-chapters")) || undefined,
+    score: Number(el.attr("data-rating")) || undefined,
+    trendingScore: Number(el.attr("data-trending-score")) || undefined,
     // Customize these selectors/markers for the site. Harbor drops true entries.
     isFanMade:
       !!el.querySelector("[data-edition='fan'], .fan-edition") ||
@@ -488,7 +520,11 @@ function cardToSummary(el) {`,
     .replace(
       '      lastChapter: root.querySelector(".chapter-list li a")?.text(),',
       `      chapters: Number(root.attr("data-chapters")) || undefined,
-      volumes: Number(root.attr("data-volumes")) || undefined,`,
+      volumes: Number(root.attr("data-volumes")) || undefined,
+      originalLanguage: root.attr("data-original-language") || undefined,
+      genres: root.querySelectorAll(".genres a").map((node) => node.text()).filter(Boolean),
+      score: Number(root.attr("data-rating")) || undefined,
+      trendingScore: Number(root.attr("data-trending-score")) || undefined,`,
     )
     .replace(
       "  async chapters(id) {",
@@ -524,7 +560,7 @@ function cardToSummary(el) {`,
   const start = converted.indexOf("  async pageUrls(chapterId) {");
   const end = converted.indexOf("\n\n  // Optional.", start);
   if (start < 0 || end < 0) return converted;
-  return `${converted.slice(0, start)}  async content(chapterId) {
+  const withContent = `${converted.slice(0, start)}  async content(chapterId) {
     const doc = await getDoc("/" + chapterId);
     // Select only real chapter blocks. querySelectorAll keeps DOM/source order;
     // never sort, reverse, or deduplicate prose (including Arabic/RTL text).
@@ -533,6 +569,22 @@ function cardToSummary(el) {`,
     );
     return blocks.map((node) => node.text().trim()).filter(Boolean).join("\\n\\n");
   },${converted.slice(end)}`;
+  const tagsStart = withContent.indexOf("  // Optional.");
+  const tagsEnd = withContent.indexOf("\n  },\n};", tagsStart);
+  if (tagsStart < 0 || tagsEnd < 0) return withContent;
+  const nativeTags = `  // Optional native filters. Declare only IDs the source implements.
+  // Unsupported filters fall back to Harbor-side metadata filtering/sorting.
+  async tags() {
+    return [
+      { id: "status:ongoing", name: "Ongoing", group: "Status" },
+      { id: "status:completed", name: "Completed", group: "Status" },
+      { id: "status:hiatus", name: "Hiatus", group: "Status" },
+      { id: "sort:popular", name: "Popular", group: "Sort" },
+      { id: "sort:chapters", name: "Chapters", group: "Sort" },
+      { id: "sort:rating", name: "Rating", group: "Sort" },
+    ];
+  },`;
+  return `${withContent.slice(0, tagsStart)}${nativeTags}${withContent.slice(tagsEnd + 5)}`;
 }
 
 const EBOOK_API_REFERENCE = String.raw`# Harbor eBook source plugin API
@@ -586,9 +638,12 @@ fetch, storage, files, or Tauri access. Networking and HTML parsing go through h
       description?: string;
       year?: number;
       status?: string;
+      originalLanguage?: string;
       genres?: string[];
       chapters?: number;
       volumes?: number;
+      score?: number;
+      trendingScore?: number;
       siteUrl?: string;
       isFanMade?: boolean;
     };
@@ -601,6 +656,35 @@ editions in titles, detect that site's marker in the plugin and set isFanMade ra
 making Harbor guess. Return the canonical title; Harbor also normalizes punctuation used
 as word separators and removes trailing source branding such as "kol"/"كول" before
 metadata matching.
+
+status should use a stable source value such as ongoing, completed, or hiatus.
+originalLanguage accepts a language name or ISO-style code such as zh, ko, or ja. score
+is the source rating, while trendingScore is an optional numeric signal used for
+Harbor-side Trending sorting. Return chapters on summaries when the source exposes a
+total chapter count.
+
+## Browse filters and tags
+
+    type EBookTag = { id: string; name: string; group?: string };
+
+tags() declares the native filters a source backend actually supports. Harbor forwards a
+tagId to popular(offset, tagId) or search(query, offset, tagId) only when tags() includes
+that exact ID. Unsupported controls safely fall back to filtering and sorting the metadata
+already returned by the source.
+
+Reserved eBook filter IDs:
+
+    status:ongoing
+    status:completed
+    status:hiatus
+    sort:popular
+    sort:chapters
+    sort:rating
+
+Name and Trending currently use Harbor-side sorting. Return only the reserved IDs your
+backend truly implements; tags() may be omitted entirely. Harbor passes at most one native
+tag per call. Translate status:* and sort:* into the source's real query parameters—do not
+treat them as genre slugs.
 
 Before Harbor renders a source result, it resolves metadata in this order:
 
@@ -733,7 +817,7 @@ the plugin file on HTTPS, then paste the manifest URL into eBook > Sources > Ext
       "plugins": [{
       "id": "my-source",
       "name": "My Source",
-      "version": "1.6.0",
+      "version": "1.7.0",
         "lang": "en",
         "nsfw": false,
         "entry": "my-source.plugin.js"

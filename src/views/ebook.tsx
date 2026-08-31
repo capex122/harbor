@@ -337,6 +337,14 @@ export function EBookView() {
     setSourceCatalogItems((current) => updateSourceItems(current, books, true));
     setResults((current) => (current ? updateSourceItems(current, books, true) : current));
   }, []);
+  useEffect(() => {
+    const preventNativeMenu = (event: MouseEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest("[data-ebook-page]")) event.preventDefault();
+    };
+    document.addEventListener("contextmenu", preventNativeMenu, true);
+    return () => document.removeEventListener("contextmenu", preventNativeMenu, true);
+  }, []);
   const loadAnilistLibrary = useCallback(() => {
     if (!isConnected || !session) {
       return;
@@ -686,7 +694,7 @@ export function EBookView() {
 
   if (screen === "sources") {
     return (
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
+      <main data-ebook-page className="flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
         <EBookSourcesView onBack={() => setScreen("browse")} />
       </main>
     );
@@ -698,7 +706,7 @@ export function EBookView() {
 
   if (screen === "collections") {
     return (
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
+      <main data-ebook-page className="flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
         <button
           type="button"
           onClick={() => setScreen("browse")}
@@ -777,7 +785,7 @@ export function EBookView() {
     return (
       <EBookTitleLanguageContext.Provider value={titleLanguage}>
         <EBookCardMenuContext.Provider value={openCardMenu}>
-          <main className="flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
+          <main data-ebook-page className="flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
             <button
               type="button"
               onClick={() => setScreen("browse")}
@@ -894,7 +902,7 @@ export function EBookView() {
   return (
     <EBookTitleLanguageContext.Provider value={titleLanguage}>
       <EBookCardMenuContext.Provider value={openCardMenu}>
-      <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20">
+      <main data-ebook-page className="flex-1 overflow-y-auto overflow-x-hidden pb-20">
         <EBookLibraryHero ebooks={heroBooks} onOpen={(ebook) => openEBook(String(ebook.id))} />
 
         <div className="flex w-full flex-col gap-9 px-12 pt-8">
@@ -2755,6 +2763,7 @@ function EBookDetails({
   ].filter(Boolean);
   return (
     <main
+      data-ebook-page
       ref={detailScrollRef}
       className="relative flex-1 overflow-y-auto overflow-x-hidden px-12 pb-20 pt-24"
     >

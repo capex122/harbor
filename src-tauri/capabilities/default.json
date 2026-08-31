@@ -31,6 +31,7 @@
         { "url": "http://*/**" }
       ]
     },
+    "shell:allow-open",
     {
       "identifier": "http:default",
       "allow": [

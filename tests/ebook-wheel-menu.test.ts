@@ -25,6 +25,13 @@ test("eBook cards and the featured book open the dedicated wheel menu", () => {
   assert.match(view, /<EBookWheelMenu/);
 });
 
+test("eBook pages suppress the native context menu without removing wheel handlers", () => {
+  assert.match(view, /document\.addEventListener\("contextmenu", preventNativeMenu, true\)/);
+  assert.match(view, /closest\("\[data-ebook-page\]"\)/);
+  assert.match(view, /data-ebook-page/);
+  assert.match(view, /onContextMenu=\{\(event\) => openMenu\(ebook, event\)\}/);
+});
+
 test("duplicate books retain all readable sources and expose the details source picker", () => {
   assert.match(api, /export function eBooksMatch/);
   assert.match(api, /explicitSourceIdentityMatch\(left, right\)/);

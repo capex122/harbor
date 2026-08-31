@@ -21,7 +21,7 @@ export function EBookSetup({ onSetup }: { onSetup: () => void }) {
   ];
 
   return (
-    <main className="ebook-setup-shell flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
+    <main data-ebook-page className="ebook-setup-shell flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
       <section className="ebook-setup-card">
         <div className="ebook-setup-copy">
           <span className="ebook-setup-kicker">
