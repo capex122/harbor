@@ -1,4 +1,5 @@
 import { setItemWithRecovery } from "@/lib/storage-recovery";
+import { GUTENDEX_BASE, GUTENDEX_NAME } from "./gutendex";
 
 export type EBookHtmlSourceConfig = {
   name: string;
@@ -31,7 +32,7 @@ export type EBookHtmlSourceConfig = {
 export type EBookSource = {
   id: string;
   name: string;
-  kind: "local" | "html";
+  kind: "local" | "html" | "gutendex";
   location: string;
   iconUrl?: string;
   config?: EBookHtmlSourceConfig;
@@ -54,7 +55,7 @@ function read(): EBookSource[] {
             typeof source.id === "string" &&
             typeof source.name === "string" &&
             typeof source.location === "string" &&
-            (source.kind === "local" || source.kind === "html"),
+            (source.kind === "local" || source.kind === "html" || source.kind === "gutendex"),
         )
       : [];
   } catch {
@@ -91,6 +92,20 @@ export function addEBookFolder(path: string): boolean {
     return true;
   const name = location.split(/[\\/]/).filter(Boolean).at(-1) || "Local eBooks";
   return write([...sources, { id: sourceId("local", location), name, kind: "local", location }]);
+}
+
+export function addEBookGutendex(): boolean {
+  const sources = read();
+  const id = sourceId("gutendex", GUTENDEX_BASE);
+  if (sources.some((source) => source.id === id)) return true;
+  return write([
+    ...sources,
+    { id, name: GUTENDEX_NAME, kind: "gutendex", location: GUTENDEX_BASE },
+  ]);
+}
+
+export function hasEBookGutendex(): boolean {
+  return read().some((source) => source.kind === "gutendex");
 }
 
 export function parseEBookSourceConfig(value: string): EBookHtmlSourceConfig {

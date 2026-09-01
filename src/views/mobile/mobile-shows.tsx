@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Meta } from "@/lib/cinemeta";
 import { topSeries } from "@/lib/cinemeta";
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 import { useHideAnimeMetas, useHideAnimeRows } from "@/lib/anime-hide";
 import { buildShowHero } from "@/views/shows/hero-curation";
 import { showSpecs } from "@/views/shows/show-specs";
@@ -41,6 +42,7 @@ function dedupeMetas(metas: Meta[]): Meta[] {
 }
 
 export function MobileShows() {
+  const t = useT();
   const { settings } = useSettings();
   const [hero, setHero] = useState<Meta[]>([]);
   const [rows, setRows] = useState<RowData[]>([]);
@@ -113,16 +115,18 @@ export function MobileShows() {
   if (failed && rows.length === 0) {
     return (
       <div className="flex h-[70vh] flex-col items-center justify-center gap-4 px-8 text-center">
-        <h2 className="font-display text-[20px] font-medium text-ink">Couldn't load shows</h2>
+        <h2 className="font-display text-[20px] font-medium text-ink">
+          {t("Couldn't load shows")}
+        </h2>
         <p className="max-w-xs text-[13.5px] leading-relaxed text-ink-muted">
-          Harbor couldn't reach the catalog servers. Check your connection and try again.
+          {t("Harbor couldn't reach the catalog servers. Check your connection and try again.")}
         </p>
         <button
           type="button"
           onClick={() => setReloadKey((k) => k + 1)}
           className="flex h-11 items-center rounded-full bg-ink px-6 text-[14px] font-semibold text-canvas transition-transform active:scale-95"
         >
-          Try again
+          {t("Try again")}
         </button>
       </div>
     );
@@ -132,10 +136,19 @@ export function MobileShows() {
     <div className="flex flex-col gap-7 pt-3 motion-safe:[animation:harbor-step-in_420ms_var(--ease-out)_both]">
       <MobileHero slides={shownHero} onOpenDetail={setDetailMeta} />
       {shownRows[0] && shownRows[0].metas.length >= 6 && (
-        <MobileRankRail title="Top 10 Series Today" metas={dedupeMetas(shownRows[0].metas)} onOpenDetail={setDetailMeta} />
+        <MobileRankRail
+          title={t("Top 10 Series Today")}
+          metas={dedupeMetas(shownRows[0].metas)}
+          onOpenDetail={setDetailMeta}
+        />
       )}
       {shownRows.slice(1).map((r) => (
-        <MobileRail key={r.key} title={r.title} metas={dedupeMetas(r.metas).slice(0, 18)} onOpenDetail={setDetailMeta} />
+        <MobileRail
+          key={r.key}
+          title={t(r.title)}
+          metas={dedupeMetas(r.metas).slice(0, 18)}
+          onOpenDetail={setDetailMeta}
+        />
       ))}
       <div className="h-4" />
       {detailMeta && <MobileDetail meta={detailMeta} onClose={() => setDetailMeta(null)} />}

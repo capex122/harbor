@@ -2,14 +2,14 @@ pub(crate) mod correlate;
 mod extract;
 pub mod moviehash;
 
-mod url_guard;
-mod vad;
+pub mod asr;
 mod asr_match;
+pub mod audio_tracks;
+pub mod fingerprint;
 pub mod scorer;
 pub mod torrent_sync;
-pub mod audio_tracks;
-pub mod asr;
-pub mod fingerprint;
+mod url_guard;
+mod vad;
 
 #[cfg(feature = "asr-whisper")]
 mod asr_whisper;

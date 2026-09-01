@@ -61,7 +61,7 @@ export function GuideChannelCell({
           >
             {String(index + 1).padStart(3, "0")}
           </span>
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-elevated">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-canvas ring-1 ring-inset ring-edge-soft">
             {posterUrl ? (
               <img
                 src={posterUrl}

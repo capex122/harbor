@@ -157,7 +157,18 @@ export function loadStoredSettings(rawKey: string = STORAGE_KEY): Settings {
       _playlistsTabV1?: boolean;
       _smoothScrollOptIn?: boolean;
       _streamCacheCapV1?: boolean;
+      _playbackSourcePreferenceV1?: boolean;
     };
+    if (!parsed._playbackSourcePreferenceV1) {
+      parsed.playbackSourcePreference =
+        parsed.localPlaybackMode === "local"
+          ? "local"
+          : parsed.localPlaybackMode === "stream"
+            ? "online"
+            : "ask";
+      parsed.preferredMediaServerId = null;
+      parsed._playbackSourcePreferenceV1 = true;
+    }
     if (!parsed._animeRowsV1) {
       const prev = (parsed.animeRows ?? {}) as Partial<Settings["animeRows"]>;
       const hiddenSet = new Set<string>(Array.isArray(prev.hidden) ? prev.hidden : []);

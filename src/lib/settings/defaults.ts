@@ -310,6 +310,8 @@ export const DEFAULT: Settings = {
   showLocalLibraryBadge: true,
   showWatchedBadge: true,
   localPlaybackMode: "ask",
+  playbackSourcePreference: "ask",
+  preferredMediaServerId: null,
   localMinFileSizeMb: 50,
   catalogsPinned: [],
   catalogsHidden: [],
@@ -520,6 +522,7 @@ export const DEFAULT: Settings = {
   downloadCreateFolders: false,
   ebookDownloadDir: "",
   ebookDownloadCreateFolders: false,
+  nytKey: "",
   stremioDeeplinkInstall: true,
   iptvPlaylists: [],
 

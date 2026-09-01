@@ -11,6 +11,7 @@ export type BpFilterGroup = {
   heading: string;
   options: BpFilterOption[];
   active: string;
+  selected?: (id: string) => boolean;
   onPick: (id: string) => void;
 };
 
@@ -89,7 +90,7 @@ export function BpLibraryFilters({
                   key={option.id}
                   label={option.label}
                   count={option.count}
-                  selected={group.active === option.id}
+                  selected={group.selected?.(option.id) ?? group.active === option.id}
                   onSelect={() => group.onPick(option.id)}
                 />
               ))}

@@ -8,7 +8,7 @@ import {
   signInWithDiscord,
   startDiscordSignup,
 } from "@/lib/account/discord-link";
-import { accountErrorMessage } from "@/lib/account/error-messages";
+import { accountErrorMessage, type AccountErrorMessage } from "@/lib/account/error-messages";
 import { canDiscordAuth } from "@/lib/discord-auth";
 import { PasswordField, TextField } from "./fields";
 import { AccountRecoverForm } from "./account-recover-form";
@@ -54,7 +54,7 @@ export function AccountAuthForm({
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [discordBusy, setDiscordBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AccountErrorMessage | null>(null);
   // Set once Discord confirms identity for a fresh signup, cleared once the
   // account is actually created. While set, the username/password fields
   // below finish the Discord signup instead of a plain password one -- see
@@ -173,180 +173,185 @@ export function AccountAuthForm({
 
   return (
     <ModalShell closing={closing} onDismiss={close}>
-        <div className="flex items-start gap-4 px-6 pt-6">
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-subtle">
-              {t("Harbor account")}
-            </span>
-            <h3 className="text-[17px] font-semibold tracking-tight text-ink">
-              {discordPending
-                ? t("Choose your username")
-                : mode === "register"
-                  ? t("Join Harbor")
-                  : t("Welcome back")}
-            </h3>
-            <p className="text-[12.5px] leading-relaxed text-ink-subtle">
-              {discordPending
-                ? t("Discord confirmed. Pick a username and password to finish.")
-                : mode === "register"
-                  ? t("One free account for your handle, themes, and sync.")
-                  : t("Sign in to pick up where you left off.")}
-            </p>
-          </div>
-          {onClose && (
-            <button
-              type="button"
-              onClick={close}
-              aria-label={t("Close")}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
-            >
-              <X size={16} />
-            </button>
-          )}
+      <div className="flex items-start gap-4 px-6 pt-6">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-subtle">
+            {t("Harbor account")}
+          </span>
+          <h3 className="text-[17px] font-semibold tracking-tight text-ink">
+            {discordPending
+              ? t("Choose your username")
+              : mode === "register"
+                ? t("Join Harbor")
+                : t("Welcome back")}
+          </h3>
+          <p className="text-[12.5px] leading-relaxed text-ink-subtle">
+            {discordPending
+              ? t("Discord confirmed. Pick a username and password to finish.")
+              : mode === "register"
+                ? t("One free account for your handle, themes, and sync.")
+                : t("Sign in to pick up where you left off.")}
+          </p>
         </div>
-
-        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-6">
-          {!discordPending && mode === "register" && <AccountValueProps />}
-
-          {!discordPending && (
-            <div ref={switchRef} className="relative flex items-center gap-1 rounded-md bg-canvas p-1">
-              <span
-                ref={thumbRef}
-                aria-hidden
-                className="pointer-events-none absolute rounded-[4px] bg-ink opacity-0"
-              />
-              {MODES.map((m, i) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  ref={(el) => {
-                    modeRefs.current[i] = el;
-                  }}
-                  onClick={() => {
-                    setMode(m.id);
-                    setError(null);
-                  }}
-                  className={`relative z-10 h-8 flex-1 rounded-[4px] text-[12.5px] font-semibold transition-colors duration-200 ${
-                    mode === m.id ? "text-canvas" : "text-ink-muted hover:text-ink"
-                  }`}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void submit();
-            }}
-            className="flex flex-col gap-4"
+        {onClose && (
+          <button
+            type="button"
+            onClick={close}
+            aria-label={t("Close")}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
           >
-            <TextField
-              label={t("Username")}
-              value={username}
-              onChange={setUsername}
-              placeholder={t("yourname")}
-              maxLength={24}
-              hint={usernameHint}
-              tone={usernameHint ? "danger" : "muted"}
-              autoComplete="username"
-            />
-            <PasswordField
-              label={t("Password")}
-              value={password}
-              onChange={setPassword}
-              placeholder={mode === "register" ? t("At least 8 characters") : t("Your password")}
-              onEnter={submit}
-            />
+            <X size={16} />
+          </button>
+        )}
+      </div>
 
-            {mode === "signin" && (
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-6">
+        {!discordPending && mode === "register" && <AccountValueProps />}
+
+        {!discordPending && (
+          <div
+            ref={switchRef}
+            className="relative flex items-center gap-1 rounded-md bg-canvas p-1"
+          >
+            <span
+              ref={thumbRef}
+              aria-hidden
+              className="pointer-events-none absolute rounded-[4px] bg-ink opacity-0"
+            />
+            {MODES.map((m, i) => (
               <button
+                key={m.id}
                 type="button"
+                ref={(el) => {
+                  modeRefs.current[i] = el;
+                }}
                 onClick={() => {
-                  setView("recover");
+                  setMode(m.id);
                   setError(null);
                 }}
-                className="-mt-1 self-end text-[12px] font-medium text-ink-subtle transition-colors hover:text-ink"
+                className={`relative z-10 h-8 flex-1 rounded-[4px] text-[12.5px] font-semibold transition-colors duration-200 ${
+                  mode === m.id ? "text-canvas" : "text-ink-muted hover:text-ink"
+                }`}
               >
-                {t("Forgot password ?")}
+                {t(m.label)}
               </button>
-            )}
+            ))}
+          </div>
+        )}
 
-            {error && (
-              <p className="rounded-md bg-danger/10 px-3.5 py-2.5 text-[12.5px] leading-snug text-danger">
-                {error}
-              </p>
-            )}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+          className="flex flex-col gap-4"
+        >
+          <TextField
+            label={t("Username")}
+            value={username}
+            onChange={setUsername}
+            placeholder={t("yourname")}
+            maxLength={24}
+            hint={usernameHint ? t(usernameHint) : undefined}
+            tone={usernameHint ? "danger" : "muted"}
+            autoComplete="username"
+          />
+          <PasswordField
+            label={t("Password")}
+            value={password}
+            onChange={setPassword}
+            placeholder={mode === "register" ? t("At least 8 characters") : t("Your password")}
+            onEnter={submit}
+          />
 
-            {(discordPending || mode === "register") && (
-              <p className="flex items-start gap-2 rounded-md bg-canvas px-3.5 py-2.5 text-[11.5px] leading-snug text-ink-subtle">
-                <KeyRound size={13} className="mt-0.5 shrink-0" />
-                {discordPending
-                  ? t(
-                      "We'll show a one-time recovery key and send it to you on Discord. Save it: it's the only way back in if you forget your password.",
-                    )
-                  : t("We'll show a one-time recovery key right after you sign up. Save it: it's the only way back in if you forget your password.")}
-              </p>
-            )}
+          {mode === "signin" && (
+            <button
+              type="button"
+              onClick={() => {
+                setView("recover");
+                setError(null);
+              }}
+              className="-mt-1 self-end text-[12px] font-medium text-ink-subtle transition-colors hover:text-ink"
+            >
+              {t("Forgot password ?")}
+            </button>
+          )}
 
-            <div className="flex items-center justify-end gap-3">
-              {discordPending && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => {
-                    setDiscordPending(null);
-                    setError(null);
-                  }}
-                  className="text-[12px] font-medium text-ink-subtle transition-colors hover:text-ink disabled:opacity-40"
-                >
-                  {t("Cancel")}
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={!ready || busy || discordBusy}
-                className="harbor-press-pop flex h-9 items-center justify-center gap-2 rounded-md bg-ink px-4 text-[12.5px] font-semibold text-canvas transition-opacity duration-150 hover:opacity-90 disabled:opacity-40"
-              >
-                {busy && <Loader2 size={16} className="animate-spin" />}
-                {discordPending ? t("Finish creating my account") : active.action}
-              </button>
-            </div>
-          </form>
+          {error && (
+            <p className="rounded-md bg-danger/10 px-3.5 py-2.5 text-[12.5px] leading-snug text-danger">
+              {error.kind === "built-in" ? t(error.key) : error.detail}
+            </p>
+          )}
 
-          {!discordPending && canDiscord && (
-            <>
-              <div className="flex items-center gap-3">
-                <span className="h-px flex-1 bg-edge-soft" />
-                <span className="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
-                  {t("or")}
-                </span>
-                <span className="h-px flex-1 bg-edge-soft" />
-              </div>
+          {(discordPending || mode === "register") && (
+            <p className="flex items-start gap-2 rounded-md bg-canvas px-3.5 py-2.5 text-[11.5px] leading-snug text-ink-subtle">
+              <KeyRound size={13} className="mt-0.5 shrink-0" />
+              {discordPending
+                ? t(
+                    "We'll show a one-time recovery key and send it to you on Discord. Save it: it's the only way back in if you forget your password.",
+                  )
+                : t(
+                    "We'll show a one-time recovery key right after you sign up. Save it: it's the only way back in if you forget your password.",
+                  )}
+            </p>
+          )}
+
+          <div className="flex items-center justify-end gap-3">
+            {discordPending && (
               <button
                 type="button"
-                onClick={() => void runDiscord()}
-                disabled={busy || discordBusy}
-                className="harbor-press-pop flex h-9 items-center justify-center gap-2 rounded-md bg-canvas px-4 text-[12.5px] font-semibold text-ink transition-colors hover:bg-elevated disabled:opacity-40"
+                disabled={busy}
+                onClick={() => {
+                  setDiscordPending(null);
+                  setError(null);
+                }}
+                className="text-[12px] font-medium text-ink-subtle transition-colors hover:text-ink disabled:opacity-40"
               >
-                {discordBusy ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" />
-                    {t("Continue in your browser...")}
-                  </>
-                ) : (
-                  <>
-                    <DiscordIcon size={16} />
-                    {mode === "register" ? t("Continue with Discord") : t("Sign in with Discord")}
-                    <ExternalLink size={13} />
-                  </>
-                )}
+                {t("Cancel")}
               </button>
-            </>
-          )}
-        </div>
+            )}
+            <button
+              type="submit"
+              disabled={!ready || busy || discordBusy}
+              className="harbor-press-pop flex h-9 items-center justify-center gap-2 rounded-md bg-ink px-4 text-[12.5px] font-semibold text-canvas transition-opacity duration-150 hover:opacity-90 disabled:opacity-40"
+            >
+              {busy && <Loader2 size={16} className="animate-spin" />}
+              {discordPending ? t("Finish creating my account") : t(active.action)}
+            </button>
+          </div>
+        </form>
+
+        {!discordPending && canDiscord && (
+          <>
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-edge-soft" />
+              <span className="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
+                {t("or")}
+              </span>
+              <span className="h-px flex-1 bg-edge-soft" />
+            </div>
+            <button
+              type="button"
+              onClick={() => void runDiscord()}
+              disabled={busy || discordBusy}
+              className="harbor-press-pop flex h-9 items-center justify-center gap-2 rounded-md bg-canvas px-4 text-[12.5px] font-semibold text-ink transition-colors hover:bg-elevated disabled:opacity-40"
+            >
+              {discordBusy ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  {t("Continue in your browser...")}
+                </>
+              ) : (
+                <>
+                  <DiscordIcon size={16} />
+                  {mode === "register" ? t("Continue with Discord") : t("Sign in with Discord")}
+                  <ExternalLink size={13} />
+                </>
+              )}
+            </button>
+          </>
+        )}
+      </div>
     </ModalShell>
   );
 }

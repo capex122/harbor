@@ -13,14 +13,20 @@ import {
   parseBackup,
   type Backup,
   type BackupSectionKey,
+  type BackupValidationError,
 } from "@/lib/backup";
 import { useT } from "@/lib/i18n";
+
+type BackupRowError =
+  | BackupValidationError
+  | "Could not build the backup file."
+  | "Could not read that file.";
 
 export function BackupRow() {
   const t = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const [exported, setExported] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<BackupRowError | null>(null);
   const [pending, setPending] = useState<Backup | null>(null);
   const [applying, setApplying] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -75,7 +81,7 @@ export function BackupRow() {
         className="hidden"
       />
 
- <div className="flex flex-col gap-3 rounded-md bg-canvas p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-md bg-canvas p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-[13.5px] font-medium text-ink">{t("Export your setup")}</span>
           <span className="text-[12.5px] leading-relaxed text-ink-subtle">
@@ -93,12 +99,16 @@ export function BackupRow() {
               : "bg-ink text-canvas hover:scale-[1.02] active:scale-[0.97]"
           }`}
         >
-          {exported ? <Check size={14} strokeWidth={2.6} /> : <Download size={14} strokeWidth={2.4} />}
+          {exported ? (
+            <Check size={14} strokeWidth={2.6} />
+          ) : (
+            <Download size={14} strokeWidth={2.4} />
+          )}
           {exported ? t("Saved") : t("Export")}
         </button>
       </div>
 
- <div className="flex flex-col gap-3 rounded-md bg-canvas p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-md bg-canvas p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-[13.5px] font-medium text-ink">{t("Restore from a backup")}</span>
           <span className="text-[12.5px] leading-relaxed text-ink-subtle">
@@ -117,7 +127,7 @@ export function BackupRow() {
         </button>
       </div>
 
-      {error && <p className="px-1 text-[12.5px] text-danger">{error}</p>}
+      {error && <p className="px-1 text-[12.5px] text-danger">{t(error)}</p>}
 
       {pickerOpen && <ExportPicker onExport={doExport} onCancel={() => setPickerOpen(false)} />}
 
@@ -290,7 +300,9 @@ function RestoreConfirm({
   onCancel: () => void;
 }) {
   const t = useT();
-  const when = backup.exportedAt ? new Date(backup.exportedAt).toLocaleString() : t("an unknown date");
+  const when = backup.exportedAt
+    ? new Date(backup.exportedAt).toLocaleString()
+    : t("an unknown date");
   const sections = backupSections(backup);
 
   useEffect(() => {

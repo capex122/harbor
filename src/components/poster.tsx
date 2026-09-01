@@ -50,7 +50,7 @@ export function useLocalizedPoster(metaId: string): {
     return () => {
       alive = false;
     };
-  }, [metaId, settings.tmdbKey]);
+  }, [metaId, settings.tmdbKey, settings.tmdbLanguage, settings.tmdbImageLangs]);
   return { url, localizing };
 }
 

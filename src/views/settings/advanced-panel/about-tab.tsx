@@ -40,7 +40,7 @@ function AboutRow() {
     <SettingGroup>
       <InfoLine
         label={t("Version")}
-        value={`${__APP_VERSION__}${IS_BETA_BUILD ? " (Beta)" : ""}`}
+        value={`${__APP_VERSION__}${IS_BETA_BUILD ? ` (${t("Beta")})` : ""}`}
       />
       <InfoLine label={t("Build")} value={isTauri ? t("Desktop (Tauri 2 / WebView2)") : t("Web")} />
       <InfoLine label={t("Bug reports")} value="bugs@harbor.site" />
@@ -57,29 +57,36 @@ function InfoLine({ label, value }: { label: string; value: string }) {
 }
 
 function LegalDisclaimer() {
+  const t = useT();
+  const trademarkNames =
+    '"Stremio", "Cinemeta", "OpenSubtitles", "Real-Debrid", "Premiumize", "AllDebrid", "TorBox", "DebridLink", "TMDB", "Trakt", "IMDb", "Netflix", "Disney+"';
   return (
     <section className="rounded-md bg-elevated p-5">
       <span className="block text-[10.5px] font-bold uppercase tracking-[0.22em] text-ink-subtle">
-        Legal
+        {t("Legal")}
       </span>
       <p className="mt-2 text-[12.5px] leading-relaxed text-ink-muted">
-        Harbor is an independent, open-source desktop and web client. It is{" "}
+        {t("{app} is an independent, open-source desktop and web client.", { app: "Harbor" })}{" "}
         <span className="font-semibold text-ink">
-          not affiliated with, endorsed by, sponsored by, or in any way associated with Stremio Ltd.
-        </span>
-        , the maker of <span className="font-semibold text-ink">Stremio</span>, or with any company,
-        addon author, or trademark holder referenced inside the app. &quot;Stremio&quot;,
-        &quot;Cinemeta&quot;, &quot;OpenSubtitles&quot;, &quot;Real-Debrid&quot;,
-        &quot;Premiumize&quot;, &quot;AllDebrid&quot;, &quot;TorBox&quot;, &quot;DebridLink&quot;,
-        &quot;TMDB&quot;, &quot;Trakt&quot;, &quot;IMDb&quot;, &quot;Netflix&quot;,
-        &quot;Disney+&quot;, and all other names, logos, and brand references are property of their
-        respective owners and are used here only for compatibility and identification.
+          {t(
+            "It is not affiliated with, endorsed by, sponsored by, or in any way associated with {company}.",
+            { company: "Stremio Ltd." },
+          )}
+        </span>{" "}
+        {t(
+          "It is not affiliated with the maker of {product}, or with any company, addon author, or trademark holder referenced inside the app.",
+          { product: "Stremio" },
+        )}{" "}
+        {t(
+          "{names}, and all other names, logos, and brand references are property of their respective owners and are used here only for compatibility and identification.",
+          { names: trademarkNames },
+        )}
       </p>
       <p className="mt-2 text-[12.5px] leading-relaxed text-ink-muted">
-        Harbor itself does not host, distribute, or index any media. All streams come from
-        third-party addons, debrid services, or your own Stremio account that you configure
-        yourself. You are responsible for what you choose to play and for complying with the laws of
-        your jurisdiction.
+        {t(
+          "{app} itself does not host, distribute, or index any media. All streams come from third-party addons, debrid services, or your own {service} account that you configure yourself. You are responsible for what you choose to play and for complying with the laws of your jurisdiction.",
+          { app: "Harbor", service: "Stremio" },
+        )}
       </p>
     </section>
   );

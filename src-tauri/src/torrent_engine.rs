@@ -170,7 +170,9 @@ fn spawn_cache_sweeper(app: AppHandle) -> CacheSweeper {
                 let started = std::time::Instant::now();
                 let released = expire_session_torrents(&dir, retention).await;
                 if released > 0 {
-                    eprintln!("[torrent-engine] cache sweep released {released} expired torrent(s)");
+                    eprintln!(
+                        "[torrent-engine] cache sweep released {released} expired torrent(s)"
+                    );
                 }
                 let cancelled_for_sweep = cancelled_for_task.clone();
                 let result = tokio::task::spawn_blocking(move || {
@@ -1021,7 +1023,9 @@ pub fn torrent_engine_list() -> Vec<TorrentListItem> {
                             fi.relative_filename
                                 .file_name()
                                 .map(|s| s.to_string_lossy().to_string())
-                                .unwrap_or_else(|| fi.relative_filename.to_string_lossy().to_string())
+                                .unwrap_or_else(|| {
+                                    fi.relative_filename.to_string_lossy().to_string()
+                                })
                         })
                     })
                     .ok()
@@ -1063,6 +1067,9 @@ pub async fn torrent_engine_resume(info_hash: String) -> Result<(), String> {
     let session = current_session().ok_or_else(|| "engine not ready".to_string())?;
     let id = TorrentIdOrHash::parse(&info_hash).map_err(|e| e.to_string())?;
     let handle = session.get(id).ok_or_else(|| "no torrent".to_string())?;
-    session.unpause(&handle).await.map_err(|e| format!("{e:#}"))?;
+    session
+        .unpause(&handle)
+        .await
+        .map_err(|e| format!("{e:#}"))?;
     Ok(())
 }

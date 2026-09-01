@@ -63,6 +63,7 @@ export const ShellLayer = memo(function ShellLayer({
   onOpenDvr,
   sleep,
   onVolumeFeedback,
+  homeServerQualityControl,
 }: {
   shellId: string;
   shellSnap: PlayerSnapshot;
@@ -119,6 +120,7 @@ export const ShellLayer = memo(function ShellLayer({
   onOpenDvr?: () => void;
   sleep: PlayerShellProps["sleep"];
   onVolumeFeedback?: (volume: number, muted: boolean) => void;
+  homeServerQualityControl?: PlayerShellProps["homeServerQualityControl"];
 }) {
   const ActiveShell = getPlayerShell(shellId).Component;
   return (
@@ -127,7 +129,16 @@ export const ShellLayer = memo(function ShellLayer({
       engine={engine}
       useOverlayPopups={false}
       onMenuOpenChange={onMenuOpenChange}
-      capabilities={bridgeRef.current?.capabilities() ?? { engine: "html5", pictureInPicture: false, airplay: false, chromecast: false, hdrPassthrough: false, hardwareDecode: true }}
+      capabilities={
+        bridgeRef.current?.capabilities() ?? {
+          engine: "html5",
+          pictureInPicture: false,
+          airplay: false,
+          chromecast: false,
+          hdrPassthrough: false,
+          hardwareDecode: true,
+        }
+      }
       visible={visible}
       fullscreen={fullscreen}
       drawMode={drawMode}
@@ -195,9 +206,7 @@ export const ShellLayer = memo(function ShellLayer({
       onPiP={onPiP}
       onFullscreen={onFullscreen}
       onCast={() => {
-        const btn = (document.querySelector(
-          '[aria-label="Cast"]',
-        ) as HTMLElement | null);
+        const btn = document.querySelector('[aria-label="Cast"]') as HTMLElement | null;
         if (btn) {
           const r = btn.getBoundingClientRect();
           openCastMenu({ right: r.right, bottom: r.top });
@@ -236,6 +245,7 @@ export const ShellLayer = memo(function ShellLayer({
       onDownloadReset={download?.reset}
       onOpenDvr={onOpenDvr}
       sleep={sleep}
+      homeServerQualityControl={homeServerQualityControl}
     />
   );
 });

@@ -120,7 +120,11 @@ fn stage_dir(version: &str) -> Result<PathBuf, String> {
     let root = std::env::temp_dir();
     if let Ok(entries) = std::fs::read_dir(&root) {
         for entry in entries.flatten() {
-            if entry.file_name().to_string_lossy().starts_with(STAGE_PREFIX) {
+            if entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with(STAGE_PREFIX)
+            {
                 let _ = std::fs::remove_dir_all(entry.path());
             }
         }
@@ -347,8 +351,7 @@ pub async fn handoff_launch(app: tauri::AppHandle) -> Result<(), String> {
         .lock()
         .ok()
         .and_then(|slot| slot.as_ref().map(|s| (s.path.clone(), s.version.clone())));
-    let (setup, version) =
-        staged.ok_or_else(|| "no verified installer is staged".to_string())?;
+    let (setup, version) = staged.ok_or_else(|| "no verified installer is staged".to_string())?;
     if !setup.is_file() {
         return Err("the staged installer is no longer on disk".to_string());
     }

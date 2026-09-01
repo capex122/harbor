@@ -3,6 +3,7 @@ import type { Meta } from "@/lib/cinemeta";
 import { getVoteEntries } from "@/lib/feed/preferences";
 import { recentlyPlayed } from "@/lib/playback-history";
 import { externalWatchedIds } from "@/lib/feed/external-watched";
+import { isVoyageWatched, voyageProgress } from "./progress";
 import { movieWatchedIds } from "@/lib/movie-watched";
 import { watchedFlagIds } from "@/lib/watched-flag";
 import { generatePool, usable, type PoolExclude } from "./generate";
@@ -308,7 +309,11 @@ export function voyageReady(v: Voyage): boolean {
 }
 
 export function nextUnplayedId(v: Voyage): string | undefined {
-  return v.routeIds.find((id) => !v.playedIds.includes(id));
+  const partial = v.routeIds.find(
+    (id) => !isVoyageWatched(id, metaById(v, id)) && voyageProgress(id, metaById(v, id)) > 0,
+  );
+  if (partial) return partial;
+  return v.routeIds.find((id) => !isVoyageWatched(id, metaById(v, id)));
 }
 
 export function rerollHeadings(key = "") {

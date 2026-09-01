@@ -61,7 +61,8 @@ const SOURCES: SourceMeta[] = [
   {
     id: "custom",
     label: "Custom calendar",
-    description: "Anything matching your Custom calendar: tracked people, genres, providers, countries.",
+    description:
+      "Anything matching your Custom calendar: tracked people, genres, providers, countries.",
     icon: () => <Star size={14} strokeWidth={2} />,
     prereq: (s) => (s.tmdbKey ? null : "Add a TMDB key in Library settings."),
   },
@@ -77,7 +78,10 @@ export function WebhooksPanel() {
   const { isConnected: traktConnected } = useTrakt();
   const [discordStatus, setDiscordStatus] = useState<FieldStatus>(idleStatus);
   const [telegramStatus, setTelegramStatus] = useState<FieldStatus>(idleStatus);
-  const inFlightRef = useRef<{ discord: boolean; telegram: boolean }>({ discord: false, telegram: false });
+  const inFlightRef = useRef<{ discord: boolean; telegram: boolean }>({
+    discord: false,
+    telegram: false,
+  });
 
   const setUrl = (which: "discordUrl" | "telegramUrl", v: string) =>
     update({ webhooks: { ...settings.webhooks, [which]: v.trim() } });
@@ -99,16 +103,19 @@ export function WebhooksPanel() {
     const setStatus = kind === "discord" ? setDiscordStatus : setTelegramStatus;
     if (!url) return;
     inFlightRef.current[kind] = true;
-    setStatus({ state: "busy", message: "Sending…" });
+    setStatus({ state: "busy", message: t("Sending…") });
+    const service = kind === "discord" ? "Discord" : "Telegram";
     const testPayload: WebhookPayload = {
-      text: `Harbor test message (${kind === "discord" ? "Discord" : "Telegram"}). If you can read this, your webhook is wired up.`,
+      text: t("Harbor test message ({service}). If you can read this, your webhook is wired up.", {
+        service,
+      }),
       items: [],
     };
     try {
       const res = await fireWebhook(kind, url, testPayload);
       setStatus({
         state: res.ok ? "ok" : "error",
-        message: res.ok ? "Sent. Check your channel." : res.error ?? "Failed",
+        message: res.ok ? t("Sent. Check your channel.") : (res.error ?? t("Failed")),
       });
     } finally {
       inFlightRef.current[kind] = false;
@@ -130,75 +137,93 @@ export function WebhooksPanel() {
     <div key={tab} className="harbor-cascade flex flex-col gap-10">
       {tab === "destinations" && (
         <>
-      <Section
-        title={t("Where alerts go")}
-        subtitle={t("Connect Discord or Telegram and Harbor posts a message when something you follow is about to drop. Hit Test to send yourself a sample first.")}
-      >
-        <div className="flex flex-col gap-5">
-          <WebhookField
-            label={t("Discord webhook URL")}
-            logo={<DiscordMark />}
-            placeholder="https://discord.com/api/webhooks/…"
-            value={settings.webhooks.discordUrl}
-            onChange={(v) => setUrl("discordUrl", v)}
-            onTest={() => send("discord")}
-            status={discordStatus}
-            help={<DiscordTutorial />}
-          />
-          <TelegramComposedField
-            fullUrl={settings.webhooks.telegramUrl}
-            onUrlChange={(v) => setUrl("telegramUrl", v)}
-            onTest={() => send("telegram")}
-            status={telegramStatus}
-          />
-        </div>
-      </Section>
+          <Section
+            title={t("Where alerts go")}
+            subtitle={t(
+              "Connect Discord or Telegram and Harbor posts a message when something you follow is about to drop. Hit Test to send yourself a sample first.",
+            )}
+          >
+            <div className="flex flex-col gap-5">
+              <WebhookField
+                label={t("Discord webhook URL")}
+                logo={<DiscordMark />}
+                placeholder="https://discord.com/api/webhooks/…"
+                value={settings.webhooks.discordUrl}
+                onChange={(v) => setUrl("discordUrl", v)}
+                onTest={() => send("discord")}
+                status={discordStatus}
+                help={<DiscordTutorial />}
+              />
+              <TelegramComposedField
+                fullUrl={settings.webhooks.telegramUrl}
+                onUrlChange={(v) => setUrl("telegramUrl", v)}
+                onTest={() => send("telegram")}
+                status={telegramStatus}
+              />
+            </div>
+          </Section>
         </>
       )}
       {tab === "what" && (
         <>
-      <Section
-        title={t("What to send")}
-        subtitle={t("Pick which calendars feed your alerts. Items are deduped across sources before sending.")}
-      >
-        <div className="flex flex-col gap-1.5">
-          {SOURCES.map((s) => {
-            const blocker = s.prereq(settings, { authKey, traktConnected });
-            const on = settings.webhooks.sources[s.id];
-            return (
-              <SourceToggle
-                key={s.id}
-                source={s}
-                on={on}
-                blocker={blocker}
-                onChange={(v) => setSource(s.id, v)}
-              />
-            );
-          })}
-        </div>
-      </Section>
+          <Section
+            title={t("What to send")}
+            subtitle={t(
+              "Pick which calendars feed your alerts. Items are deduped across sources before sending.",
+            )}
+          >
+            <div className="flex flex-col gap-1.5">
+              {SOURCES.map((s) => {
+                const blocker = s.prereq(settings, { authKey, traktConnected });
+                const on = settings.webhooks.sources[s.id];
+                return (
+                  <SourceToggle
+                    key={s.id}
+                    source={s}
+                    on={on}
+                    blocker={blocker}
+                    onChange={(v) => setSource(s.id, v)}
+                  />
+                );
+              })}
+            </div>
+          </Section>
 
-      <Section
-        title={t("Media types")}
-        subtitle={t("Filter by type after the sources merge. Leave them all on to send everything.")}
-      >
-        <div className="flex flex-col gap-1.5">
-          <ToggleRow label={t("Movies")} value={settings.webhooks.notifyMovies} onChange={(v) => setNotify("notifyMovies", v)} />
-          <ToggleRow label={t("TV")} value={settings.webhooks.notifyTv} onChange={(v) => setNotify("notifyTv", v)} />
-          <ToggleRow label={t("Anime")} value={settings.webhooks.notifyAnime} onChange={(v) => setNotify("notifyAnime", v)} />
-        </div>
-      </Section>
+          <Section
+            title={t("Media types")}
+            subtitle={t(
+              "Filter by type after the sources merge. Leave them all on to send everything.",
+            )}
+          >
+            <div className="flex flex-col gap-1.5">
+              <ToggleRow
+                label={t("Movies")}
+                value={settings.webhooks.notifyMovies}
+                onChange={(v) => setNotify("notifyMovies", v)}
+              />
+              <ToggleRow
+                label={t("TV")}
+                value={settings.webhooks.notifyTv}
+                onChange={(v) => setNotify("notifyTv", v)}
+              />
+              <ToggleRow
+                label={t("Anime")}
+                value={settings.webhooks.notifyAnime}
+                onChange={(v) => setNotify("notifyAnime", v)}
+              />
+            </div>
+          </Section>
         </>
       )}
       {tab === "rules" && (
         <>
-      <RuleBuilder
-        rules={settings.webhookRules}
-        onChange={(rules) => update({ webhookRules: rules })}
-        trackedPeople={settings.customCalendar.trackedPeople}
-        canDiscord={!!settings.webhooks.discordUrl}
-        canTelegram={!!settings.webhooks.telegramUrl}
-      />
+          <RuleBuilder
+            rules={settings.webhookRules}
+            onChange={(rules) => update({ webhookRules: rules })}
+            trackedPeople={settings.customCalendar.trackedPeople}
+            canDiscord={!!settings.webhooks.discordUrl}
+            canTelegram={!!settings.webhooks.telegramUrl}
+          />
         </>
       )}
     </div>

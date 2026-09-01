@@ -6,9 +6,8 @@ import type { Voyage } from "@/lib/voyage/types";
 
 export function VoyageReady({ voyage, onStart }: { voyage: Voyage; onStart: () => void }) {
   const t = useT();
-  const count = voyage.routeIds.length;
   return (
-    <div className="flex flex-col items-center gap-3 rounded-md border border-dashed border-edge bg-canvas/30 px-6 py-9 text-center">
+    <div className="flex flex-col items-center gap-3.5 rounded-lg bg-canvas/40 px-6 py-9 text-center ring-1 ring-inset ring-edge-soft">
       <span
         className="grid h-14 w-14 place-items-center rounded-md"
         style={{
@@ -18,14 +17,7 @@ export function VoyageReady({ voyage, onStart }: { voyage: Voyage; onStart: () =
       >
         <Play size={22} strokeWidth={2} fill="currentColor" />
       </span>
-      <div className="flex max-w-sm flex-col gap-1">
-        <span className="text-[16px] font-semibold text-ink">{t("Your voyage is ready")}</span>
-        <span className="text-[13px] leading-relaxed text-ink-subtle">
-          {t("{count} films, in the order you picked them. Nothing plays until you start.", {
-            count,
-          })}
-        </span>
-      </div>
+      <span className="text-[16px] font-semibold text-ink">{t("Your voyage is ready")}</span>
       <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
         <button
           type="button"

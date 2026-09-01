@@ -194,6 +194,7 @@ export type PlayerOverlayLayersProps = {
   syncApi: ReturnType<typeof useTextSync>;
   syncToast: ToastInfo | null;
   onSyncPlayPause: () => void;
+  homeServerQualityControl?: Shell["homeServerQualityControl"];
 };
 
 export const PlayerOverlayLayers = memo(function PlayerOverlayLayers(p: PlayerOverlayLayersProps) {
@@ -213,7 +214,10 @@ export const PlayerOverlayLayers = memo(function PlayerOverlayLayers(p: PlayerOv
         videoFillPill={p.videoFillPill}
         subDropToast={p.subDropToast}
         contentAdvisory={p.contentAdvisory}
-        onSubDelay={(s) => { p.bridgeRef.current?.setSubDelay(s); writePlayerPrefs(p.metaId, { subDelaySec: s }); }}
+        onSubDelay={(s) => {
+          p.bridgeRef.current?.setSubDelay(s);
+          writePlayerPrefs(p.metaId, { subDelaySec: s });
+        }}
         onEnterSync={p.onEnterSync}
         chromeVisible={p.showChrome}
       />
@@ -251,10 +255,7 @@ export const PlayerOverlayLayers = memo(function PlayerOverlayLayers(p: PlayerOv
 
       {!p.tenFoot && !p.pipMode && (
         <BufferingIndicator
-          show={
-            p.snap.buffering &&
-            (p.snap.status === "playing" || p.snap.status === "paused")
-          }
+          show={p.snap.buffering && (p.snap.status === "playing" || p.snap.status === "paused")}
         />
       )}
 
@@ -323,7 +324,12 @@ export const PlayerOverlayLayers = memo(function PlayerOverlayLayers(p: PlayerOv
       )}
 
       {!p.pipMode && !p.drawMode && (
-        <XrayOverlay meta={p.src.meta} visible={p.showChrome} isPaused={p.snap.status === "paused"} bridgeRef={p.bridgeRef} />
+        <XrayOverlay
+          meta={p.src.meta}
+          visible={p.showChrome}
+          isPaused={p.snap.status === "paused"}
+          bridgeRef={p.bridgeRef}
+        />
       )}
 
       {!p.loaderActive && !p.tenFoot && p.syncMode === "idle" && (
@@ -390,6 +396,7 @@ export const PlayerOverlayLayers = memo(function PlayerOverlayLayers(p: PlayerOv
           onOpenDvr={p.openDvr}
           sleep={p.sleep}
           onVolumeFeedback={p.onVolumeFeedback}
+          homeServerQualityControl={p.homeServerQualityControl}
         />
       )}
 
@@ -446,7 +453,9 @@ export const PlayerOverlayLayers = memo(function PlayerOverlayLayers(p: PlayerOv
           compact={p.mpvEmbedWindowsActive}
           live={p.liveOverlay.isLive}
           onDismiss={
-            p.streamPillVariant === "check" ? () => p.setStreamCheckOpen(false) : p.dismissStreamPill
+            p.streamPillVariant === "check"
+              ? () => p.setStreamCheckOpen(false)
+              : p.dismissStreamPill
           }
           onPickAnother={p.pickAnotherOrGuide}
         />

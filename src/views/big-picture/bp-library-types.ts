@@ -6,6 +6,7 @@ export type BpLibTab =
   | "watchlist"
   | "history"
   | "local"
+  | "media-servers"
   | "lists"
   | "favorites"
   | "trakt"
@@ -24,12 +25,17 @@ export type BpLibEntry = {
   date: number | null;
   item?: LibraryItem;
   group?: string;
+  /** One deduplicated title may be contributed by several home servers. */
+  groups?: string[];
+  /** Library memberships are separate from server memberships for home-server filtering. */
+  libraries?: string[];
 };
 
 export type BpLibFeed = {
   entries: BpLibEntry[];
   status: BpLibStatus;
   groups: BpLibGroup[];
+  libraries?: BpLibGroup[];
   hidden?: number;
 };
 

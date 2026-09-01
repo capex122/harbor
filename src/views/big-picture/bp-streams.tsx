@@ -1,33 +1,33 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Loader2, PackageX } from "lucide-react";
 import { isCurrentStream } from "@/components/player/stream-switcher/switcher-row";
 import type { Meta } from "@/lib/cinemeta";
 import { localPlayerSrc } from "@/lib/local-library/player-src";
+import { createMediaServerPlayerSrc } from "@/lib/media-server/playback";
+import { decidePlaybackSource } from "@/lib/media-server/playback-policy";
+import { useMediaServerHealth } from "@/hooks/use-media-server-health";
+import { useSettings } from "@/lib/settings";
 import { SFX } from "@/lib/sfx";
 import type { ScoredStream } from "@/lib/streams/types";
 import { type PlayEpisode } from "@/lib/view";
 import {
   anyStreamCached,
-  debridBannerTitle,
+  debridBanner,
   streamIdentity,
+  translateDebridBannerTitle,
+  translatePickerError,
+  translatePipelineErrorTransport,
 } from "@/views/play-picker/picker-utils";
 import { pushBpBack } from "./bp-back";
 import { useBpT } from "./bp-i18n";
-import { BpStreamChips } from "./bp-stream-chips";
+import { BpStreamChips, type BpSourceKind } from "./bp-stream-chips";
 import {
   BpAutoExhaustedDialog,
   BpDebridDownDialog,
   BpNoSourcesDialog,
   BpP2pDialog,
 } from "./bp-stream-dialogs";
-import { BpLocalRow, BpStreamRow } from "./bp-stream-row";
+import { BpHomeServerRow, BpLocalRow, BpStreamRow } from "./bp-stream-row";
 import { BpAutoStep } from "./bp-stream-steps";
 import { BpSubtitleStep } from "./bp-subtitle-step";
 import { bpSurfaceVisible } from "./bp-visible";
@@ -42,6 +42,7 @@ export type BpStreamsProps = {
   mode?: "pick" | "switch";
   resume?: boolean;
   autoPlay?: boolean;
+  applyPreference?: boolean;
   intent?: "play" | "download";
   onClose: () => void;
   onPick?: (stream: ScoredStream) => void | Promise<void>;
@@ -118,6 +119,7 @@ export function BpStreams({
   mode = "pick",
   resume,
   autoPlay,
+  applyPreference = false,
   intent,
   onClose,
   onPick,
@@ -126,6 +128,7 @@ export function BpStreams({
   currentFileIdx,
 }: BpStreamsProps) {
   const t = useBpT();
+  const { settings } = useSettings();
   // The switcher is a card over a running film and must never hide what is
   // behind it. Every other mode here is an opaque full-page surface.
   const setModalNode = useBpPageModal(mode !== "switch");
@@ -145,6 +148,102 @@ export function BpStreams({
   // session on top of the one being switched. The desktop switcher never
   // offered them either.
   const localFiles = download || switching ? [] : s.localFiles;
+  const homeServerCopies = download || switching ? [] : s.homeServerCopies;
+  const homeServerHealth = useMediaServerHealth(s.homeServerConnections);
+  const [homeServerError, setHomeServerError] = useState<string | null>(null);
+  const [sourceKind, setSourceKind] = useState<BpSourceKind>(() => {
+    if (!applyPreference) return "all";
+    if (settings.playbackSourcePreference === "local") return "local";
+    if (settings.playbackSourcePreference === "home-server") return "media-server";
+    return "all";
+  });
+  const showLocal = sourceKind === "all" || sourceKind === "local";
+  const showHomeServers = sourceKind === "all" || sourceKind === "media-server";
+  const showOnline = sourceKind === "all" || sourceKind === "online";
+  const homeServerHealthReady = s.homeServerConnections.every(
+    (connection) => (homeServerHealth[connection.id] ?? "checking") !== "checking",
+  );
+  const availableHomeServerCopies = homeServerCopies.filter(
+    (copy) => copy.connectionId != null && homeServerHealth[copy.connectionId] === "active",
+  );
+
+  const playHomeServer = useCallback(
+    async (copy: (typeof homeServerCopies)[number]) => {
+      const connection = s.homeServerConnections.find((entry) => entry.id === copy.connectionId);
+      const item = s.homeServerItems.find(
+        (entry) => entry.connectionId === copy.connectionId && entry.id === copy.itemId,
+      );
+      if (!connection || !item) return;
+      setHomeServerError(null);
+      try {
+        play.openLocal(
+          await createMediaServerPlayerSrc({
+            meta,
+            imdbId: s.imdbId ?? undefined,
+            episode,
+            connection,
+            item,
+            versionId: copy.version.id,
+          }),
+        );
+      } catch (cause) {
+        setHomeServerError(cause instanceof Error ? cause.message : String(cause));
+      }
+    },
+    [episode, homeServerCopies, meta, play, s.homeServerConnections, s.homeServerItems, s.imdbId],
+  );
+
+  const preferredSourceFired = useRef(false);
+  useEffect(() => {
+    preferredSourceFired.current = false;
+  }, [meta.id, episode?.season, episode?.episode]);
+  useEffect(() => {
+    if (
+      !applyPreference ||
+      mode !== "pick" ||
+      preferredSourceFired.current ||
+      !s.homeServersLoaded ||
+      !homeServerHealthReady
+    )
+      return;
+    if (settings.playbackSourcePreference === "local" && localFiles.length === 0) {
+      preferredSourceFired.current = true;
+      setSourceKind("all");
+      return;
+    }
+    if (settings.playbackSourcePreference === "local" && localFiles.length > 1) {
+      preferredSourceFired.current = true;
+      setSourceKind("local");
+      return;
+    }
+    if (
+      settings.playbackSourcePreference === "home-server" &&
+      settings.preferredMediaServerId == null
+    ) {
+      preferredSourceFired.current = true;
+      setSourceKind("media-server");
+      return;
+    }
+    const decision = decidePlaybackSource(settings, localFiles.length, availableHomeServerCopies);
+    if (decision.kind === "local" && localFiles[0]) {
+      preferredSourceFired.current = true;
+      play.openLocal(localPlayerSrc(localFiles[0], s.isAnime, episode));
+    } else if (decision.kind === "home-server") {
+      preferredSourceFired.current = true;
+      void playHomeServer(decision.copy);
+    }
+  }, [
+    applyPreference,
+    availableHomeServerCopies,
+    homeServerHealthReady,
+    localFiles,
+    mode,
+    play,
+    playHomeServer,
+    s.homeServersLoaded,
+    s.isAnime,
+    settings,
+  ]);
 
   // Claimed only while this surface owns the focus scope, so a dialog opened on
   // top of it still gets Back first. Resolved from this element and never from
@@ -281,20 +380,37 @@ export function BpStreams({
           {s.loading
             ? t("Searching")
             : t("{shown} of {total} sources", {
-                shown: list.length + localFiles.length,
-                total: s.total + localFiles.length,
+                shown:
+                  (showOnline ? list.length : 0) +
+                  (showLocal ? localFiles.length : 0) +
+                  (showHomeServers ? homeServerCopies.length : 0),
+                total:
+                  (showOnline ? s.total : 0) +
+                  (showLocal ? localFiles.length : 0) +
+                  (showHomeServers ? homeServerCopies.length : 0),
               })}
           {s.pendingAddonCount > 0 && ` · ${t("{n} addons loading", { n: s.pendingAddonCount })}`}
         </p>
       </header>
 
-      <BpStreamChips s={s} onClose={onClose} />
+      <BpStreamChips s={s} sourceKind={sourceKind} onSourceKind={setSourceKind} onClose={onClose} />
 
-      {play.error && <BpStreamsBanner text={play.error} tone="error" />}
-      {s.error && !play.error && <BpStreamsBanner text={s.error} tone="error" />}
-      {debridError && <BpStreamsBanner text={debridBannerTitle(debridError)} tone="info" />}
+      {play.error && <BpStreamsBanner text={translatePickerError(t, play.error)} tone="error" />}
+      {homeServerError && !play.error && <BpStreamsBanner text={homeServerError} tone="error" />}
+      {s.error && !play.error && (
+        <BpStreamsBanner text={translatePipelineErrorTransport(t, s.error)} tone="error" />
+      )}
+      {debridError && (
+        <BpStreamsBanner
+          text={translateDebridBannerTitle(t, debridBanner(debridError))}
+          tone="info"
+        />
+      )}
       {s.filterFellBack && s.activeFilterId != null && (
-        <BpStreamsBanner text={t("No sources match your filter. Showing all sources.")} tone="info" />
+        <BpStreamsBanner
+          text={t("No sources match your filter. Showing all sources.")}
+          tone="info"
+        />
       )}
 
       <div
@@ -306,71 +422,103 @@ export function BpStreams({
             : "pb-[calc(var(--bp-hint-h,0px)_+_clamp(20px,2.4vh,36px))]"
         }`}
       >
-        {localFiles.map((entry, i) => (
-          <BpSourceCell key={entry.id}>
-            <BpLocalRow
-              entry={entry}
-              autofocus={i === 0}
-              onPick={() => play.openLocal(localPlayerSrc(entry, s.isAnime))}
-            />
-          </BpSourceCell>
-        ))}
-        {list.slice(0, shown).map((stream, i) => (
-          <BpSourceCell key={streamIdentity(stream)}>
-            <BpStreamRow
-              stream={stream}
-              logo={s.addonLogo(stream)}
-              cached={anyStreamCached(stream) || s.cachedOn(stream) != null}
-              cachedOn={s.cachedOn(stream)}
-              isAnime={s.isAnime}
-              isCurrent={
-                currentUrl != null &&
-                isCurrentStream(stream, currentUrl, currentInfoHash, currentFileIdx)
-              }
-              remembered={s.rememberedStream != null && s.rememberedStream === stream}
-              resolving={play.resolvingKey === streamIdentity(stream)}
-              failed={play.failed(stream)}
-              hostMatch={s.hostMatchFor(stream)}
-              showName={meta.name}
-              episode={episode}
-              autofocus={i === 0 && localFiles.length === 0}
-              download={download}
-              onPick={() => play.play(stream)}
-            />
-          </BpSourceCell>
-        ))}
+        {showLocal &&
+          localFiles.map((entry, i) => (
+            <BpSourceCell key={entry.id}>
+              <BpLocalRow
+                entry={entry}
+                autofocus={i === 0}
+                onPick={() => play.openLocal(localPlayerSrc(entry, s.isAnime, episode))}
+              />
+            </BpSourceCell>
+          ))}
+        {showHomeServers &&
+          homeServerCopies.map((copy, i) => {
+            const connection = s.homeServerConnections.find(
+              (entry) => entry.id === copy.connectionId,
+            );
+            if (!connection) return null;
+            const status = homeServerHealth[connection.id] ?? "checking";
+            return (
+              <BpSourceCell key={copy.key}>
+                <BpHomeServerRow
+                  copy={copy}
+                  connection={connection}
+                  status={status}
+                  unavailable={status !== "active"}
+                  autofocus={(!showLocal || localFiles.length === 0) && i === 0}
+                  onPick={() => void playHomeServer(copy)}
+                />
+              </BpSourceCell>
+            );
+          })}
+        {showOnline &&
+          list.slice(0, shown).map((stream, i) => (
+            <BpSourceCell key={streamIdentity(stream)}>
+              <BpStreamRow
+                stream={stream}
+                logo={s.addonLogo(stream)}
+                cached={anyStreamCached(stream) || s.cachedOn(stream) != null}
+                cachedOn={s.cachedOn(stream)}
+                isAnime={s.isAnime}
+                isCurrent={
+                  currentUrl != null &&
+                  isCurrentStream(stream, currentUrl, currentInfoHash, currentFileIdx)
+                }
+                remembered={s.rememberedStream != null && s.rememberedStream === stream}
+                resolving={play.resolvingKey === streamIdentity(stream)}
+                failed={play.failed(stream)}
+                hostMatch={s.hostMatchFor(stream)}
+                showName={meta.name}
+                episode={episode}
+                autofocus={
+                  i === 0 &&
+                  (!showLocal || localFiles.length === 0) &&
+                  (!showHomeServers || homeServerCopies.length === 0)
+                }
+                download={download}
+                onPick={() => play.play(stream)}
+              />
+            </BpSourceCell>
+          ))}
         <div ref={moreRef} aria-hidden className="h-px w-full shrink-0" />
-        {list.length === 0 && localFiles.length === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-[clamp(10px,1.2vh,18px)] text-ink-subtle">
-            {s.loading ? (
-              <Loader2 size={34} className="animate-spin motion-reduce:[animation-duration:2.4s]" strokeWidth={2} />
-            ) : (
-              <PackageX size={34} strokeWidth={1.8} />
-            )}
-            <p className="text-[clamp(14px,1.95vh,22px)] font-semibold">
-              {s.loading
-                ? t("Looking for sources")
-                : s.total > 0
-                  ? t("No sources match these filters")
-                  : t("No sources found")}
-            </p>
-            {!s.loading && s.total === 0 && s.canLoosen && (
-              <div
-                data-bp-row
-                data-bp-scroll-x
-                style={{ paddingInline: 0, marginInline: 0, containIntrinsicSize: "auto 100px" }}
-                className="flex gap-[clamp(9px,0.9vw,16px)] overflow-x-auto py-[26px] -my-[26px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              >
-                {s.strictMode && (
-                  <BpLadderButton label={t("Search wider")} onPress={s.searchWider} />
-                )}
-                {!s.forceShowAll && (
-                  <BpLadderButton label={t("Show everything")} onPress={s.showEverything} />
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        {(!showOnline || list.length === 0) &&
+          (!showLocal || localFiles.length === 0) &&
+          (!showHomeServers || homeServerCopies.length === 0) && (
+            <div className="flex flex-1 flex-col items-center justify-center gap-[clamp(10px,1.2vh,18px)] text-ink-subtle">
+              {s.loading ? (
+                <Loader2
+                  size={34}
+                  className="animate-spin motion-reduce:[animation-duration:2.4s]"
+                  strokeWidth={2}
+                />
+              ) : (
+                <PackageX size={34} strokeWidth={1.8} />
+              )}
+              <p className="text-[clamp(14px,1.95vh,22px)] font-semibold">
+                {s.loading
+                  ? t("Looking for sources")
+                  : s.total > 0
+                    ? t("No sources match these filters")
+                    : t("No sources found")}
+              </p>
+              {!s.loading && s.total === 0 && s.canLoosen && (
+                <div
+                  data-bp-row
+                  data-bp-scroll-x
+                  style={{ paddingInline: 0, marginInline: 0, containIntrinsicSize: "auto 100px" }}
+                  className="flex gap-[clamp(9px,0.9vw,16px)] overflow-x-auto py-[26px] -my-[26px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {s.strictMode && (
+                    <BpLadderButton label={t("Search wider")} onPress={s.searchWider} />
+                  )}
+                  {!s.forceShowAll && (
+                    <BpLadderButton label={t("Show everything")} onPress={s.showEverything} />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
       </div>
 
       {switching && (
@@ -389,7 +537,9 @@ export function BpStreams({
       {play.debridDown && (
         <BpDebridDownDialog onTryAgain={play.dismissDebridDown} onBack={onClose} />
       )}
-      {s.noSources && <BpNoSourcesDialog title={meta.name} onClose={onClose} />}
+      {s.noSources && localFiles.length === 0 && homeServerCopies.length === 0 && (
+        <BpNoSourcesDialog title={meta.name} onClose={onClose} />
+      )}
       {play.autoExhausted && !s.noSources && !play.debridDown && (
         <BpAutoExhaustedDialog
           title={meta.name}

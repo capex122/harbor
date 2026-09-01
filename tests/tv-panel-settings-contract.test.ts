@@ -1,11 +1,11 @@
 // @ts-expect-error Node test types are intentionally outside the browser-only tsconfig.
 import assert from "node:assert/strict";
 // @ts-expect-error Node test types are intentionally outside the browser-only tsconfig.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 // @ts-expect-error Node test types are intentionally outside the browser-only tsconfig.
 import test from "node:test";
 
-import { readTvContract, type KotlinItem } from "./_tv-panel-kotlin.ts";
+import { readTvContract, type KotlinItem, type TvContract } from "./_tv-panel-kotlin.ts";
 import { TV_GROUPS, type TvRow } from "../src/views/settings/tv-panel/model.ts";
 
 const LABEL_WAIVERS: Record<string, [string, string]> = {
@@ -19,7 +19,19 @@ const OFF_WIRE_TV_SETTINGS = ["playerConfirmLeave", "playerStats", "subSize"];
 
 const KIND_OF_LETTER: Record<string, string> = { b: "toggle", s: "choice", m: "multi" };
 
-const kt = readTvContract();
+const hasTvSource = existsSync(
+  new URL("../android-native/app/src/main/java/com/harbor/tv/SettingsPage.kt", import.meta.url),
+);
+const contractTest = hasTvSource ? test : test.skip;
+const kt: TvContract = hasTvSource
+  ? readTvContract()
+  : {
+      items: [],
+      settingsWire: new Map(),
+      layoutWire: new Map(),
+      numbers: new Map(),
+      enums: new Map(),
+    };
 const declared = new Map<string, KotlinItem>(kt.items.map((i) => [i.key, i]));
 const rows: TvRow[] = TV_GROUPS.flatMap((g) => g.rows);
 const byKey = new Map<string, TvRow>(rows.map((r) => [r.key, r]));
@@ -46,7 +58,7 @@ function checkLabel(slot: string, tv: string, desk: string): void {
   );
 }
 
-test("the settings wire and the desktop TV panel carry the same keys", () => {
+contractTest("the settings wire and the desktop TV panel carry the same keys", () => {
   assert.equal(byKey.size, rows.length, "model.ts declares the same key twice");
   const wire = [...kt.settingsWire.keys()].sort();
   const desk = [...byKey.keys()].sort();
@@ -62,7 +74,7 @@ test("the settings wire and the desktop TV panel carry the same keys", () => {
   );
 });
 
-test("every desktop row lands in the settings doc", () => {
+contractTest("every desktop row lands in the settings doc", () => {
   for (const group of TV_GROUPS) {
     assert.equal(
       group.wire,
@@ -72,7 +84,7 @@ test("every desktop row lands in the settings doc", () => {
   }
 });
 
-test("every desktop key is a setting the TV declares", () => {
+contractTest("every desktop key is a setting the TV declares", () => {
   for (const row of rows) {
     const item = declared.get(row.key);
     assert.ok(item, `${row.key} is not in SETTING_GROUPS, so setConfig skips it in silence`);
@@ -83,7 +95,7 @@ test("every desktop key is a setting the TV declares", () => {
   }
 });
 
-test("kinds agree across the wire, the TV and the desktop", () => {
+contractTest("kinds agree across the wire, the TV and the desktop", () => {
   for (const row of rows) {
     const letter = kt.settingsWire.get(row.key) as string;
     const item = declared.get(row.key) as KotlinItem;
@@ -97,7 +109,7 @@ test("kinds agree across the wire, the TV and the desktop", () => {
   }
 });
 
-test("option values match the TV, in order", () => {
+contractTest("option values match the TV, in order", () => {
   for (const row of rows) {
     if (row.kind === "toggle" || row.kind === "step") continue;
     const item = declared.get(row.key) as KotlinItem;
@@ -111,7 +123,7 @@ test("option values match the TV, in order", () => {
   }
 });
 
-test("option labels match the TV unless the pair is pinned", () => {
+contractTest("option labels match the TV unless the pair is pinned", () => {
   for (const row of rows) {
     if (row.kind === "toggle" || row.kind === "step") continue;
     const item = declared.get(row.key) as KotlinItem;
@@ -122,13 +134,13 @@ test("option labels match the TV unless the pair is pinned", () => {
   }
 });
 
-test("row labels match the TV unless the pair is pinned", () => {
+contractTest("row labels match the TV unless the pair is pinned", () => {
   for (const row of rows) {
     checkLabel(row.key, (declared.get(row.key) as KotlinItem).title, row.label);
   }
 });
 
-test("a TV subtitle on a wired row reaches the desktop", () => {
+contractTest("a TV subtitle on a wired row reaches the desktop", () => {
   for (const row of rows) {
     const item = declared.get(row.key) as KotlinItem;
     if (item.subtitle === null) continue;
@@ -140,7 +152,7 @@ test("a TV subtitle on a wired row reaches the desktop", () => {
   }
 });
 
-test("defaults match the TV", () => {
+contractTest("defaults match the TV", () => {
   for (const row of rows) {
     const item = declared.get(row.key) as KotlinItem;
     if (row.kind === "toggle") {
@@ -160,7 +172,7 @@ test("defaults match the TV", () => {
   }
 });
 
-test("every desktop default is one of its own options", () => {
+contractTest("every desktop default is one of its own options", () => {
   for (const row of rows) {
     if (row.kind === "choice") {
       const values = row.options.map((o) => o.value);
@@ -177,7 +189,7 @@ test("every desktop default is one of its own options", () => {
   }
 });
 
-test("TV settings the wire cannot carry stay off the desktop panel", () => {
+contractTest("TV settings the wire cannot carry stay off the desktop panel", () => {
   const stranded = kt.items
     .filter((i) => i.kind === "Toggle" || i.kind === "Choice")
     .map((i) => i.key)
@@ -194,7 +206,7 @@ test("TV settings the wire cannot carry stay off the desktop panel", () => {
   }
 });
 
-test("navigation rows never reach a wire", () => {
+contractTest("navigation rows never reach a wire", () => {
   for (const item of kt.items) {
     if (item.kind === "Toggle" || item.kind === "Choice") continue;
     assert.ok(
@@ -204,7 +216,7 @@ test("navigation rows never reach a wire", () => {
   }
 });
 
-test("model.ts stays ASCII", () => {
+contractTest("model.ts stays ASCII", () => {
   const raw = readFileSync(
     new URL("../src/views/settings/tv-panel/model.ts", import.meta.url),
   ) as Uint8Array;

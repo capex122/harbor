@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, Maximize, Minus, Plus, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
-import { t, useT } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
 import type { ReaderNavPos, ReaderPrefs } from "./reader-types";
 import { ReaderSettingsFrame } from "./reader-settings-frame";
 
@@ -10,44 +10,44 @@ const ICON = "/reader-icons";
 type Cat = "mode" | "direction" | "fit" | "nav" | "background" | "zoom";
 
 const CATS: Array<{ id: Cat; label: string; icon: string }> = [
-  { id: "mode", label: t("Reading mode"), icon: "reading-mode" },
-  { id: "direction", label: t("Direction"), icon: "flip-direction" },
-  { id: "fit", label: t("Fit"), icon: "image-position" },
-  { id: "nav", label: t("Arrows"), icon: "arrows" },
-  { id: "background", label: t("Brightness"), icon: "brightness" },
-  { id: "zoom", label: t("Zoom"), icon: "zoom" },
+  { id: "mode", label: "Reading mode", icon: "reading-mode" },
+  { id: "direction", label: "Direction", icon: "flip-direction" },
+  { id: "fit", label: "Fit", icon: "image-position" },
+  { id: "nav", label: "Arrows", icon: "arrows" },
+  { id: "background", label: "Brightness", icon: "brightness" },
+  { id: "zoom", label: "Zoom", icon: "zoom" },
 ];
 
 const NAV_POS: Array<{ v: ReaderNavPos; label: string }> = [
-  { v: "stack-br", label: t("Bottom right") },
-  { v: "stack-bl", label: t("Bottom left") },
-  { v: "bottom", label: t("Bottom center") },
-  { v: "sides", label: t("Sides") },
+  { v: "stack-br", label: "Bottom right" },
+  { v: "stack-bl", label: "Bottom left" },
+  { v: "bottom", label: "Bottom center" },
+  { v: "sides", label: "Sides" },
 ];
 
 const MODES: Array<{ v: ReaderPrefs["mode"]; label: string; icon?: string; glyph?: ReactNode }> = [
-  { v: "long", label: t("Long strip"), icon: "layout-long" },
+  { v: "long", label: "Long strip", icon: "layout-long" },
   {
     v: "long-h",
-    label: t("Horizontal"),
+    label: "Horizontal",
     glyph: (
       <img src={`${ICON}/layout-long.png`} alt="" className="h-12 w-12 rotate-90 object-contain" />
     ),
   },
-  { v: "paged", label: t("Single"), icon: "layout-single" },
-  { v: "double", label: t("Double"), icon: "layout-double" },
-  { v: "book", label: t("Book"), icon: "layout-book" },
+  { v: "paged", label: "Single", icon: "layout-single" },
+  { v: "double", label: "Double", icon: "layout-double" },
+  { v: "book", label: "Book", icon: "layout-book" },
 ];
 
 const DIRECTIONS: Array<{ v: boolean; label: string; icon: string }> = [
-  { v: false, label: t("Left to right"), icon: "book-ltr" },
-  { v: true, label: t("Right to left"), icon: "book-rtl" },
+  { v: false, label: "Left to right", icon: "book-ltr" },
+  { v: true, label: "Right to left", icon: "book-rtl" },
 ];
 
 const BGS: Array<{ v: ReaderPrefs["bg"]; label: string; color: string }> = [
-  { v: "dark", label: t("Dark"), color: "#0b0b0d" },
-  { v: "gray", label: t("Dim"), color: "#404040" },
-  { v: "light", label: t("Light"), color: "#f5f5f5" },
+  { v: "dark", label: "Dark", color: "#0b0b0d" },
+  { v: "gray", label: "Dim", color: "#404040" },
+  { v: "light", label: "Light", color: "#f5f5f5" },
 ];
 
 export function ReaderSettings({
@@ -63,7 +63,12 @@ export function ReaderSettings({
   const [cat, setCat] = useState<Cat>("mode");
 
   return (
-    <ReaderSettingsFrame categories={CATS} category={cat} onCategory={setCat} onClose={onClose}>
+    <ReaderSettingsFrame
+      categories={CATS.map((category) => ({ ...category, label: t(category.label) }))}
+      category={cat}
+      onCategory={setCat}
+      onClose={onClose}
+    >
       {cat === "mode" && (
         <div className="flex flex-col gap-4">
           <CardRow>
@@ -72,7 +77,7 @@ export function ReaderSettings({
                 key={m.v}
                 icon={m.icon}
                 glyph={m.glyph}
-                label={m.label}
+                label={t(m.label)}
                 selected={prefs.mode === m.v}
                 onClick={() => onChange({ mode: m.v })}
               />
@@ -90,7 +95,7 @@ export function ReaderSettings({
               <IconCard
                 key={String(d.v)}
                 icon={d.icon}
-                label={d.label}
+                label={t(d.label)}
                 selected={prefs.rtl === d.v}
                 onClick={() => onChange({ rtl: d.v })}
               />
@@ -137,7 +142,7 @@ export function ReaderSettings({
               <IconCard
                 key={n.v}
                 glyph={<PosGlyph pos={n.v} />}
-                label={n.label}
+                label={t(n.label)}
                 selected={prefs.navPos === n.v}
                 onClick={() => onChange({ navPos: n.v })}
               />
@@ -164,7 +169,7 @@ export function ReaderSettings({
               key={b.v}
               type="button"
               onClick={() => onChange({ bg: b.v })}
-              aria-label={b.label}
+              aria-label={t(b.label)}
               className={`flex w-24 flex-col items-center gap-2 rounded-2xl border p-3 transition duration-150 active:scale-[0.96] ${prefs.bg === b.v ? "border-accent bg-accent/10" : "border-edge-soft bg-elevated/40 hover:border-edge hover:bg-elevated"}`}
             >
               <span
@@ -179,7 +184,7 @@ export function ReaderSettings({
                   />
                 )}
               </span>
-              <span className="text-[12px] font-medium text-ink">{b.label}</span>
+              <span className="text-[12px] font-medium text-ink">{t(b.label)}</span>
             </button>
           ))}
         </div>

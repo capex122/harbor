@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { ChevronRight, LogOut } from "lucide-react";
 import { ServiceLogo } from "@/components/service-logo";
 import type { StreamingService } from "@/lib/settings";
@@ -42,20 +42,23 @@ const LETTER_PX: Record<string, string> = {
 export function BpSettingsColumnBox({
   children,
   scrollRef,
+  scrollable = false,
 }: {
   children: ReactNode;
   scrollRef?: React.RefObject<HTMLDivElement | null>;
+  scrollable?: boolean;
 }) {
   return (
-    // Fixed height and overflow-hidden, never a scroller. Nothing here may grow
-    // past the box: eight category rows plus gaps is 404px against 443px of
-    // usable height at the 641px canvas floor with the largest edge margin the
-    // UI offers. A ninth category or a taller row clips silently and the focus
-    // ring walks off the bottom with nothing to scroll it back.
+    // Categories fit the fixed box and stay still. Control rows may grow when a
+    // choice group becomes a grid, so that depth opts into the focus engine's
+    // centred vertical scrolling instead of letting lower settings clip.
     <div
       ref={scrollRef}
       data-bp-scroll-y
-      className="flex min-h-0 w-[clamp(330px,38%,470px)] shrink-0 flex-col gap-[clamp(5px,0.8vh,10px)] overflow-hidden"
+      data-bp-center={scrollable ? "" : undefined}
+      className={`flex min-h-0 w-[clamp(330px,38%,470px)] shrink-0 flex-col gap-[clamp(5px,0.8vh,10px)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+        scrollable ? "overflow-y-auto" : "overflow-hidden"
+      }`}
     >
       {children}
     </div>
@@ -115,6 +118,7 @@ export function BpOptionRow({
   value,
   options,
   letter,
+  columns,
   autofocus,
   onPick,
   onCellFocus,
@@ -124,47 +128,71 @@ export function BpOptionRow({
   value: string;
   options: BpOption[];
   letter?: boolean;
+  columns?: 2;
   autofocus: boolean;
   onPick: (value: string) => void;
   onCellFocus?: (value: string) => void;
 }) {
+  const rows =
+    columns === 2
+      ? Array.from({ length: Math.ceil(options.length / 2) }, (_, row) =>
+          options.slice(row * 2, row * 2 + 2),
+        )
+      : [options];
+
   return (
-    <div data-bp-rail-row={index} data-bp-row style={CONTROL_ROW} className="shrink-0">
-      <span className={LABEL}>{label}</span>
-      <div data-bp-scroll-x className={`${TRACK} mt-[clamp(3px,0.5vh,7px)]`}>
-        {options.map((o, i) => {
-          const on = o.value === value;
-          return (
-            <button
-              key={o.value}
-              type="button"
-              data-bp-focusable
-              data-bp-chip
-              data-bp-autofocus={autofocus && i === 0 ? "true" : undefined}
-              aria-pressed={on}
-              aria-label={o.label}
-              onFocus={onCellFocus ? () => onCellFocus(o.value) : undefined}
-              onClick={() => {
-                SFX.click();
-                onPick(o.value);
-              }}
-              className={`${CELL_BASE} ${CELL_H} ${on ? CELL_ON : CELL_OFF} min-w-[clamp(56px,6vw,96px)] flex-1 px-[clamp(6px,0.7vw,14px)]`}
-              style={letter ? { fontSize: LETTER_PX[o.value] ?? "17px" } : undefined}
-            >
-              {letter ? (
-                <span aria-hidden className="font-bold leading-none">
-                  A
-                </span>
-              ) : (
-                <span className="truncate text-[clamp(12px,1.7vh,17px)] leading-tight">
-                  {o.label}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <Fragment>
+      {rows.map((row, rowIndex) => (
+        <div
+          key={`${label}:${rowIndex}`}
+          data-bp-rail-row={index + rowIndex}
+          data-bp-row
+          style={CONTROL_ROW}
+          className="shrink-0"
+        >
+          {rowIndex === 0 && <span className={LABEL}>{label}</span>}
+          <div
+            data-bp-scroll-x
+            className={`${TRACK} ${rowIndex === 0 ? "mt-[clamp(3px,0.5vh,7px)]" : ""}`}
+          >
+            {row.map((o, cellIndex) => {
+              const optionIndex = rowIndex * 2 + cellIndex;
+              const on = o.value === value;
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  data-bp-focusable
+                  data-bp-chip
+                  data-bp-autofocus={autofocus && optionIndex === 0 ? "true" : undefined}
+                  aria-pressed={on}
+                  aria-label={o.label}
+                  onFocus={onCellFocus ? () => onCellFocus(o.value) : undefined}
+                  onClick={() => {
+                    SFX.click();
+                    onPick(o.value);
+                  }}
+                  className={`${CELL_BASE} ${CELL_H} ${on ? CELL_ON : CELL_OFF} min-w-[clamp(56px,6vw,96px)] px-[clamp(6px,0.7vw,14px)] ${
+                    columns === 2 ? "w-[calc((100%-clamp(5px,0.5vw,10px))/2)] flex-none" : "flex-1"
+                  }`}
+                  style={letter ? { fontSize: LETTER_PX[o.value] ?? "17px" } : undefined}
+                >
+                  {letter ? (
+                    <span aria-hidden className="font-bold leading-none">
+                      A
+                    </span>
+                  ) : (
+                    <span className="truncate text-[clamp(12px,1.7vh,17px)] leading-tight">
+                      {o.label}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </Fragment>
   );
 }
 

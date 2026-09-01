@@ -1,5 +1,6 @@
 import { Check, Download, Loader2, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { anime4kDir, downloadAnime4k } from "@/lib/anime4k";
 import { BeforeAfter } from "../shaders-panel/before-after";
 import {
@@ -12,6 +13,7 @@ import { useSettings } from "@/lib/settings";
 
 export function Anime4kShaderList() {
   const { settings, update } = useSettings();
+  const t = useT();
   const folder = settings.playerAnime4kFolder;
   const mode = (settings.playerAnime4kMode as Anime4kMode) || "A";
   const tier = (settings.playerAnime4kTier as Anime4kTier) || "hq";
@@ -46,7 +48,9 @@ export function Anime4kShaderList() {
         window.setTimeout(() => setJustUpdated(false), 2200);
       }
     } catch (e) {
-      setError(typeof e === "string" ? e : "Download failed. Check your connection and try again.");
+      setError(
+        typeof e === "string" ? e : t("Download failed. Check your connection and try again."),
+      );
     } finally {
       setBusy(false);
     }
@@ -58,12 +62,16 @@ export function Anime4kShaderList() {
     update({ playerAnime4kTier: t, playerAnime4kShaders: anime4kChain(folder, mode, t) });
 
   return (
- <div id="set-anime4k-presets" className="scroll-mt-28 flex flex-col gap-3.5 rounded-md bg-canvas px-4 py-4">
+    <div
+      id="set-anime4k-presets"
+      className="scroll-mt-28 flex flex-col gap-3.5 rounded-md bg-canvas px-4 py-4"
+    >
       <div className="flex flex-col gap-0.5">
-        <span className="text-[13.5px] font-semibold text-ink">Anime4K presets</span>
+        <span className="text-[13.5px] font-semibold text-ink">{t("Anime4K presets")}</span>
         <span className="text-[12.5px] leading-snug text-ink-subtle">
-          GPU shaders that sharpen lines and clean up gradients on anime as it plays. Pick a mode,
-          Harbor handles the shaders.
+          {t(
+            "GPU shaders that sharpen lines and clean up gradients on anime as it plays. Pick a mode, Harbor handles the shaders.",
+          )}
         </span>
       </div>
 
@@ -71,14 +79,16 @@ export function Anime4kShaderList() {
         demo={{
           before: "/shader-demos/anime4k/before.webp",
           after: "/shader-demos/anime4k/after.webp",
-          credit: "Harbor, from a public domain frame",
+          credit: t("Harbor, from a public domain frame"),
         }}
       />
 
       {!folder ? (
- <div className="flex flex-col gap-3 rounded-md bg-canvas px-4 py-4">
+        <div className="flex flex-col gap-3 rounded-md bg-canvas px-4 py-4">
           <span className="text-[12.5px] leading-snug text-ink-muted">
-            One-time setup downloads the shader pack (about 1 MB) into Harbor. No files to hunt down.
+            {t(
+              "One-time setup downloads the shader pack (about 1 MB) into Harbor. No files to hunt down.",
+            )}
           </span>
           {error && (
             <span className="rounded-md bg-danger/15 px-3 py-2 text-[12.5px] text-danger ring-1 ring-danger">
@@ -91,15 +101,23 @@ export function Anime4kShaderList() {
             disabled={busy}
             className="flex h-11 w-fit items-center gap-2 rounded-full bg-ink px-5 text-[13.5px] font-semibold text-canvas transition-colors hover:bg-ink/90 disabled:cursor-wait disabled:opacity-70"
           >
-            {busy ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} strokeWidth={2.2} />}
-            {busy ? "Downloading shaders…" : "Set up Anime4K"}
+            {busy ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Download size={16} strokeWidth={2.2} />
+            )}
+            {busy ? t("Downloading shaders…") : t("Set up Anime4K")}
           </button>
         </div>
       ) : (
         <>
           <div className="flex items-center gap-1 self-start rounded-full bg-elevated p-1 ring-1 ring-edge-soft/60">
-            <TierBtn active={tier === "hq"} onClick={() => pickTier("hq")} label="Quality" />
-            <TierBtn active={tier === "fast"} onClick={() => pickTier("fast")} label="Performance" />
+            <TierBtn active={tier === "hq"} onClick={() => pickTier("hq")} label={t("Quality")} />
+            <TierBtn
+              active={tier === "fast"}
+              onClick={() => pickTier("fast")}
+              label={t("Performance")}
+            />
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {ANIME4K_MODES.map((m) => {
@@ -123,8 +141,8 @@ export function Anime4kShaderList() {
                     {selected && <Check size={12} strokeWidth={3} className="text-ink" />}
                   </span>
                   <span className="flex min-w-0 flex-col gap-0.5">
-                    <span className="text-[13.5px] font-semibold text-ink">{m.label}</span>
-                    <span className="text-[12.5px] leading-snug text-ink-subtle">{m.sub}</span>
+                    <span className="text-[13.5px] font-semibold text-ink">{t(m.label)}</span>
+                    <span className="text-[12.5px] leading-snug text-ink-subtle">{t(m.sub)}</span>
                   </span>
                 </button>
               );
@@ -133,7 +151,7 @@ export function Anime4kShaderList() {
           <div className="flex items-center justify-between gap-3 pt-0.5">
             <span className="flex items-center gap-1.5 text-[12.5px] text-ink-subtle">
               <Check size={14} className="text-success" strokeWidth={2.6} />
-              Shaders installed
+              {t("Shaders installed")}
             </span>
             <button
               type="button"
@@ -146,17 +164,17 @@ export function Anime4kShaderList() {
               {busy ? (
                 <>
                   <Loader2 size={12} className="animate-spin" strokeWidth={2.6} />
-                  Updating…
+                  {t("Updating…")}
                 </>
               ) : justUpdated ? (
                 <>
                   <Check size={12} strokeWidth={3} />
-                  Updated
+                  {t("Updated")}
                 </>
               ) : (
                 <>
                   <RefreshCw size={12} strokeWidth={2.4} />
-                  Re-download
+                  {t("Re-download")}
                 </>
               )}
             </button>
@@ -172,7 +190,15 @@ export function Anime4kShaderList() {
   );
 }
 
-function TierBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+function TierBtn({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
   return (
     <button
       type="button"

@@ -11,8 +11,18 @@ import { BpChip, BpChipRow } from "./bp-library-chips";
 import { BpLibraryFilters, type BpFilterGroup } from "./bp-library-filters";
 import { BpLibrarySearch } from "./bp-library-search";
 import { BpLibrarySections } from "./bp-library-sections";
-import { buildBpSections, capBpSections, useBpLibraryFeed, useBpLibraryTabs } from "./use-bp-library";
-import type { BpLibStatus, BpLibTab } from "./bp-library-types";
+import {
+  buildBpSections,
+  capBpSections,
+  useBpLibraryFeed,
+  useBpLibraryTabs,
+} from "./use-bp-library";
+import type { BpLibEntry, BpLibSection, BpLibStatus, BpLibTab } from "./bp-library-types";
+import type { LocalSortKey, SortDir } from "@/views/library/local-tab/toolbar";
+import {
+  readLibraryFilterPreferences,
+  writeLibraryFilterPreferences,
+} from "@/views/library/filter-preferences";
 import { useBpT } from "./bp-i18n";
 import { useBpPersistedState } from "./bp-view-state";
 
@@ -49,6 +59,43 @@ const SORTS: Array<{ id: SortKey; label: string }> = [
   { id: "year", label: "Year" },
 ];
 
+const OWNED_SORTS: Array<{ id: LocalSortKey; label: string }> = [
+  { id: "added", label: "Date added" },
+  { id: "title", label: "Title" },
+  { id: "year", label: "Year" },
+  { id: "rating", label: "Rating" },
+  { id: "runtime", label: "Duration" },
+];
+
+function numericMeta(entry: BpLibEntry, key: LocalSortKey): number | null {
+  const raw =
+    key === "year"
+      ? entry.meta.releaseInfo?.match(/\d{4}/)?.[0]
+      : key === "rating"
+        ? entry.meta.imdbRating
+        : key === "runtime"
+          ? entry.meta.runtime?.match(/\d+/)?.[0]
+          : entry.date;
+  if (raw == null) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+function sortOwned(entries: BpLibEntry[], key: LocalSortKey, dir: SortDir): BpLibSection[] {
+  const mul = dir === "asc" ? 1 : -1;
+  const items = [...entries].sort((a, b) => {
+    if (key === "title")
+      return mul * a.meta.name.localeCompare(b.meta.name, undefined, { sensitivity: "base" });
+    const av = numericMeta(a, key);
+    const bv = numericMeta(b, key);
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    return mul * (av - bv);
+  });
+  return [{ label: "", items, total: items.length }];
+}
+
 type T = (key: string, vars?: Record<string, string | number>) => string;
 
 function emptyCopy(params: {
@@ -62,7 +109,9 @@ function emptyCopy(params: {
   const { t, tab, status, signedIn, total, hidden } = params;
   if (status === "error") {
     const name = SERVICE_NAMES[tab];
-    return name ? t("Couldn't reach {name}. Try refreshing.", { name }) : t("Couldn't load your library. Try refreshing.");
+    return name
+      ? t("Couldn't reach {name}. Try refreshing.", { name })
+      : t("Couldn't load your library. Try refreshing.");
   }
   if (total > 0) return t("No matches for these filters.");
   if (tab === "library") {
@@ -80,7 +129,9 @@ function emptyCopy(params: {
   if (tab === "lists") return t("You have no lists yet.");
   if (tab === "favorites") {
     return hidden > 0
-      ? t("Your {n} character and manga favorites live on the desktop Favorites tab.", { n: hidden })
+      ? t("Your {n} character and manga favorites live on the desktop Favorites tab.", {
+          n: hidden,
+        })
       : t("No favorites yet. Save a movie or show to see it here.");
   }
   return t("Nothing here yet.");
@@ -96,45 +147,106 @@ export function BpLibrary({ onSelect }: { onSelect: (m: Meta) => void }) {
   const [type, setType] = useState<TypeKey>("all");
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("");
+  const [library, setLibrary] = useState("");
+  const [genres, setGenres] = useState<Set<string>>(() => new Set());
+  const [ownedSort, setOwnedSort] = useState<LocalSortKey>("added");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [flat, setFlat] = useState(false);
   const [episodes, setEpisodes] = useState(true);
   const [searching, setSearching] = useState(false);
   const [filtering, setFiltering] = useState(false);
   const [limit, setLimit] = useState(PAGE);
+  const [filterPrefsSection, setFilterPrefsSection] = useState<"local" | "media-servers" | null>(
+    null,
+  );
 
   const feed = useBpLibraryFeed(tab);
   const sort: SortKey = settings.librarySort;
 
   useEffect(() => {
-    setGroup("");
+    const section = tab === "local" || tab === "media-servers" ? tab : null;
+    const saved = section ? readLibraryFilterPreferences(section) : {};
+    setGroup(
+      section === "media-servers" && saved.server && saved.server !== "all" ? saved.server : "",
+    );
+    setLibrary(
+      section === "media-servers" && saved.library && saved.library !== "all" ? saved.library : "",
+    );
+    setGenres(new Set(saved.genres ?? []));
     setQuery("");
-    setType("all");
+    setType(saved.type ?? "all");
+    setOwnedSort(saved.sort ?? "added");
+    setSortDir(saved.sortDir ?? "desc");
+    setFilterPrefsSection(section);
   }, [tab]);
 
   useEffect(() => {
+    if (filterPrefsSection == null || filterPrefsSection !== tab) return;
+    writeLibraryFilterPreferences(filterPrefsSection, {
+      type,
+      genres: [...genres],
+      sort: ownedSort,
+      sortDir,
+      ...(filterPrefsSection === "media-servers"
+        ? { server: group || "all", library: library || "all" }
+        : {}),
+    });
+  }, [filterPrefsSection, tab, type, genres, ownedSort, sortDir, group, library]);
+
+  useEffect(() => {
     setLimit(PAGE);
-  }, [tab, type, query, group, sort, flat, episodes]);
+  }, [tab, type, query, group, library, genres, sort, ownedSort, sortDir, flat, episodes]);
 
   const scoped = useMemo(
-    () => (group ? feed.entries.filter((e) => e.group === group) : feed.entries),
-    [feed.entries, group],
+    () =>
+      feed.entries.filter(
+        (e) =>
+          (!group || e.group === group || e.groups?.includes(group)) &&
+          (!library || e.libraries?.includes(library)),
+      ),
+    [feed.entries, group, library],
   );
 
   const counts = useMemo(() => countByType(scoped), [scoped]);
-  const visible = useMemo(() => applyFilter(scoped, type, query), [scoped, type, query]);
+  const visible = useMemo(
+    () =>
+      applyFilter(scoped, type, query).filter((entry) => {
+        if (genres.size === 0) return true;
+        if (tab === "local") return entry.meta.genres?.some((genre) => genres.has(genre)) ?? false;
+        return [...genres].every((genre) => entry.meta.genres?.includes(genre));
+      }),
+    [scoped, type, query, genres, tab],
+  );
   const dated = useMemo(() => visible.some((e) => e.date != null), [visible]);
   const years = useMemo(() => visible.some((e) => e.meta.releaseInfo), [visible]);
-  const sections = useMemo(() => buildBpSections(visible, sort, flat), [visible, sort, flat]);
+  const ownedTab = tab === "local" || tab === "media-servers";
+  const sections = useMemo(
+    () =>
+      ownedTab ? sortOwned(visible, ownedSort, sortDir) : buildBpSections(visible, sort, flat),
+    [visible, ownedTab, ownedSort, sortDir, sort, flat],
+  );
   const paged = useMemo(() => capBpSections(sections, limit), [sections, limit]);
 
   const groupCount = useMemo(() => {
     const out = new Map<string, number>();
     for (const e of feed.entries) {
-      if (!e.group) continue;
-      out.set(e.group, (out.get(e.group) ?? 0) + 1);
+      const memberships = e.groups ?? (e.group ? [e.group] : []);
+      for (const membership of memberships) out.set(membership, (out.get(membership) ?? 0) + 1);
     }
     return out;
   }, [feed.entries]);
+  const libraryCount = useMemo(() => {
+    const out = new Map<string, number>();
+    for (const entry of feed.entries)
+      for (const id of entry.libraries ?? []) out.set(id, (out.get(id) ?? 0) + 1);
+    return out;
+  }, [feed.entries]);
+  const genreOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const entry of scoped)
+      for (const genre of entry.meta.genres ?? []) counts.set(genre, (counts.get(genre) ?? 0) + 1);
+    return [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }, [scoped]);
 
   const first = feed.status === "loading" && feed.entries.length === 0;
   const showEmpty = visible.length === 0 && !first;
@@ -159,6 +271,22 @@ export function BpLibrary({ onSelect }: { onSelect: (m: Meta) => void }) {
       ],
     });
   }
+  if (tab === "media-servers" && (feed.libraries?.length ?? 0) > 0) {
+    filterGroups.push({
+      key: "library",
+      heading: t("Library"),
+      active: library,
+      onPick: setLibrary,
+      options: [
+        { id: "", label: t("All libraries"), count: feed.entries.length },
+        ...feed.libraries!.map((item) => ({
+          id: item.id,
+          label: item.label,
+          count: libraryCount.get(item.id) ?? 0,
+        })),
+      ],
+    });
+  }
   filterGroups.push({
     key: "type",
     heading: t("Type"),
@@ -166,14 +294,52 @@ export function BpLibrary({ onSelect }: { onSelect: (m: Meta) => void }) {
     onPick: (id) => setType(id as TypeKey),
     options: TYPES.map((item) => ({ id: item.id, label: t(item.label), count: counts[item.id] })),
   });
-  filterGroups.push({
-    key: "sort",
-    heading: t("Sort"),
-    active: sort,
-    onPick: (id) => update({ librarySort: id as SortKey }),
-    options: sorts.map((item) => ({ id: item.id, label: t(item.label) })),
-  });
-  if (sort === "recent" && dated) {
+  if (ownedTab && genreOptions.length > 0) {
+    filterGroups.push({
+      key: "genre",
+      heading: t("Genre"),
+      active: "",
+      selected: (id) => genres.has(id),
+      onPick: (id) =>
+        setGenres((current) => {
+          const next = new Set(current);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+        }),
+      options: genreOptions.map(([label, count]) => ({ id: label, label, count })),
+    });
+  }
+  filterGroups.push(
+    ownedTab
+      ? {
+          key: "sort",
+          heading: t("Sort"),
+          active: ownedSort,
+          onPick: (id) => setOwnedSort(id as LocalSortKey),
+          options: OWNED_SORTS.map((item) => ({ id: item.id, label: t(item.label) })),
+        }
+      : {
+          key: "sort",
+          heading: t("Sort"),
+          active: sort,
+          onPick: (id) => update({ librarySort: id as SortKey }),
+          options: sorts.map((item) => ({ id: item.id, label: t(item.label) })),
+        },
+  );
+  if (ownedTab) {
+    filterGroups.push({
+      key: "direction",
+      heading: t("Direction"),
+      active: sortDir,
+      onPick: (id) => setSortDir(id as SortDir),
+      options: [
+        { id: "asc", label: t("Ascending") },
+        { id: "desc", label: t("Descending") },
+      ],
+    });
+  }
+  if (!ownedTab && sort === "recent" && dated) {
     filterGroups.push({
       key: "grouping",
       heading: t("View"),
@@ -203,8 +369,12 @@ export function BpLibrary({ onSelect }: { onSelect: (m: Meta) => void }) {
   // sets deliberately; type and sort read as the standing state.
   const summary = [
     group ? (feed.groups.find((g) => g.id === group)?.label ?? "") : "",
+    library ? (feed.libraries?.find((item) => item.id === library)?.label ?? "") : "",
     TYPES.find((x) => x.id === type)?.label ?? "",
-    sorts.find((x) => x.id === sort)?.label ?? "",
+    ownedTab
+      ? (OWNED_SORTS.find((x) => x.id === ownedSort)?.label ?? "")
+      : (sorts.find((x) => x.id === sort)?.label ?? ""),
+    ownedTab ? (sortDir === "asc" ? "Ascending" : "Descending") : "",
   ]
     .filter(Boolean)
     .map((label) => t(label))
@@ -242,7 +412,7 @@ export function BpLibrary({ onSelect }: { onSelect: (m: Meta) => void }) {
           label={summary}
           ariaLabel={`${t("Filters")}: ${summary}`}
           icon={<SlidersHorizontal size={16} strokeWidth={2.3} />}
-          selected={Boolean(group) || type !== "all"}
+          selected={Boolean(group) || Boolean(library) || genres.size > 0 || type !== "all"}
           onSelect={() => {
             SFX.open();
             setFiltering(true);
@@ -306,9 +476,7 @@ export function BpLibrary({ onSelect }: { onSelect: (m: Meta) => void }) {
         )}
       </BpGridScroller>
 
-      {filtering && (
-        <BpLibraryFilters groups={filterGroups} onClose={() => setFiltering(false)} />
-      )}
+      {filtering && <BpLibraryFilters groups={filterGroups} onClose={() => setFiltering(false)} />}
 
       {searching && (
         <BpLibrarySearch query={query} onChange={setQuery} onClose={() => setSearching(false)} />

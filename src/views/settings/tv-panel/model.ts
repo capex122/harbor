@@ -41,6 +41,8 @@ export type TvGroup = {
   rows: TvRow[];
 };
 
+export type TvLockReason = "hide-spoilers-disabled";
+
 export const TV_GROUPS: TvGroup[] = [
   {
     id: "picture",

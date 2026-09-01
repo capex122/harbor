@@ -2,6 +2,7 @@ import { BookOpen, X } from "lucide-react";
 import { useModalExit } from "@/components/modal-shell";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/lib/i18n";
 import { CodeBlock, CopyName, HoverTip } from "./cheat-sheet-parts";
 import {
   COLOR_TOKENS,
@@ -19,7 +20,12 @@ import {
 import { RECIPES } from "./cheat-sheet-recipes";
 import { SUITE_CHROME } from "./suite-theme";
 
-const RECIPE_EXT: Record<string, string> = { css: "css", js: "js", harborstyle: "harborstyle", html: "html" };
+const RECIPE_EXT: Record<string, string> = {
+  css: "css",
+  js: "js",
+  harborstyle: "harborstyle",
+  html: "html",
+};
 
 function slug(s: string): string {
   return (
@@ -46,6 +52,7 @@ const SECTIONS = [
 ] as const;
 
 export function CheatSheet({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const { closing, close } = useModalExit(onClose);
   const [active, setActive] = useState<(typeof SECTIONS)[number]["id"]>("tokens-color");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -95,26 +102,23 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
       className={`${closing ? "animate-scrim-out" : "animate-scrim-in"} fixed inset-0 z-[240] flex flex-col bg-surface animate-[editorIn_220ms_ease-out]`}
       style={SUITE_CHROME}
       role="dialog"
-      aria-label="Theme cheat sheet"
+      aria-label={t("Theme cheat sheet")}
     >
-      <header
-        data-tauri-drag-region
-        className="flex shrink-0 items-start gap-4 px-6 pb-5 pt-6"
-      >
+      <header data-tauri-drag-region className="flex shrink-0 items-start gap-4 px-6 pb-5 pt-6">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h2 className="flex items-center gap-2 text-[17px] font-semibold tracking-tight text-ink">
             <BookOpen size={16} strokeWidth={2.2} className="shrink-0 text-ink-subtle" />
-            Cheat sheet
+            {t("Cheat sheet")}
           </h2>
           <span className="hidden text-[12.5px] leading-snug text-ink-subtle md:block">
-            Every variable, selector, hook, and recipe for building custom Harbor themes.
+            {t("Every variable, selector, hook, and recipe for building custom Harbor themes.")}
           </span>
         </div>
         <button
           type="button"
           onClick={close}
-          aria-label="Done"
-          title="Done"
+          aria-label={t("Done")}
+          title={t("Done")}
           className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
         >
           <X size={16} />
@@ -124,7 +128,7 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
       <div className="flex flex-1 overflow-hidden">
         <aside className="hidden w-60 shrink-0 px-3 pb-6 pt-2 lg:block">
           <span className="block px-3 pb-2 text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-subtle">
-            Contents
+            {t("Contents")}
           </span>
           <nav className="flex flex-col gap-0.5">
             {SECTIONS.map((s) => (
@@ -138,7 +142,7 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
                     : "text-ink-muted hover:bg-elevated hover:text-ink"
                 }`}
               >
-                {s.label}
+                {t(s.label)}
               </button>
             ))}
           </nav>
@@ -146,30 +150,54 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <div className="mx-auto flex max-w-[960px] flex-col gap-12 px-6 pb-16 pt-2 lg:px-10">
-            <Section id="tokens-color" title="Color tokens" sub="Every surface in Harbor maps to one of these 12 variables.">
+            <Section
+              id="tokens-color"
+              title={t("Color tokens")}
+              sub={t("Every surface in Harbor maps to one of these 12 variables.")}
+            >
               <TokenTable rows={COLOR_TOKENS} swatch />
             </Section>
 
-            <Section id="tokens-font" title="Font tokens" sub="Set on the root. Override any to swap typography.">
+            <Section
+              id="tokens-font"
+              title={t("Font tokens")}
+              sub={t("Set on the root. Override any to swap typography.")}
+            >
               <TokenTable rows={FONT_TOKENS} />
             </Section>
 
-            <Section id="tokens-easing" title="Easing tokens" sub="Shared transition curves. Use anywhere you transition.">
+            <Section
+              id="tokens-easing"
+              title={t("Easing tokens")}
+              sub={t("Shared transition curves. Use anywhere you transition.")}
+            >
               <TokenTable rows={EASING_TOKENS} />
             </Section>
 
-            <Section id="api" title="window.harbor API" sub="Call these from onclick handlers or your theme JS. They are stable and safe: each one drives the real Harbor feature, so your chrome never goes stale when Harbor adds menu items.">
+            <Section
+              id="api"
+              title={t("window.harbor API")}
+              sub={t(
+                "Call these from onclick handlers or your theme JS. They are stable and safe: each one drives the real Harbor feature, so your chrome never goes stale when Harbor adds menu items.",
+              )}
+            >
               <div className="flex flex-col gap-1.5">
                 {WINDOW_HARBOR.map((a) => (
                   <div key={a.call} className="rounded-md bg-canvas px-3.5 py-2.5">
                     <CopyName text={a.call} />
-                    <p className="mt-1 text-[12.5px] leading-snug text-ink-muted">{a.desc}</p>
+                    <p className="mt-1 text-[12.5px] leading-snug text-ink-muted">{t(a.desc)}</p>
                   </div>
                 ))}
               </div>
             </Section>
 
-            <Section id="data-attrs" title="Root data attributes" sub="Set on <html>. Use them to scope styles to a specific layout/card/button choice.">
+            <Section
+              id="data-attrs"
+              title={t("Root data attributes")}
+              sub={t(
+                "Set on <html>. Use them to scope styles to a specific layout/card/button choice.",
+              )}
+            >
               <div className="flex flex-col gap-2.5">
                 {ROOT_DATA_ATTRS.map((d) => (
                   <div key={d.attr} className="rounded-md bg-canvas p-4">
@@ -187,60 +215,89 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
                         ))}
                       </span>
                     </div>
-                    <p className="mt-1.5 text-[12.5px] leading-snug text-ink-muted">{d.desc}</p>
+                    <p className="mt-1.5 text-[12.5px] leading-snug text-ink-muted">{t(d.desc)}</p>
                     <CodeBlock code={d.example} compact />
                   </div>
                 ))}
               </div>
             </Section>
 
-            <Section id="utilities" title="Tailwind utility shortcuts" sub="The Tailwind classes that already exist on every component. Override one of these in CSS and you change everywhere it's used.">
+            <Section
+              id="utilities"
+              title={t("Tailwind utility shortcuts")}
+              sub={t(
+                "The Tailwind classes that already exist on every component. Override one of these in CSS and you change everywhere it's used.",
+              )}
+            >
               <div className="grid gap-1.5 sm:grid-cols-2">
                 {TAILWIND_UTILITIES.map((u) => (
                   <div
                     key={u.class}
                     className="flex items-center justify-between gap-3 rounded-md bg-canvas px-3 py-1.5"
                   >
-                    <code className="font-mono text-[11.5px] font-semibold text-ink">.{u.class}</code>
-                    <code className="truncate text-end font-mono text-[11.5px] text-ink-subtle">{u.mapsTo}</code>
+                    <code className="font-mono text-[11.5px] font-semibold text-ink">
+                      .{u.class}
+                    </code>
+                    <code className="truncate text-end font-mono text-[11.5px] text-ink-subtle">
+                      {u.mapsTo}
+                    </code>
                   </div>
                 ))}
               </div>
             </Section>
 
-            <Section id="selectors" title="Stable selectors" sub="Class names and data attributes that won't change between releases. Safe to target from your CSS.">
+            <Section
+              id="selectors"
+              title={t("Stable selectors")}
+              sub={t(
+                "Class names and data attributes that won't change between releases. Safe to target from your CSS.",
+              )}
+            >
               <div className="flex flex-col gap-1.5">
                 {STABLE_SELECTORS.map((s) => (
                   <div key={s.selector} className="rounded-md bg-canvas px-3.5 py-2.5">
                     <div className="flex flex-wrap items-baseline gap-3">
                       <CopyName text={s.selector} />
-                      <span className="text-[11.5px] text-ink-muted">{s.where}</span>
+                      <span className="text-[11.5px] text-ink-muted">{t(s.where)}</span>
                     </div>
                     {s.tip && (
-                      <p className="mt-1 text-[11.5px] italic text-ink-subtle">{s.tip}</p>
+                      <p className="mt-1 text-[11.5px] italic text-ink-subtle">{t(s.tip)}</p>
                     )}
                   </div>
                 ))}
               </div>
             </Section>
 
-            <Section id="z-index" title="Z-index map" sub="Pick a z-index for your overlays that sits where you want it.">
+            <Section
+              id="z-index"
+              title={t("Z-index map")}
+              sub={t("Pick a z-index for your overlays that sits where you want it.")}
+            >
               <div className="flex flex-col gap-1">
                 {Z_INDEX_MAP.map((l) => (
-                  <div key={l.name} className="flex items-center gap-3 rounded-md bg-canvas px-3.5 py-2">
+                  <div
+                    key={l.name}
+                    className="flex items-center gap-3 rounded-md bg-canvas px-3.5 py-2"
+                  >
                     <code className="w-12 shrink-0 text-center font-mono text-[12.5px] font-bold text-accent">
                       {l.z}
                     </code>
                     <div className="flex min-w-0 flex-col">
-                      <span className="text-[12.5px] font-semibold text-ink">{l.name}</span>
-                      <span className="text-[11.5px] text-ink-subtle">{l.what}</span>
+                      <span className="text-[12.5px] font-semibold text-ink">{t(l.name)}</span>
+                      <span className="text-[11.5px] text-ink-subtle">{t(l.what)}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </Section>
 
-            <Section id="events" title="Window events" sub="Dispatched on window. Listen from your theme JS to react to Harbor's lifecycle.">
+            <Section
+              id="events"
+              title={t("Window events")}
+              sub={t(
+                "Dispatched on window. Listen from your theme JS to react to Harbor's lifecycle.",
+              )}
+            >
               <div className="flex flex-col gap-1.5">
                 {WINDOW_EVENTS.map((e) => (
                   <div key={e.name} className="rounded-md bg-canvas px-3.5 py-2.5">
@@ -252,13 +309,17 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
                         </code>
                       )}
                     </div>
-                    <p className="mt-1 text-[11.5px] text-ink-muted">{e.when}</p>
+                    <p className="mt-1 text-[11.5px] text-ink-muted">{t(e.when)}</p>
                   </div>
                 ))}
               </div>
             </Section>
 
-            <Section id="views" title="View identifiers" sub="Use these strings if you wire a custom navbar that needs to navigate.">
+            <Section
+              id="views"
+              title={t("View identifiers")}
+              sub={t("Use these strings if you wire a custom navbar that needs to navigate.")}
+            >
               <div className="flex flex-wrap gap-1.5">
                 {VIEW_NAMES.map((v) => (
                   <span
@@ -268,13 +329,17 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
                     <code className="rounded-full bg-elevated px-2 py-0.5 font-mono text-[11.5px] text-ink">
                       {v.id}
                     </code>
-                    <span className="text-[11.5px] text-ink-muted">{v.label}</span>
+                    <span className="text-[11.5px] text-ink-muted">{t(v.label)}</span>
                   </span>
                 ))}
               </div>
             </Section>
 
-            <Section id="recipes" title="Recipes" sub="Copy-paste starters for common customizations.">
+            <Section
+              id="recipes"
+              title={t("Recipes")}
+              sub={t("Copy-paste starters for common customizations.")}
+            >
               <div className="flex flex-col gap-3">
                 {RECIPES.map((r) => (
                   <div key={r.title} className="rounded-md bg-canvas p-4">
@@ -282,9 +347,9 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
                       <span className="rounded-md bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.18em] text-accent">
                         {r.lang}
                       </span>
-                      <span className="text-[13px] font-semibold text-ink">{r.title}</span>
+                      <span className="text-[13px] font-semibold text-ink">{t(r.title)}</span>
                     </div>
-                    <p className="mb-2 text-[12.5px] text-ink-muted">{r.why}</p>
+                    <p className="mb-2 text-[12.5px] text-ink-muted">{t(r.why)}</p>
                     <CodeBlock
                       code={r.code}
                       filename={`${slug(r.title)}.${RECIPE_EXT[r.lang.toLowerCase()] ?? "txt"}`}
@@ -299,11 +364,11 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
 
       <div className="pointer-events-auto fixed bottom-6 end-6 z-[50] flex flex-col items-center gap-1 rounded-md bg-elevated p-1.5 harbor-float">
         {SECTIONS.map((s) => (
-          <HoverTip key={s.id} label={s.label} side="left">
+          <HoverTip key={s.id} label={t(s.label)} side="left">
             <button
               type="button"
               onClick={() => jump(s.id)}
-              aria-label={s.label}
+              aria-label={t(s.label)}
               className="flex h-5 w-5 items-center justify-center"
             >
               <span
@@ -322,7 +387,17 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-function Section({ id, title, sub, children }: { id: string; title: string; sub?: string; children: ReactNode }) {
+function Section({
+  id,
+  title,
+  sub,
+  children,
+}: {
+  id: string;
+  title: string;
+  sub?: string;
+  children: ReactNode;
+}) {
   return (
     <section id={`cs-${id}`} className="flex flex-col gap-4 scroll-mt-4">
       <div className="flex flex-col gap-0.5">
@@ -335,6 +410,7 @@ function Section({ id, title, sub, children }: { id: string; title: string; sub?
 }
 
 function TokenTable({ rows, swatch }: { rows: TokenRow[]; swatch?: boolean }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-1.5">
       {rows.map((r) => (
@@ -352,9 +428,11 @@ function TokenTable({ rows, swatch }: { rows: TokenRow[]; swatch?: boolean }) {
           )}
           <div className="flex min-w-0 flex-col">
             <CopyName text={r.name} />
-            <code className="truncate font-mono text-[12.5px] text-ink-subtle">{r.defaultValue}</code>
+            <code className="truncate font-mono text-[12.5px] text-ink-subtle">
+              {r.defaultValue}
+            </code>
           </div>
-          <span className="text-[13px] leading-snug text-ink-muted">{r.desc}</span>
+          <span className="text-[13px] leading-snug text-ink-muted">{t(r.desc)}</span>
         </div>
       ))}
     </div>

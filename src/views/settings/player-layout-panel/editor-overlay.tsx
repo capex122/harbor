@@ -163,33 +163,42 @@ export function EditorOverlay({
   const mid = chromeW > 0 && chromeW < 1300;
   const compact = chromeW > 0 && chromeW < 1000;
   const tight = chromeW > 0 && chromeW < 600;
-  const sizeLabel = tight ? "Tight" : compact ? "Compact" : mid ? "Mid" : "Wide";
+  const sizeLabel = tight ? t("Tight") : compact ? t("Compact") : mid ? t("Mid") : t("Wide");
 
   const controlVariants = useMemo(
     () => Object.fromEntries(config.controls.map((c) => [c.id, c.variant ?? "auto"])),
     [config.controls],
   );
 
-  const ctx = useMemo(
-    () => {
-      const opts = {
-        mid,
-        compact,
-        tight,
-        mode,
-        customIcons: config.customIcons,
-        controlVariants,
-        timeFormat: config.options.timeFormat,
-        volumeStyle: config.options.volumeStyle,
-        previewStates,
-      };
-      return theme === "stremio" ? buildStremioCtx(opts) : buildDefaultCtx(opts);
-    },
-    [theme, mid, compact, tight, mode, config.customIcons, controlVariants, config.options.timeFormat, config.options.volumeStyle, previewStates],
-  );
+  const ctx = useMemo(() => {
+    const opts = {
+      mid,
+      compact,
+      tight,
+      mode,
+      customIcons: config.customIcons,
+      controlVariants,
+      timeFormat: config.options.timeFormat,
+      volumeStyle: config.options.volumeStyle,
+      previewStates,
+    };
+    return theme === "stremio" ? buildStremioCtx(opts) : buildDefaultCtx(opts);
+  }, [
+    theme,
+    mid,
+    compact,
+    tight,
+    mode,
+    config.customIcons,
+    controlVariants,
+    config.options.timeFormat,
+    config.options.volumeStyle,
+    previewStates,
+  ]);
 
   const renderOne = (id: PlayerControlId) => {
-    if (theme === "stremio") return <RenderedStremioControl id={id} ctx={ctx as StremioRenderCtx} />;
+    if (theme === "stremio")
+      return <RenderedStremioControl id={id} ctx={ctx as StremioRenderCtx} />;
     return renderControl(id, ctx as ControlContext);
   };
 
@@ -262,7 +271,11 @@ export function EditorOverlay({
             title={isFs ? t("Exit fullscreen") : t("Enter fullscreen")}
             className="flex h-11 w-11 items-center justify-center rounded-md bg-white/8 text-white/85 transition-colors hover:bg-white/15 hover:text-white"
           >
-            {isFs ? <Minimize size={14} strokeWidth={2.4} /> : <Maximize size={14} strokeWidth={2.4} />}
+            {isFs ? (
+              <Minimize size={14} strokeWidth={2.4} />
+            ) : (
+              <Maximize size={14} strokeWidth={2.4} />
+            )}
           </button>
           <button
             type="button"
@@ -397,7 +410,7 @@ function HiddenTray({
               onUnhide(c.id);
               onSelect(c.id);
             }}
-            title={t("Show {label}", { label: CONTROL_META[c.id]?.label ?? c.id })}
+            title={t("Show {label}", { label: t(CONTROL_META[c.id]?.label ?? c.id) })}
             className="flex shrink-0 items-center gap-1.5 rounded-md bg-white/8 py-1.5 ps-2.5 pe-3 text-[12px] font-medium text-white/65 transition-colors hover:bg-white/15 hover:text-white"
           >
             <Plus size={12} strokeWidth={2.6} />
@@ -413,13 +426,25 @@ function ModeSwitch({ mode, onChange }: { mode: PlayerMode; onChange: (m: Player
   const t = useT();
   return (
     <div className="flex h-11 items-center gap-0.5 rounded-md bg-white/8 p-1">
-      <ModePill active={mode === "normal"} onClick={() => onChange("normal")} icon={<Film size={13} strokeWidth={2.4} />}>
+      <ModePill
+        active={mode === "normal"}
+        onClick={() => onChange("normal")}
+        icon={<Film size={13} strokeWidth={2.4} />}
+      >
         {t("Normal")}
       </ModePill>
-      <ModePill active={mode === "live"} onClick={() => onChange("live")} icon={<Tv size={13} strokeWidth={2.4} />}>
+      <ModePill
+        active={mode === "live"}
+        onClick={() => onChange("live")}
+        icon={<Tv size={13} strokeWidth={2.4} />}
+      >
         {t("Live TV")}
       </ModePill>
-      <ModePill active={mode === "together"} onClick={() => onChange("together")} icon={<Users size={13} strokeWidth={2.4} />}>
+      <ModePill
+        active={mode === "together"}
+        onClick={() => onChange("together")}
+        icon={<Users size={13} strokeWidth={2.4} />}
+      >
         {t("Together")}
       </ModePill>
     </div>

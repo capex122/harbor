@@ -7,6 +7,7 @@ import { useBpT } from "./bp-i18n";
 export type BpLiveFilterItem = {
   key: string;
   label: string;
+  translateLabel?: boolean;
   count: number;
   star?: boolean;
   flagCode?: string;
@@ -70,7 +71,9 @@ export function BpLiveFilters({
                 // ours. Resting selected is --bp-on so active and focus never
                 // read as the same object.
                 className={`flex h-[clamp(46px,5.2vh,60px)] shrink-0 items-center gap-[clamp(6px,0.5vw,10px)] rounded-full px-[clamp(15px,1.3vw,24px)] text-[clamp(13px,1.85vh,21px)] font-semibold transition-[transform,background-color,border-color,color] duration-[var(--bp-dur-fast)] ease-[var(--bp-ease)] data-[bp-focus=true]:[transform:scale(1.04)] motion-reduce:data-[bp-focus=true]:[transform:none] ${
-                  on ? "bg-[var(--bp-on)] text-ink" : "border border-[var(--bp-edge)] text-ink-muted"
+                  on
+                    ? "bg-[var(--bp-on)] text-ink"
+                    : "border border-[var(--bp-edge)] text-ink-muted"
                 }`}
               >
                 {item.star && (
@@ -82,7 +85,9 @@ export function BpLiveFilters({
                   />
                 )}
                 {item.flagCode && <FilterFlag code={item.flagCode} />}
-                <span className="max-w-[clamp(160px,24vw,380px)] truncate">{t(item.label)}</span>
+                <span className="max-w-[clamp(160px,24vw,380px)] truncate">
+                  {item.translateLabel ? t(item.label) : item.label}
+                </span>
                 {showCount && (
                   <span className="text-[clamp(11px,1.45vh,16px)] font-bold tabular-nums opacity-55">
                     {item.count.toLocaleString()}

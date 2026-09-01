@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { Popcorn } from "lucide-react";
 import { NavGlyph } from "@/components/icons/nav-glyph";
-import { EBookNavIcon } from "@/components/icons/ebook-nav-icon";
 import { useUnseenReminderCount } from "@/lib/reminders";
 import { AddonsIcon } from "@/components/icons/addons-icon";
 import { CatalogsIcon } from "@/components/icons/catalogs-icon";
@@ -125,7 +124,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     id: "ebook",
     label: "nav.ebook",
-    render: (active) => <EBookNavIcon active={active} />,
+    render: () => <NavGlyph name="ebook" className="h-[26px] w-[26px] p-[2px]" />,
     view: "ebook",
     parentalKey: "anime",
   },

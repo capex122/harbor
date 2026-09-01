@@ -71,6 +71,9 @@ export type PlayerSrc = {
   imdbId?: string;
   imdbIdVerified?: boolean;
   episode?: PlayEpisode;
+  /** Last logical episode covered by the physical source. */
+  episodeEnd?: number;
+  episodeSpan?: import("./episode-span").EpisodeSpan;
   url: string;
   title: string;
   subtitle?: string;
@@ -86,6 +89,15 @@ export type PlayerSrc = {
   liveProgram?: string;
   isLive?: boolean;
   headers?: Record<string, string>;
+  homeServer?: {
+    connectionId: string;
+    itemId: string;
+    versionId: string;
+    quality: import("./media-server/types").MediaServerQuality;
+    playbackSessionId?: string;
+  };
+  startPositionMs?: number;
+  startPaused?: boolean;
 };
 
 export type PlayerStreamRef = {

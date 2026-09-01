@@ -39,6 +39,22 @@ export function isAuthFailure(e: unknown): boolean {
   return s === 401 || s === 403;
 }
 
+/**
+ * 422 and 413 mean the server looked at this batch and refused it. Retrying the identical
+ * bytes can only fail identically, so these must never be treated as a network blip: that
+ * is how one malformed or oversized section stalls every other section on the account
+ * forever. The body names the offending key for the per-write cases.
+ */
+export function isRejection(e: unknown): boolean {
+  const s = httpStatusOf(e);
+  return s === 422 || s === 413;
+}
+
+export function rejectedKeyOf(e: unknown): string {
+  const key = (e as { body?: { key?: unknown } } | null | undefined)?.body?.key;
+  return typeof key === "string" ? key : "";
+}
+
 function asDoc(raw: unknown): SyncDoc | null {
   if (!raw || typeof raw !== "object") return null;
   const d = raw as Record<string, unknown>;

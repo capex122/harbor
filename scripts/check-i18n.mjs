@@ -4,7 +4,23 @@ import { pathToFileURL } from "node:url";
 
 const LOCALES_DIR = resolve("src/lib/i18n/locales");
 const SOURCE_LANG = "en";
-const PLURAL_LANGS = new Set(["ru"]);
+const PLURAL_LANGS = {
+  ar: true,
+  de: true,
+  es: true,
+  fr: true,
+  hi: true,
+  id: true,
+  it: true,
+  ja: true,
+  ko: true,
+  pl: true,
+  pt: true,
+  ru: true,
+  tr: true,
+  vi: true,
+  zh: true,
+};
 const VARIANT_SUFFIX = /#(?:one|few|many)$/;
 const DOT_KEY = /^[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)+$/;
 const PLACEHOLDER = /\{([A-Za-z][A-Za-z0-9_]*)\}/g;
@@ -157,7 +173,15 @@ export function parseCatalog(sourceRaw) {
         const name = tokens[k + 1];
         const from = tokens[k + 2];
         const spec = tokens[k + 3];
-        if (name && name.t === "id" && from && from.t === "id" && from.v === "from" && spec && spec.t === "str") {
+        if (
+          name &&
+          name.t === "id" &&
+          from &&
+          from.t === "id" &&
+          from.v === "from" &&
+          spec &&
+          spec.t === "str"
+        ) {
           imports.set(name.v, spec.v);
         }
       }
@@ -198,27 +222,35 @@ async function loadLanguage(lang) {
       continue;
     }
     const rel = spec.replace(/^\.\//, "");
-    files.push({ file: `${rel}.ts`, parsed: parseCatalog(await readFile(join(LOCALES_DIR, `${rel}.ts`), "utf8")) });
+    files.push({
+      file: `${rel}.ts`,
+      parsed: parseCatalog(await readFile(join(LOCALES_DIR, `${rel}.ts`), "utf8")),
+    });
   }
   for (const { file, parsed } of files) {
     for (const entry of parsed.entries) {
-      if (origin.has(entry.key)) duplicates.push({ key: entry.key, first: origin.get(entry.key), again: file });
+      if (origin.has(entry.key))
+        duplicates.push({ key: entry.key, first: origin.get(entry.key), again: file });
       origin.set(entry.key, file);
       table.set(entry.key, { key: entry.key, value: entry.value, line: entry.line, file });
     }
   }
   const spreadNames = new Set(barrel.spreads.map((s) => s.name));
   const declared = new Set(
-    [...barrel.imports.entries()].filter(([name]) => spreadNames.has(name)).map(([, spec]) => spec.replace(/^\.\//, "")),
+    [...barrel.imports.entries()]
+      .filter(([name]) => spreadNames.has(name))
+      .map(([, spec]) => spec.replace(/^\.\//, "")),
   );
   return { lang, table, duplicates, declared, unresolved };
 }
 
 async function discoverLanguages() {
   const names = (await readdir(LOCALES_DIR, { withFileTypes: true }))
-    .filter((e) => e.isFile() && e.name.endsWith(".ts"))
+    .filter((e) => e.isFile() && e.name.endsWith(".ts") && e.name !== "ui-fallback.ts")
     .map((e) => e.name.slice(0, -3));
-  return names.sort((a, b) => (a === SOURCE_LANG ? -1 : b === SOURCE_LANG ? 1 : a.localeCompare(b)));
+  return names.sort((a, b) =>
+    a === SOURCE_LANG ? -1 : b === SOURCE_LANG ? 1 : a.localeCompare(b),
+  );
 }
 
 async function orphanLeaves(lang, declared) {
@@ -241,7 +273,8 @@ async function collect() {
   const source = loaded.get(SOURCE_LANG);
   const defects = [];
   const hygiene = [];
-  if (!source) defects.push(`${SOURCE_LANG}.ts is required as the source catalog for dot-style keys`);
+  if (!source)
+    defects.push(`${SOURCE_LANG}.ts is required as the source catalog for dot-style keys`);
 
   for (const lang of languages) {
     const state = loaded.get(lang);
@@ -254,23 +287,31 @@ async function collect() {
     for (const [key, entry] of state.table) {
       const where = `${entry.file}:${entry.line}`;
       if (hasTab(key)) {
-        defects.push(`${where}: key holds a tab so no call site can ever match it: ${JSON.stringify(key)}`);
+        defects.push(
+          `${where}: key holds a tab so no call site can ever match it: ${JSON.stringify(key)}`,
+        );
         continue;
       }
       if (DOUBLE_BRACE.test(key) || DOUBLE_BRACE.test(entry.value)) {
-        defects.push(`${where}: doubled brace never interpolates and leaves a literal brace: ${JSON.stringify(key)}`);
+        defects.push(
+          `${where}: doubled brace never interpolates and leaves a literal brace: ${JSON.stringify(key)}`,
+        );
       }
       if (lang === SOURCE_LANG) continue;
       const base = key.replace(VARIANT_SUFFIX, "");
-      if (VARIANT_SUFFIX.test(key) && !PLURAL_LANGS.has(lang)) {
-        defects.push(`${where}: plural variant key in a language with no plural rule: ${JSON.stringify(key)}`);
+      if (VARIANT_SUFFIX.test(key) && !(lang in PLURAL_LANGS)) {
+        defects.push(
+          `${where}: plural variant key in a language with no plural rule: ${JSON.stringify(key)}`,
+        );
         continue;
       }
       let expected;
       if (DOT_KEY.test(base)) {
         const src = source && source.table.get(base);
         if (!src) {
-          defects.push(`${where}: dot-style key is absent from ${SOURCE_LANG}.ts: ${JSON.stringify(base)}`);
+          defects.push(
+            `${where}: dot-style key is absent from ${SOURCE_LANG}.ts: ${JSON.stringify(base)}`,
+          );
           continue;
         }
         expected = placeholders(src.value);
@@ -279,11 +320,15 @@ async function collect() {
       }
       const actual = placeholders(entry.value);
       if (expected.join(SEP) !== actual.join(SEP)) {
-        defects.push(`${where}: placeholders [${actual}] do not match source [${expected}] for ${JSON.stringify(base)}`);
+        defects.push(
+          `${where}: placeholders [${actual}] do not match source [${expected}] for ${JSON.stringify(base)}`,
+        );
       }
     }
     for (const dup of state.duplicates) {
-      hygiene.push(`${lang}: ${JSON.stringify(dup.key)} is defined in ${dup.first} and again in ${dup.again}`);
+      hygiene.push(
+        `${lang}: ${JSON.stringify(dup.key)} is defined in ${dup.first} and again in ${dup.again}`,
+      );
     }
   }
 
@@ -344,9 +389,13 @@ async function run(argv) {
     );
   } else {
     console.log(`Catalogs: ${languages.map((l) => `${l} ${loaded.get(l).table.size}`).join(", ")}`);
-    console.log(`Comparable union across ${coverage.map((c) => c.lang).join(", ")}: ${union.size} keys`);
+    console.log(
+      `Comparable union across ${coverage.map((c) => c.lang).join(", ")}: ${union.size} keys`,
+    );
     for (const c of coverage) {
-      console.log(`  ${c.lang}: ${c.have} present, ${c.missing.length} missing, ${c.pct.toFixed(1)} percent of union`);
+      console.log(
+        `  ${c.lang}: ${c.have} present, ${c.missing.length} missing, ${c.pct.toFixed(1)} percent of union`,
+      );
     }
     if (listMissing) {
       for (const c of coverage) {
@@ -365,7 +414,9 @@ async function run(argv) {
     }
     if (hygiene.length) {
       console.log("");
-      console.log(`${hygiene.length} shadowed duplicate keys, reported but never fatal. Use --list-duplicates to see them.`);
+      console.log(
+        `${hygiene.length} shadowed duplicate keys, reported but never fatal. Use --list-duplicates to see them.`,
+      );
       if (listDuplicates) for (const h of hygiene) console.log(`  ${h}`);
     }
   }

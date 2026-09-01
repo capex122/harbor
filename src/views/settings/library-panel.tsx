@@ -5,11 +5,12 @@ import { HomeTab } from "./library-panel/home-tab";
 import { CardsTab } from "./library-panel/cards-tab";
 import { DetailTab } from "./library-panel/detail-tab";
 import { ProvidersTab } from "./library-panel/providers-tab";
+import { AiTab } from "./library-panel/ai-tab";
 import { LibraryTab } from "./library-panel/library-tab";
 
 export type LibraryKey = "tmdb" | "omdb" | "rpdb" | "fanart" | "tvdb";
 
-type Tab = "home" | "cards" | "detail" | "providers" | "library";
+type Tab = "home" | "cards" | "detail" | "providers" | "ai" | "library";
 
 export function LibraryPanel({
   tmdbDraft,
@@ -45,6 +46,7 @@ export function LibraryPanel({
     { id: "cards" as const, label: t("Cards") },
     { id: "detail" as const, label: t("Detail pages") },
     { id: "providers" as const, label: t("Metadata") },
+    { id: "ai" as const, label: t("AI search") },
     { id: "library" as const, label: t("Library") },
   ];
   useSubTabs(tabs, tab, (id) => setTab(id as Tab));
@@ -70,6 +72,7 @@ export function LibraryPanel({
             saveKey={saveKey}
           />
         )}
+        {tab === "ai" && <AiTab />}
         {tab === "library" && <LibraryTab />}
       </div>
     </>

@@ -1,4 +1,5 @@
 import { ArrowDownToLine } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { UserHoverCard } from "@/views/profile/user-hover-card";
 import { requestOpenProfile } from "@/lib/social/open-profile";
 import type { AuthorStat } from "./use-store-themes";
@@ -17,14 +18,23 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function TopAuthors({ authors, onSelect }: { authors: AuthorStat[]; onSelect: (author: string) => void }) {
+export function TopAuthors({
+  authors,
+  onSelect,
+}: {
+  authors: AuthorStat[];
+  onSelect: (author: string) => void;
+}) {
+  const t = useT();
   const top = authors.slice(0, 8);
   if (top.length < 3) return null;
   return (
     <section className="flex flex-col gap-5 ps-[9px]">
       <div className="flex flex-col">
-        <h3 className="text-[17px] font-medium tracking-tight text-ink">Top authors</h3>
-        <p className="text-[12.5px] text-ink-subtle">The most-downloaded creators in the community.</p>
+        <h3 className="text-[17px] font-medium tracking-tight text-ink">{t("Top authors")}</h3>
+        <p className="text-[12.5px] text-ink-subtle">
+          {t("The most-downloaded creators in the community.")}
+        </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {top.map((a, i) => {
@@ -36,7 +46,9 @@ export function TopAuthors({ authors, onSelect }: { authors: AuthorStat[]; onSel
               onClick={() => onSelect(a.author)}
               className="group flex w-full items-center gap-3 rounded-md bg-surface p-3 text-start outline-none ring-1 ring-edge-soft transition-[transform,box-shadow] duration-200 hover:harbor-float hover:ring-edge focus-visible:ring-2 focus-visible:ring-accent active:translate-y-0 motion-reduce:transform-none"
             >
-              <span className="w-4 shrink-0 text-center text-[13.5px] font-bold tabular-nums text-ink-subtle">{i + 1}</span>
+              <span className="w-4 shrink-0 text-center text-[13.5px] font-bold tabular-nums text-ink-subtle">
+                {i + 1}
+              </span>
               {a.avatar ? (
                 <img
                   src={a.avatar}
@@ -59,7 +71,7 @@ export function TopAuthors({ authors, onSelect }: { authors: AuthorStat[]; onSel
                     <span
                       role="link"
                       tabIndex={0}
-                      title={`Open @${h} profile`}
+                      title={t("Open @{handle} profile", { handle: h })}
                       onClick={(e) => {
                         e.stopPropagation();
                         requestOpenProfile(h);
@@ -73,17 +85,23 @@ export function TopAuthors({ authors, onSelect }: { authors: AuthorStat[]; onSel
                       }}
                       className="truncate cursor-pointer text-[13.5px] font-semibold text-ink underline-offset-2 outline-none hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
                     >
-                      {a.author}
+                      {a.author === "Anonymous" ? t("Anonymous") : a.author}
                     </span>
                   ) : (
-                    <span className="truncate text-[13.5px] font-semibold text-ink">{a.author}</span>
+                    <span className="truncate text-[13.5px] font-semibold text-ink">
+                      {a.author === "Anonymous" ? t("Anonymous") : a.author}
+                    </span>
                   )}
                   {h && (
-                    <span className="shrink-0 truncate font-display text-[11.5px] text-ink-subtle">@{h}</span>
+                    <span className="shrink-0 truncate font-display text-[11.5px] text-ink-subtle">
+                      @{h}
+                    </span>
                   )}
                 </span>
                 <span className="flex items-center gap-1.5 text-[11.5px] text-ink-subtle">
-                  <span>{a.count} {a.count === 1 ? "theme" : "themes"}</span>
+                  <span>
+                    {a.count} {a.count === 1 ? t("theme") : t("themes")}
+                  </span>
                   <span className="text-ink-subtle/50">·</span>
                   <span className="inline-flex items-center gap-1 tabular-nums">
                     <ArrowDownToLine size={10.5} strokeWidth={2.2} />

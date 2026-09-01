@@ -49,7 +49,9 @@ export function HandleChangeConfirm({
       >
         <div className="flex items-start gap-4 px-6 pt-6">
           <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <h2 className="text-[17px] font-semibold tracking-tight text-ink">Change your handle?</h2>
+            <h2 className="text-[17px] font-semibold tracking-tight text-ink">
+              {t("Change your handle?")}
+            </h2>
           </div>
           <button
             type="button"
@@ -63,9 +65,11 @@ export function HandleChangeConfirm({
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-6">
           <p className="text-[12.5px] leading-relaxed text-ink-subtle">
-            {t("You are changing")} <span className="font-display text-ink">@{current}</span> {t("to")}{" "}
-            <span className="font-display text-ink">@{next}</span>. {t("You will not be able to change it again for 14 days, and your old handle may be taken by someone else.")}
-
+            {t("You are changing")} <span className="font-display text-ink">@{current}</span>{" "}
+            {t("to")} <span className="font-display text-ink">@{next}</span>.{" "}
+            {t(
+              "You will not be able to change it again for 14 days, and your old handle may be taken by someone else.",
+            )}
           </p>
         </div>
 

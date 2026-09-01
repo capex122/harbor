@@ -2,6 +2,7 @@ import { Check, ExternalLink, X } from "lucide-react";
 import { useModalExit } from "@/components/modal-shell";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/lib/i18n";
 import { openUrl } from "@/lib/window";
 import tvdb1 from "@/assets/tvdb-guide/tvdb1.png";
 import tvdb2 from "@/assets/tvdb-guide/tvdb2.png";
@@ -54,6 +55,7 @@ function linkify(text: string) {
 }
 
 export function TvdbGuideModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useT();
   const { closing, close } = useModalExit(onClose, open);
   useEffect(() => {
     if (!open) return;
@@ -78,12 +80,14 @@ export function TvdbGuideModal({ open, onClose }: { open: boolean; onClose: () =
             <span className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-subtle">
               TheTVDB
             </span>
-            <h2 className="text-[17px] font-semibold text-ink">Get your free TheTVDB key</h2>
-            <p className="text-[12.5px] text-ink-subtle">About a minute. Free for personal use.</p>
+            <h2 className="text-[17px] font-semibold text-ink">{t("Get your free TheTVDB key")}</h2>
+            <p className="text-[12.5px] text-ink-subtle">
+              {t("About a minute. Free for personal use.")}
+            </p>
           </div>
           <button
             onClick={close}
-            aria-label="Close"
+            aria-label={t("Close")}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
           >
             <X size={16} strokeWidth={2.2} />
@@ -96,23 +100,28 @@ export function TvdbGuideModal({ open, onClose }: { open: boolean; onClose: () =
                 {i + 1}
               </span>
               <div className="flex min-w-0 flex-col gap-1.5">
-                <span className="text-[13.5px] font-semibold text-ink">{step.title}</span>
-                <p className="text-[13px] leading-relaxed text-ink-muted">{linkify(step.body)}</p>
+                <span className="text-[13.5px] font-semibold text-ink">{t(step.title)}</span>
+                <p className="text-[13px] leading-relaxed text-ink-muted">
+                  {linkify(t(step.body))}
+                </p>
                 {step.callout && (
                   <div className="mt-1 flex items-start gap-2 rounded-md bg-canvas px-3.5 py-3">
                     <Check size={16} strokeWidth={2.6} className="mt-0.5 shrink-0 text-accent" />
                     <p className="text-[12.5px] leading-relaxed text-ink">
-                      Ignore the paid tiers. Personal use is free, you are not a company. Just pick the
-                      first option and keep going.
+                      {t(
+                        "Ignore the paid tiers. Personal use is free, you are not a company. Just pick the first option and keep going.",
+                      )}
                     </p>
                   </div>
                 )}
-                <img
-                  src={step.img}
-                  alt=""
-                  loading="lazy"
-                  className="mt-1.5 max-h-[128px] max-w-full rounded-md"
-                />
+                <div className="mt-2 overflow-hidden rounded-lg bg-canvas ring-1 ring-inset ring-edge-soft">
+                  <img
+                    src={step.img}
+                    alt=""
+                    loading="lazy"
+                    className="block max-h-[240px] w-full object-contain"
+                  />
+                </div>
               </div>
             </div>
           ))}
@@ -122,13 +131,13 @@ export function TvdbGuideModal({ open, onClose }: { open: boolean; onClose: () =
             onClick={close}
             className="h-9 rounded-md bg-elevated px-4 text-[12.5px] font-semibold text-ink-muted transition-colors hover:text-ink"
           >
-            Close
+            {t("Close")}
           </button>
           <button
             onClick={() => openUrl("https://thetvdb.com/api-information")}
             className="flex h-9 items-center gap-2 rounded-md bg-ink px-4 text-[12.5px] font-semibold text-canvas transition-opacity hover:opacity-90"
           >
-            Open TheTVDB
+            {t("Open TheTVDB")}
             <ExternalLink size={14} strokeWidth={2.2} />
           </button>
         </div>

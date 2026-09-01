@@ -878,17 +878,25 @@ export function PluginGuide({ kind = "manga" }: { kind?: "manga" | "ebook" }) {
                 n={1}
                 title={t("Write one JavaScript file")}
                 body={t(
-                  `Implement the ${ebook ? "EBookProvider" : "MangaProvider"} object: popular, search, detail, chapters, ${ebook ? "content" : "pageUrls"}, and optional tags. Nothing else.`,
+                  "Implement the {provider} object: popular, search, detail, chapters, {contentMethod}, and optional tags. Nothing else.",
+                  {
+                    provider: ebook ? "EBookProvider" : "MangaProvider",
+                    contentMethod: ebook ? "content" : "pageUrls",
+                  },
                 )}
               />
               <Step
                 n={2}
                 title={t("Use the harbor bridge")}
-                body={t(
+                body={
                   ebook
-                    ? "Reach HTTP sources with harbor.http(url, opts), binary gRPC sources with harbor.grpc(url, protobufBytes, opts), and parse HTML with harbor.parseHtml(html). There is no fetch, DOM, or storage in the sandbox."
-                    : "Reach the network with harbor.http(url, opts) and parse HTML with harbor.parseHtml(html). There is no fetch, DOM, or storage in the sandbox.",
-                )}
+                    ? t(
+                        "Reach HTTP sources with harbor.http(url, opts), binary gRPC sources with harbor.grpc(url, protobufBytes, opts), and parse HTML with harbor.parseHtml(html). There is no fetch, DOM, or storage in the sandbox.",
+                      )
+                    : t(
+                        "Reach the network with harbor.http(url, opts) and parse HTML with harbor.parseHtml(html). There is no fetch, DOM, or storage in the sandbox.",
+                      )
+                }
               />
               <Step
                 n={3}

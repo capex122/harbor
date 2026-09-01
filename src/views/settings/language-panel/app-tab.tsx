@@ -7,6 +7,7 @@ import { ALL_LANGUAGE_NAMES } from "@/lib/subtitles/language";
 import { Section, ToggleRow } from "../shared";
 import { SettingGroup, SettingRow } from "../kit";
 import { LanguagesPicker } from "../streaming-panel";
+import { RegionField } from "../region-cascade";
 import { DisplayLanguageSection } from "./display-language-section";
 
 const IMAGE_LANG_OPTIONS = ["Original", ...ALL_LANGUAGE_NAMES];
@@ -40,6 +41,18 @@ export function AppLanguageTab() {
   const t = useT();
   return (
     <>
+      <Section title={t("Region & language")}>
+        <SettingRow
+          wide
+          label={t("Where you watch from")}
+          desc={t(
+            "Sets streaming availability and the Now Playing release window. Pick a country and Harbor offers to match the interface, metadata, subtitle, and audio languages to it.",
+          )}
+        >
+          <RegionField />
+        </SettingRow>
+      </Section>
+
       <DisplayLanguageSection />
 
       <Section

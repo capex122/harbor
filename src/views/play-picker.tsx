@@ -54,15 +54,17 @@ import { CachedFilterPill, LanguageFilterPill } from "./play-picker/filter-pills
 import { PickerEmptyLadder } from "./play-picker/picker-empty-ladder";
 import { NoSourcesConfiguredModal } from "./play-picker/no-sources-modal";
 import {
-  debridBannerTitle,
+  debridBanner,
   hasCachedMarker,
   hasUncachedMarker,
-  humanError,
   isEngineWarmingError,
   normalizeLangCode,
   orderByAddonNative,
+  playError,
   streamIdentity,
   streamMatchesLangs,
+  translateDebridBannerTitle,
+  translatePickerError,
 } from "./play-picker/picker-utils";
 import { PickerHeader, PickerNav } from "./play-picker/picker-header";
 import { PrimaryCard } from "./play-picker/primary-card";
@@ -96,6 +98,14 @@ import { isLivePlaybackSrc } from "@/lib/player/live-src";
 const TIER_ORDER: Tier[] = ["4K_DV", "4K_HDR", "4K", "1080p_HDR", "1080p", "720p", "SD", "ROUGH"];
 
 const RESOLVE_TIMEOUT_MS = 150_000;
+
+type PerEpisodeStatus =
+  | { code: "checking"; total: number }
+  | { code: "checked"; done: number; total: number }
+  | { code: "already-downloading" }
+  | { code: "no-source" }
+  | { code: "queued"; queued: number; total: number }
+  | { code: "failed" };
 
 export function PlayPicker({
   meta,
@@ -232,7 +242,7 @@ export function PlayPicker({
     autoSettleReady,
     addonQuorum,
     pipelineStartedAt,
-    resolveError,
+    pickerError,
     refresh,
     setAutoSettleReady,
     setResolveError,
@@ -516,7 +526,11 @@ export function PlayPicker({
     if (!filteredPicker || !previousPlayback) return null;
     const m = filteredPicker.allRaw.find((s) => streamMatchesEntry(s, previousPlayback)) ?? null;
     if (!m || isAnimeMetaId || !episode) return m;
-    if (m.episode != null && m.episode !== episode.episode) return null;
+    if (
+      m.episode != null &&
+      (episode.episode < m.episode || episode.episode > (m.episodeEnd ?? m.episode))
+    )
+      return null;
     if (
       m.episode != null &&
       m.season != null &&
@@ -621,7 +635,7 @@ export function PlayPicker({
       abortResolve();
       setResolving(null);
       setAutoCancelled(true);
-      setResolveError(humanError("timeout"));
+      setResolveError(playError("timeout"));
     }, RESOLVE_TIMEOUT_MS);
     return () => window.clearTimeout(t);
   }, [resolving, abortResolve, setResolveError]);
@@ -750,7 +764,7 @@ export function PlayPicker({
   const terminalEmpty = noStreamIds || noDebrids || noResults;
   const seasonPackEmpty = isSeasonDownload && addonsSettled && allCount === 0;
   const [perEpisodeBusy, setPerEpisodeBusy] = useState(false);
-  const [perEpisodeStatus, setPerEpisodeStatus] = useState<string | null>(null);
+  const [perEpisodeStatus, setPerEpisodeStatus] = useState<PerEpisodeStatus | null>(null);
   const perEpisodeAcRef = useRef<AbortController | null>(null);
   useEffect(() => () => perEpisodeAcRef.current?.abort(), []);
   const startPerEpisodeSeason = useCallback(async () => {
@@ -759,7 +773,7 @@ export function PlayPicker({
     const ac = new AbortController();
     perEpisodeAcRef.current = ac;
     setPerEpisodeBusy(true);
-    setPerEpisodeStatus(t("Checking {total} episodes for sources.", { total: targets.length }));
+    setPerEpisodeStatus({ code: "checking", total: targets.length });
     try {
       const batch = await downloadSeasonPerEpisode({
         meta,
@@ -770,39 +784,33 @@ export function PlayPicker({
         signal: ac.signal,
         onProgress: (done, total) => {
           if (!ac.signal.aborted) {
-            setPerEpisodeStatus(t("Checked {done} of {total} episodes.", { done, total }));
+            setPerEpisodeStatus({ code: "checked", done, total });
           }
         },
       });
       if (ac.signal.aborted) return;
       if (batch.total === 0) {
-        setPerEpisodeStatus(t("These episodes are already downloading."));
+        setPerEpisodeStatus({ code: "already-downloading" });
       } else if (batch.queued === 0) {
-        setPerEpisodeStatus(
-          t("No source was found for any of these episodes. Try refreshing or another addon."),
-        );
+        setPerEpisodeStatus({ code: "no-source" });
       } else {
-        setPerEpisodeStatus(
-          t("Queued {queued} of {total} episodes.", { queued: batch.queued, total: batch.total }),
-        );
+        setPerEpisodeStatus({ code: "queued", queued: batch.queued, total: batch.total });
       }
     } catch {
-      if (!ac.signal.aborted) setPerEpisodeStatus(t("Could not queue these episodes."));
+      if (!ac.signal.aborted) setPerEpisodeStatus({ code: "failed" });
     } finally {
       if (!ac.signal.aborted) {
         perEpisodeAcRef.current = null;
         setPerEpisodeBusy(false);
       }
     }
-  }, [addons, debrids, meta, seasonEpisodes, t]);
-  const [stubBanner, setStubBanner] = useState<string | null>(null);
+  }, [addons, debrids, meta, seasonEpisodes]);
+  const [stubBanner, setStubBanner] = useState(false);
   useEffect(() => {
     const ev = consumeRecentStubEvent(8000);
     if (!ev) return;
-    setStubBanner(
-      "Last source wasn't actually cached on your debrid yet. Pick another from the list.",
-    );
-    const t = window.setTimeout(() => setStubBanner(null), 6000);
+    setStubBanner(true);
+    const t = window.setTimeout(() => setStubBanner(false), 6000);
     return () => window.clearTimeout(t);
   }, [streamIds]);
   useEffect(() => {
@@ -817,7 +825,8 @@ export function PlayPicker({
     }
   }, [autoPlay, pipelineDone, autoCandidates.length, autoExhausted, autoCancelled]);
 
-  const engineWarming = isEngineWarmingError(resolveError);
+  const engineWarming = isEngineWarmingError(pickerError);
+  const pickerErrorText = pickerError ? translatePickerError(t, pickerError) : null;
   useEffect(() => {
     if (!engineWarming) return;
     let alive = true;
@@ -839,7 +848,7 @@ export function PlayPicker({
   }, [engineWarming, setResolveError]);
 
   const showAutoTransition =
-    !resolveError &&
+    !pickerErrorText &&
     !isDownload &&
     ((autoActive && (streamIds === null || loading || autoCandidates.length > 0)) ||
       resolving != null);
@@ -954,7 +963,7 @@ export function PlayPicker({
                       imdbId,
                       isAnime: isAnimeRequest,
                     })
-                  : localPlayerSrc(entry),
+                  : localPlayerSrc(entry, undefined, episode),
               )
             }
           />
@@ -974,7 +983,9 @@ export function PlayPicker({
 
         {stubBanner && (
           <div className="rounded-2xl border border-amber-300/30 bg-amber-400/10 px-5 py-4 text-[13.5px] text-amber-100">
-            {stubBanner}
+            {t(
+              "Last source wasn't actually cached on your debrid yet. Pick another from the list.",
+            )}
           </div>
         )}
 
@@ -1002,11 +1013,12 @@ export function PlayPicker({
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-accent-soft px-5 py-3.5 text-[13px] ring-1 ring-edge-soft">
             <div className="flex min-w-0 flex-1 flex-col">
               <p className="font-semibold text-accent">
-                {debridBannerTitle(result.debridErrors[0])}
+                {translateDebridBannerTitle(t, debridBanner(result.debridErrors[0]))}
               </p>
               <p className="text-[12.5px] leading-snug text-ink-muted">
-                Some of your cached sources may be missing from this list. This is a debrid-side
-                issue, not a problem with your subscription.
+                {t(
+                  "Some of your cached sources may be missing from this list. This is a debrid-side issue, not a problem with your subscription.",
+                )}
               </p>
             </div>
             <button
@@ -1014,7 +1026,7 @@ export function PlayPicker({
               disabled={loading}
               className="shrink-0 rounded-full bg-elevated px-4 py-2 text-[12.5px] font-semibold text-ink ring-1 ring-edge-soft transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 motion-reduce:transition-none motion-reduce:hover:scale-100"
             >
-              Recheck
+              {t("Recheck")}
             </button>
           </div>
         )}
@@ -1166,15 +1178,15 @@ export function PlayPicker({
           </>
         )}
 
-        {resolveError && engineWarming && (
+        {pickerErrorText && engineWarming && (
           <div className="flex items-center gap-3 rounded-2xl border border-edge-soft/60 bg-elevated/40 px-5 py-4 text-[13.5px] text-ink-muted">
             <Loader2 size={16} className="shrink-0 animate-spin text-ink-subtle" />
-            <span>{resolveError}</span>
+            <span>{pickerErrorText}</span>
           </div>
         )}
-        {resolveError && !engineWarming && (
+        {pickerErrorText && !engineWarming && (
           <div className="rounded-2xl border border-danger/30 bg-danger/15 px-5 py-4 text-[13.5px] text-ink">
-            {resolveError}
+            {pickerErrorText}
           </div>
         )}
       </div>
@@ -1208,13 +1220,36 @@ function SeasonPackEmptyState({
   refreshing: boolean;
   episodeCount: number;
   queueing: boolean;
-  queueStatus: string | null;
+  queueStatus: PerEpisodeStatus | null;
   onQueueEpisodes: () => void;
   onRefresh: () => void;
   onOpenSettings: () => void;
 }) {
   const t = useT();
   const seasonLabel = season == null ? t("this season") : t("Season {n}", { n: season });
+  const queueStatusText = (() => {
+    if (!queueStatus) return null;
+    switch (queueStatus.code) {
+      case "checking":
+        return t("Checking {total} episodes for sources.", { total: queueStatus.total });
+      case "checked":
+        return t("Checked {done} of {total} episodes.", {
+          done: queueStatus.done,
+          total: queueStatus.total,
+        });
+      case "already-downloading":
+        return t("These episodes are already downloading.");
+      case "no-source":
+        return t("No source was found for any of these episodes. Try refreshing or another addon.");
+      case "queued":
+        return t("Queued {queued} of {total} episodes.", {
+          queued: queueStatus.queued,
+          total: queueStatus.total,
+        });
+      case "failed":
+        return t("Could not queue these episodes.");
+    }
+  })();
   return (
     <div
       role="status"
@@ -1274,9 +1309,9 @@ function SeasonPackEmptyState({
             {t("Source settings")}
           </button>
         </div>
-        {queueStatus && (
+        {queueStatusText && (
           <p className="animate-lift-in max-w-lg text-[12.5px] leading-relaxed text-ink-subtle">
-            {queueStatus}
+            {queueStatusText}
           </p>
         )}
       </div>

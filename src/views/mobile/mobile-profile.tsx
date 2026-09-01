@@ -10,6 +10,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { useProfiles } from "@/lib/profiles";
+import { useT } from "@/lib/i18n";
 import { MobileWhosWatching } from "./mobile-whos-watching";
 import { useMobileRemote } from "./mobile-remote";
 import { setMobileRemoteStyle, useMobileRemoteStyle, type MobileRemoteStyle } from "./remote-style";
@@ -17,11 +18,12 @@ import { HARBOR_BUGS_BASE } from "@/lib/config/endpoints";
 import { openUrl } from "@/lib/window";
 
 export function MobileProfile({ onOpenRemote }: { onOpenRemote: () => void }) {
+  const t = useT();
   const { user, signOut } = useAuth();
   const { activeProfile } = useProfiles();
   const { snapshot } = useMobileRemote();
   const remote = snapshot.profile;
-  const name = remote?.name || activeProfile?.name || user?.email?.split("@")[0] || "Guest";
+  const name = remote?.name || activeProfile?.name || user?.email?.split("@")[0] || t("Guest");
   const avatar = remote?.avatar ?? activeProfile?.avatar ?? null;
   const color = remote?.color ?? activeProfile?.color ?? "oklch(0.78 0.13 60)";
   const [switching, setSwitching] = useState(false);
@@ -29,7 +31,7 @@ export function MobileProfile({ onOpenRemote }: { onOpenRemote: () => void }) {
   return (
     <div className="flex h-full flex-col gap-6 px-5 pt-4">
       <header className="flex items-center justify-center">
-        <h1 className="font-display text-[22px] font-medium text-ink">Profile</h1>
+        <h1 className="font-display text-[22px] font-medium text-ink">{t("Profile")}</h1>
       </header>
 
       <button
@@ -50,40 +52,40 @@ export function MobileProfile({ onOpenRemote }: { onOpenRemote: () => void }) {
         <span className="text-[18px] font-semibold text-ink">{name}</span>
         <span className="flex items-center gap-1.5 text-[13px] font-semibold text-accent">
           <Users size={14} strokeWidth={2.4} />
-          Switch profile
+          {t("Switch profile")}
         </span>
       </button>
 
       <section className="flex flex-col gap-3">
         <h2 className="px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-ink-subtle">
-          Remote style
+          {t("Remote style")}
         </h2>
         <div className="grid grid-cols-2 gap-3">
-          <StylePreview kind="dpad" label="D-pad" />
-          <StylePreview kind="minimal" label="Touchpad" />
+          <StylePreview kind="dpad" label={t("D-pad")} />
+          <StylePreview kind="minimal" label={t("Touchpad")} />
         </div>
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-edge-soft/70 bg-elevated/40">
         <Row
           icon={<MonitorSmartphone size={20} strokeWidth={2} />}
-          label="Remote"
+          label={t("Remote")}
           onClick={onOpenRemote}
         />
         <Divider />
         <Row
           icon={<HelpCircle size={20} strokeWidth={2} />}
-          label="Help & feedback"
+          label={t("Help & feedback")}
           href={HARBOR_BUGS_BASE}
         />
         <Divider />
-        <Row icon={<FileText size={20} strokeWidth={2} />} label="Legal" onClick={() => {}} />
+        <Row icon={<FileText size={20} strokeWidth={2} />} label={t("Legal")} onClick={() => {}} />
         {user && (
           <>
             <Divider />
             <Row
               icon={<LogOut size={20} strokeWidth={2} />}
-              label="Sign out"
+              label={t("Sign out")}
               danger
               onClick={signOut}
             />

@@ -36,6 +36,7 @@ export function CommentItem({
   const [replying, setReplying] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
   const name = comment.author || "Anonymous";
+  const displayName = comment.author || t("Anonymous");
   const handle = comment.authorHandle || null;
   const hue = hueOf(name);
   const canReply = !!onReply && !!signedIn && !!replyToId;
@@ -60,10 +61,10 @@ export function CommentItem({
       <button
         type="button"
         onClick={() => requestOpenProfile(handle)}
-        aria-label={`Open ${name} profile`}
+        aria-label={t("Open {name} profile", { name: displayName })}
         className="mt-0.5 shrink-0"
       >
-        <Avatar src={comment.authorAvatar ?? undefined} size={32} alias={name} />
+        <Avatar src={comment.authorAvatar ?? undefined} size={32} alias={displayName} />
       </button>
     </UserHoverCard>
   ) : (
@@ -71,7 +72,7 @@ export function CommentItem({
       className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12.5px] font-bold text-white ring-1 ring-white/15"
       style={{ background: `oklch(0.58 0.15 ${hue})` }}
     >
-      {(name.trim()[0] || "?").toUpperCase()}
+      {(displayName.trim()[0] || "?").toUpperCase()}
     </span>
   );
 
@@ -82,11 +83,11 @@ export function CommentItem({
         onClick={() => requestOpenProfile(handle)}
         className="truncate text-[13px] font-semibold text-ink transition-colors hover:text-accent"
       >
-        {name}
+        {displayName}
       </button>
     </UserHoverCard>
   ) : (
-    <span className="truncate text-[13px] font-semibold text-ink">{name}</span>
+    <span className="truncate text-[13px] font-semibold text-ink">{displayName}</span>
   );
 
   return (
@@ -96,8 +97,12 @@ export function CommentItem({
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-center gap-2">
             {nameEl}
-            {handle && <span className="shrink-0 font-display text-[11.5px] text-ink-subtle">@{handle}</span>}
-            <span className="shrink-0 text-[11.5px] text-ink-subtle">{timeAgo(comment.createdAt)}</span>
+            {handle && (
+              <span className="shrink-0 font-display text-[11.5px] text-ink-subtle">@{handle}</span>
+            )}
+            <span className="shrink-0 text-[11.5px] text-ink-subtle">
+              {timeAgo(comment.createdAt)}
+            </span>
             {comment.canDelete && (
               <button
                 type="button"
@@ -110,7 +115,7 @@ export function CommentItem({
                 }`}
               >
                 {busy ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                {confirm && "Remove?"}
+                {confirm && t("Remove?")}
               </button>
             )}
           </div>

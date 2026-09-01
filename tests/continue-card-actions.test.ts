@@ -13,11 +13,8 @@ const continueCardSource = readFileSync(
 test("Continue Watching keeps source selection, direct play, and details as separate actions", () => {
   assert.match(
     continueCardSource,
-    /const onChooseSource[\s\S]*?openPicker\(meta, episode, \{ autoPlay: false, resume: false \}\)/,
+    /const onChooseSource[\s\S]*?openAvailableSources\(episode, true\)/,
   );
-  assert.match(
-    continueCardSource,
-    /playStream: \(\) => openPicker\(meta, episode, \{ autoPlay: true, resume: true \}\)/,
-  );
+  assert.match(continueCardSource, /const onPlay[\s\S]*?openAvailableSources\(episode, false\)/);
   assert.match(continueCardSource, /onClick=\{onOpenDetails\}/);
 });

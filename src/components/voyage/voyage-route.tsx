@@ -5,7 +5,6 @@ import { useView } from "@/lib/view";
 import {
   closeVoyage,
   launchVoyage,
-  markPlayed,
   metaById,
   nextUnplayedId,
   voyageReady,
@@ -29,7 +28,6 @@ export function VoyageRoute({ voyage }: { voyage: Voyage }) {
   const stuck = !sailing && !ready && voyage.headingIds.length === 0;
 
   const play = (meta: Meta) => {
-    markPlayed(meta.id);
     closeVoyage();
     if (meta.type === "movie") openPicker(meta, undefined, { autoPlay: true, resume: true });
     else openMeta(meta);

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, Check, Loader2 } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { useNotifications } from "./use-notifications";
 import { NotificationItem } from "./notification-item";
 
 export function NotificationBell({ onOpenTheme }: { onOpenTheme: (themeId: string) => void }) {
+  const t = useT();
   const { items, unread, loading, authed, refresh, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -41,8 +43,8 @@ export function NotificationBell({ onOpenTheme }: { onOpenTheme: (themeId: strin
       <button
         type="button"
         onClick={toggle}
-        aria-label="Notifications"
- className="relative grid h-9 w-9 place-items-center rounded-full bg-elevated text-ink-muted transition-colors hover:bg-raised hover:text-ink"
+        aria-label={t("Notifications")}
+        className="relative grid h-9 w-9 place-items-center rounded-full bg-elevated text-ink-muted transition-colors hover:bg-raised hover:text-ink"
       >
         <Bell size={16} strokeWidth={2.1} />
         {unread > 0 && (
@@ -53,16 +55,16 @@ export function NotificationBell({ onOpenTheme }: { onOpenTheme: (themeId: strin
       </button>
 
       {open && (
- <div className="animate-in fade-in slide-in-from-top-1 absolute end-0 top-11 z-50 w-[340px] overflow-hidden rounded-sm bg-elevated harbor-float motion-reduce:animate-none">
+        <div className="animate-in fade-in slide-in-from-top-1 absolute end-0 top-11 z-50 w-[340px] overflow-hidden rounded-sm bg-elevated harbor-float motion-reduce:animate-none">
           <div className="flex items-center justify-between border-b border-edge-soft px-4 py-3">
-            <span className="text-[13px] font-semibold text-ink">Notifications</span>
+            <span className="text-[13px] font-semibold text-ink">{t("Notifications")}</span>
             {unread > 0 && (
               <button
                 type="button"
                 onClick={markAllRead}
                 className="flex items-center gap-1 text-[11.5px] text-ink-subtle transition-colors hover:text-ink"
               >
-                <Check size={12} /> Mark all read
+                <Check size={12} /> {t("Mark all read")}
               </button>
             )}
           </div>
@@ -73,7 +75,7 @@ export function NotificationBell({ onOpenTheme }: { onOpenTheme: (themeId: strin
               </div>
             ) : items.length === 0 ? (
               <p className="px-4 py-10 text-center text-[12.5px] leading-relaxed text-ink-subtle">
-                No notifications yet. Publish a theme and watch it climb.
+                {t("No notifications yet. Publish a theme and watch it climb.")}
               </p>
             ) : (
               items.map((n) => (

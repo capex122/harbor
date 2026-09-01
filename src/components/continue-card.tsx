@@ -21,8 +21,13 @@ import { useProfiles, sharesStremioStorage } from "@/lib/profiles";
 import { useSettings } from "@/lib/settings";
 import { useView, type PlayEpisode } from "@/lib/view";
 import { getWatchedBy } from "@/lib/watched-by";
-import { playLocalAware } from "@/lib/local-library/playback";
+import { resolveLocalPlayVersions } from "@/lib/local-library/playback";
 import { localPlayerSrc } from "@/lib/local-library/player-src";
+import { openLocalVersions } from "@/lib/player/local-versions-modal";
+import { mediaServerConnections } from "@/lib/media-server/connections";
+import { mediaServerItems } from "@/lib/media-server/index-store";
+import { matchingServerItems, serverPlayableCopies } from "@/lib/media-server/selectors";
+import { createMediaServerPlayerSrc, decidePlaybackSource } from "@/lib/media-server/playback";
 import { fetchSeasonEpisodes } from "@/lib/series-episodes";
 import { aniZipByAnidb, aniZipByAnilist, aniZipByKitsu, aniZipByMal } from "@/lib/providers/anizip";
 import { peekCachedLogo, resolveLogo } from "@/lib/logo";
@@ -38,8 +43,7 @@ type Props = {
   onDismiss?: (item: LibraryItem) => void;
   /**
    * Overrides the default play behaviour. The local library row passes this
-   * because it already knows the file on disk, whereas the default path
-   * re-resolves through playLocalAware and cannot handle a `local:` id.
+   * because it already knows the file on disk and can handle a `local:` id.
    */
   onPlayOverride?: (episode: PlayEpisode | undefined) => void;
 };
@@ -52,7 +56,7 @@ export const ContinueCard = memo(function ContinueCard({
 }: Props) {
   const { openMeta, openPicker, openPlayer } = useView();
   const t = useT();
-  const { settings, update } = useSettings();
+  const { settings } = useSettings();
   const { profiles, activeProfile } = useProfiles();
   const watcherId = getWatchedBy(item._id);
   const watcher = watcherId ? profiles.find((p) => p.id === watcherId) : null;
@@ -299,7 +303,16 @@ export const ContinueCard = memo(function ContinueCard({
 
   const onOpenDetails = () => {
     const isAnime = /^(kitsu|mal|anilist|anidb):/.test(meta.id);
-    openMeta(meta, ep || isAnime ? { episodeHint: ep ?? undefined, exact: isAnime } : undefined);
+    // Continue Watching artwork comes from the Stremio library record and may
+    // use a different language than the current TMDB image preference. Do not
+    // let those cached assets become the detail page's stable/locked artwork;
+    // the detail loader will resolve the same localized logo and backdrop used
+    // when the title is opened from Search.
+    const detailMeta = isAnime ? meta : { ...meta, background: undefined, logo: undefined };
+    openMeta(
+      detailMeta,
+      ep || isAnime ? { episodeHint: ep ?? undefined, exact: isAnime } : undefined,
+    );
   };
 
   const resolveEpisode = async (): Promise<PlayEpisode | undefined> => {
@@ -343,13 +356,91 @@ export const ContinueCard = memo(function ContinueCard({
     return episode;
   };
 
+  const openAvailableSources = async (
+    episode: PlayEpisode | undefined,
+    chooseEveryTime: boolean,
+  ) => {
+    const stream = () =>
+      openPicker(meta, episode, { autoPlay: !chooseEveryTime, resume: !chooseEveryTime });
+    const tmdbMatch = meta.id.match(/^tmdb:(?:movie|tv):(\d+)$/);
+    const identity = {
+      tmdbId: tmdbMatch ? Number(tmdbMatch[1]) : undefined,
+      imdbId: meta.id.startsWith("tt") ? meta.id : undefined,
+    };
+    const kind = episode ? "series" : "movie";
+    const connections = mediaServerConnections();
+    const indexed = await mediaServerItems();
+    const serverItems = matchingServerItems(
+      indexed,
+      identity,
+      kind,
+      episode?.season,
+      episode?.episode,
+    );
+    const serverCopies = serverPlayableCopies(serverItems, connections);
+    const local = resolveLocalPlayVersions(meta, episode ?? null, identity.imdbId);
+    const playLocal = (entry: (typeof local)[number]) => {
+      const source = localPlayerSrc(entry, undefined, episode);
+      openPlayer({
+        ...source,
+        meta: {
+          ...source.meta,
+          id: meta.id,
+          poster: meta.poster ?? source.meta.poster,
+          background: meta.background,
+        },
+      });
+    };
+    const playServer = async (copy: (typeof serverCopies)[number]) => {
+      const connection = connections.find((entry) => entry.id === copy.connectionId);
+      const item = serverItems.find(
+        (entry) => entry.connectionId === copy.connectionId && entry.id === copy.itemId,
+      );
+      if (!connection || !item) return;
+      openPlayer(
+        await createMediaServerPlayerSrc({
+          meta,
+          imdbId: identity.imdbId,
+          episode,
+          connection,
+          item,
+          versionId: copy.version.id,
+        }),
+      );
+    };
+    const showChooser = () => {
+      if (local.length === 0 && serverCopies.length === 0) {
+        stream();
+        return;
+      }
+      openLocalVersions({
+        title: meta.name,
+        poster: meta.poster,
+        entries: local,
+        onPlayLocal: playLocal,
+        serverCopies,
+        onPlayServer: (copy) => void playServer(copy),
+        onStream: stream,
+      });
+    };
+    if (chooseEveryTime) {
+      showChooser();
+      return;
+    }
+    const decision = decidePlaybackSource(settings, local.length, serverCopies);
+    if (decision.kind === "online") stream();
+    else if (decision.kind === "local" && local[0]) playLocal(local[0]);
+    else if (decision.kind === "home-server") await playServer(decision.copy);
+    else showChooser();
+  };
+
   const onChooseSource = async () => {
     const episode = await resolveEpisode();
     if (onPlayOverride) {
       onPlayOverride(episode);
       return;
     }
-    openPicker(meta, episode, { autoPlay: false, resume: false });
+    await openAvailableSources(episode, true);
   };
 
   const onPlay = async (e: React.MouseEvent) => {
@@ -359,28 +450,7 @@ export const ContinueCard = memo(function ContinueCard({
       onPlayOverride(episode);
       return;
     }
-    playLocalAware({
-      meta,
-      episode: episode ?? null,
-      mode: settings.localPlaybackMode,
-      source: "manual",
-      resumeId: meta.id,
-      playStream: () => openPicker(meta, episode, { autoPlay: true, resume: true }),
-      playLocal: (entry, o) => {
-        const s = localPlayerSrc(entry);
-        openPlayer({
-          ...s,
-          meta: {
-            ...s.meta,
-            id: meta.id,
-            poster: meta.poster ?? s.meta.poster,
-            background: meta.background,
-          },
-          startFromZero: o?.fromStart,
-        });
-      },
-      setMode: (m) => update({ localPlaybackMode: m }),
-    });
+    await openAvailableSources(episode, false);
   };
 
   return (
@@ -515,7 +585,9 @@ export const ContinueCard = memo(function ContinueCard({
               background:
                 "linear-gradient(145deg, rgba(8,12,18,0.50), rgba(8,12,18,0.38) 52%, rgba(8,12,18,0.44))",
             }}
-            style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.05)" }}
+            style={{
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.05)",
+            }}
             className="pointer-events-none h-14 w-14 scale-95 rounded-full border border-white/[0.10] opacity-0 transition-[opacity,transform] duration-[120ms] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 focus-within:pointer-events-auto focus-within:scale-100 focus-within:opacity-100"
             contentClassName="flex h-full w-full"
           >
@@ -551,8 +623,8 @@ export const ContinueCard = memo(function ContinueCard({
       >
         {displayTitle}
       </button>
-      {onDismiss && (
-        settings.liquidGlass ? (
+      {onDismiss &&
+        (settings.liquidGlass ? (
           <div className="absolute end-0.5 top-0.5 z-10 flex h-11 w-11 items-center justify-center">
             <ThreeLiquidGlassSurface
               radius="9999px"
@@ -562,7 +634,9 @@ export const ContinueCard = memo(function ContinueCard({
                 background:
                   "linear-gradient(145deg, rgba(8,12,18,0.50), rgba(8,12,18,0.38) 52%, rgba(8,12,18,0.44))",
               }}
-              style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.05)" }}
+              style={{
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.05)",
+              }}
               className="pointer-events-none h-9 w-9 scale-95 rounded-full border border-white/[0.09] opacity-0 transition-[opacity,transform] duration-[120ms] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 focus-within:pointer-events-auto focus-within:scale-100 focus-within:opacity-100"
               contentClassName="flex h-full w-full"
             >
@@ -593,8 +667,7 @@ export const ContinueCard = memo(function ContinueCard({
               <X size={20} strokeWidth={2.4} />
             </span>
           </button>
-        )
-      )}
+        ))}
     </div>
   );
 });

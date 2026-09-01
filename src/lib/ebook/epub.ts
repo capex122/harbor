@@ -105,11 +105,22 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<EpubBook> {
   const ncx = [...manifest.values()].find((item) => item.mediaType === "application/x-dtbncx+xml");
   const navigation = xml(entry(entries, nav?.path ?? ncx?.path ?? ""));
   if (navigation) {
-    for (const link of elements(navigation, "a").filter((item) => item.hasAttribute("href")))
-      titles.set(
-        archivePath((nav?.path ?? "").replace(/[^/]*$/, ""), link.getAttribute("href")!),
-        link.textContent?.trim() ?? "",
+    const pageListLinks = new Set(
+      elements(navigation, "nav")
+        .filter((item) => /page-list/i.test(item.getAttribute("epub:type") ?? ""))
+        .flatMap((item) =>
+          Array.from(item.getElementsByTagName("*")).filter((node) => node.localName === "a"),
+        ),
+    );
+    for (const link of elements(navigation, "a").filter((item) => item.hasAttribute("href"))) {
+      if (pageListLinks.has(link)) continue;
+      const target = archivePath(
+        (nav?.path ?? "").replace(/[^/]*$/, ""),
+        link.getAttribute("href")!,
       );
+      const label = link.textContent?.trim() ?? "";
+      if (label && !titles.has(target)) titles.set(target, label);
+    }
     for (const point of elements(navigation, "navPoint")) {
       const descendants = Array.from(point.getElementsByTagName("*"));
       const path = descendants.find((item) => item.localName === "content")?.getAttribute("src");
@@ -130,7 +141,7 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<EpubBook> {
   const documents = spine.length
     ? spine
     : [...manifest.values()].filter((item) => /xhtml|html/.test(item.mediaType));
-  const chapters = documents.map((item, index) => {
+  const scanned = documents.map((item, index) => {
     const document = contentDocument(entry(entries, item.path));
     const heading = document
       ? ["h1", "h2", "h3", "title"]
@@ -138,11 +149,18 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<EpubBook> {
           .find((item) => item.textContent?.trim())
           ?.textContent?.trim()
       : undefined;
+    const words = document?.documentElement?.textContent?.replace(/\s+/g, " ").trim() ?? "";
     return {
       path: item.path,
       title: titles.get(item.path) || heading || `Chapter ${index + 1}`,
+      readable: words.length > 24,
     };
   });
+  const readable = scanned.filter((item) => item.readable);
+  const chapters = (readable.length ? readable : scanned).map(({ path, title }) => ({
+    path,
+    title,
+  }));
   const coverId = elements(packageDocument, "meta")
     .find((item) => item.getAttribute("name")?.toLowerCase() === "cover")
     ?.getAttribute("content");

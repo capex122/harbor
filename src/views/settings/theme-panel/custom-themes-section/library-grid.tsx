@@ -1,6 +1,7 @@
 import { Check, Copy, FilePlus2, Palette, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { ThemePreset } from "@/lib/theme";
+import { useT } from "@/lib/i18n";
 
 export type LibraryEntry = {
   theme: ThemePreset;
@@ -44,12 +45,13 @@ export function LibraryGrid({
 }
 
 function CreateTile({ onCreate }: { onCreate: () => void }) {
+  const t = useT();
   return (
     <button
       type="button"
       onClick={onCreate}
       className="group relative flex h-full min-h-[252px] flex-col items-start justify-between overflow-hidden rounded-md bg-elevated p-5 text-start transition-colors hover:bg-raised"
-      aria-label="Build a new theme"
+      aria-label={t("Build a new theme")}
     >
       <span
         aria-hidden
@@ -58,11 +60,13 @@ function CreateTile({ onCreate }: { onCreate: () => void }) {
       />
       <div className="relative flex flex-col gap-1.5">
         <span className="inline-flex w-fit items-center rounded-[3px] bg-accent px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.2em] text-canvas">
-          New
+          {t("New")}
         </span>
-        <span className="text-[18px] font-semibold tracking-tight text-ink">Build a theme</span>
+        <span className="text-[18px] font-semibold tracking-tight text-ink">
+          {t("Build a theme")}
+        </span>
         <span className="max-w-[24ch] text-[12.5px] leading-snug text-ink-muted">
-          Pick a layout, set colors and fonts, save it to your library. No code needed.
+          {t("Pick a layout, set colors and fonts, save it to your library. No code needed.")}
         </span>
       </div>
       <div className="relative flex items-end justify-between gap-3 self-stretch">
@@ -73,7 +77,7 @@ function CreateTile({ onCreate }: { onCreate: () => void }) {
           <Palette size={20} strokeWidth={2} />
         </span>
         <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-accent transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5">
-          Open studio →
+          {t("Open studio")} →
         </span>
       </div>
     </button>
@@ -81,6 +85,7 @@ function CreateTile({ onCreate }: { onCreate: () => void }) {
 }
 
 function ImportTile({ onUpload }: { onUpload: (file: File) => void }) {
+  const t = useT();
   const [dragOver, setDragOver] = useState(false);
   const pick = () => {
     const input = document.createElement("input");
@@ -108,21 +113,21 @@ function ImportTile({ onUpload }: { onUpload: (file: File) => void }) {
         if (f) onUpload(f);
       }}
       className={`group relative flex h-full min-h-[252px] flex-col items-start justify-between overflow-hidden rounded-md border p-5 text-start transition duration-200 ${
-        dragOver
-          ? "border-accent bg-accent-soft"
-          : "border-edge-soft bg-canvas hover:bg-canvas"
+        dragOver ? "border-accent bg-accent-soft" : "border-edge-soft bg-canvas hover:bg-canvas"
       }`}
-      aria-label="Import a theme file"
+      aria-label={t("Import a theme file")}
     >
       <div className="relative flex flex-col gap-1.5">
         <span className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-ink-subtle">
-          Have a file?
+          {t("Have a file?")}
         </span>
-        <span className="text-[18px] font-semibold tracking-tight text-ink">Import a theme</span>
+        <span className="text-[18px] font-semibold tracking-tight text-ink">
+          {t("Import a theme")}
+        </span>
         <span className="max-w-[24ch] text-[12.5px] leading-snug text-ink-muted">
           {dragOver
-            ? "Release to add it to your library"
-            : "Drop a theme file here or click to browse."}
+            ? t("Release to add it to your library")
+            : t("Drop a theme file here or click to browse.")}
         </span>
       </div>
       <div className="relative flex items-end justify-between gap-3 self-stretch">
@@ -130,13 +135,14 @@ function ImportTile({ onUpload }: { onUpload: (file: File) => void }) {
           className="flex h-12 w-12 items-center justify-center rounded-md bg-canvas text-ink-muted transition-colors duration-300 group-hover:text-ink"
           style={{
             transform: dragOver ? "scale(1.08)" : "scale(1)",
-            transition: "transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 200ms, color 200ms",
+            transition:
+              "transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 200ms, color 200ms",
           }}
         >
           <FilePlus2 size={20} strokeWidth={2} />
         </span>
         <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-ink-muted transition-colors group-hover:text-ink">
-          Browse files →
+          {t("Browse files")} →
         </span>
       </div>
     </button>
@@ -156,9 +162,12 @@ function LibraryCard({
   onExport: () => void;
   onRemove: () => void;
 }) {
+  const t = useT();
   const { theme, category, removable } = entry;
   const hasImage = !!theme.previewImage;
-  const bg = theme.background?.image ?? `linear-gradient(135deg, ${theme.swatch[0]}, ${theme.swatch[1]})`;
+  const localizedBlurb = category !== "Yours" && theme.blurb ? t(theme.blurb) : theme.blurb;
+  const bg =
+    theme.background?.image ?? `linear-gradient(135deg, ${theme.swatch[0]}, ${theme.swatch[1]})`;
   return (
     <div
       className={`group relative flex flex-col overflow-hidden rounded-md border bg-surface transition-colors ${
@@ -185,7 +194,7 @@ function LibraryCard({
         <CategoryBadge category={category} active={active} />
         {active && (
           <span className="absolute end-3 top-3 flex h-7 items-center gap-1 rounded-[3px] bg-accent px-2.5 text-[10.5px] font-bold uppercase tracking-[0.18em] text-canvas">
-            <Check size={12} strokeWidth={3} /> Active
+            <Check size={12} strokeWidth={3} /> {t("Active")}
           </span>
         )}
         <SwatchStrip swatch={theme.swatch} />
@@ -193,9 +202,9 @@ function LibraryCard({
       <div className="flex min-h-[88px] flex-1 flex-col justify-between gap-2 px-4 pb-3 pt-3">
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-[14.5px] font-semibold text-ink">{theme.name}</span>
-          {theme.blurb && (
+          {localizedBlurb && (
             <span className="line-clamp-2 text-[11.5px] leading-snug text-ink-subtle">
-              {theme.blurb}
+              {localizedBlurb}
             </span>
           )}
         </div>
@@ -204,12 +213,10 @@ function LibraryCard({
             type="button"
             onClick={onActivate}
             className={`h-8 flex-1 rounded-md text-[12.5px] font-semibold transition-opacity ${
-              active
-                ? "bg-elevated text-ink"
-                : "bg-ink text-canvas hover:opacity-90"
+              active ? "bg-elevated text-ink" : "bg-ink text-canvas hover:opacity-90"
             }`}
           >
-            {active ? "Active" : "Apply"}
+            {active ? t("Active") : t("Apply")}
           </button>
           <ActionBtn label="Copy" onClick={onExport}>
             <Copy size={12} strokeWidth={2.2} />
@@ -232,16 +239,15 @@ function CategoryBadge({
   category: LibraryEntry["category"];
   active: boolean;
 }) {
+  const t = useT();
   const isFeatured = category === "Featured";
   return (
     <span
       className={`absolute start-3 top-3 flex items-center gap-1 rounded-[3px] px-2 py-1 text-[9.5px] font-bold uppercase tracking-[0.2em] ${
-        isFeatured
-          ? "bg-canvas text-accent"
-          : "bg-canvas text-ink/85"
+        isFeatured ? "bg-canvas text-accent" : "bg-canvas text-ink/85"
       } ${active ? "opacity-0" : "opacity-100"}`}
     >
-      {category}
+      {t(category)}
     </span>
   );
 }
@@ -267,11 +273,12 @@ function ActionBtn({
   danger?: boolean;
   children: React.ReactNode;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
-      aria-label={label}
-      title={label}
+      aria-label={t(label)}
+      title={t(label)}
       onClick={onClick}
       className={`flex h-8 w-8 items-center justify-center rounded-md bg-canvas text-ink-subtle transition-colors ${
         danger ? "hover:bg-danger/15 hover:text-danger" : "hover:bg-surface hover:text-ink"

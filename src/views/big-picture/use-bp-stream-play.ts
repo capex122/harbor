@@ -7,7 +7,7 @@ import type { ScoredStream } from "@/lib/streams/types";
 import { useTogether } from "@/lib/together/provider";
 import { useView, type PlayEpisode, type PlayerSrc } from "@/lib/view";
 import { isLivePlaybackSrc } from "@/lib/player/live-src";
-import { humanError, streamIdentity } from "@/views/play-picker/picker-utils";
+import { playError, streamIdentity, type PickerError } from "@/views/play-picker/picker-utils";
 import { useAutoCandidates } from "@/views/play-picker/use-auto-candidates";
 import { useAutoFire } from "@/views/play-picker/use-auto-fire";
 import { usePickHandler } from "@/views/play-picker/use-pick-handler";
@@ -22,7 +22,7 @@ export type BpStreamPlay = {
   play: (s: ScoredStream) => void;
   openLocal: (src: PlayerSrc) => void;
   resolvingKey: string | null;
-  error: string | null;
+  error: PickerError | null;
   clearError: () => void;
   failed: (s: ScoredStream) => boolean;
   p2pConfirm: ScoredStream | null;
@@ -80,7 +80,7 @@ export function useBpStreamPlay(params: {
     });
 
   const [resolving, setResolving] = useState<ResolvingSelection | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<PickerError | null>(null);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [failedStreams, setFailedStreams] = useState<Set<ScoredStream>>(new Set());
   const [preselect, setPreselect] = useState<PlayerSrc | null>(null);
@@ -109,7 +109,10 @@ export function useBpStreamPlay(params: {
     () => (s.addons ?? []).some((a) => /mediafusion|comet/i.test(a.manifest?.name ?? "")),
     [s.addons],
   );
-  const isTorrentioStream = useCallback((x: ScoredStream) => /torrentio/i.test(x.addonName ?? ""), []);
+  const isTorrentioStream = useCallback(
+    (x: ScoredStream) => /torrentio/i.test(x.addonName ?? ""),
+    [],
+  );
 
   const filteredPicker = useMemo(
     () =>
@@ -158,42 +161,35 @@ export function useBpStreamPlay(params: {
     [settings.subtitlePreselect, inSession, openPlayer],
   );
 
-  const {
-    onPlay,
-    abortResolve,
-    debridDown,
-    resetDebridDown,
-    p2pConfirm,
-    confirmP2p,
-    cancelP2p,
-  } = usePickHandler({
-    meta,
-    imdbId: s.imdbId,
-    imdbIdVerified: s.imdbIdVerified,
-    episode,
-    resume,
-    debrids: s.debrids,
-    isCached: s.isCached,
-    seasonLock,
-    p2pAutoConsent,
-    streamMode: settings.streamMode,
-    inSession,
-    canInvite,
-    inviteSentRef,
-    sendInvite,
-    claimHost,
-    openPlayer: openPlayerGated,
-    intent,
-    autoActive,
-    autoAttemptIdx,
-    autoCandidatesLength: autoCandidates.length,
-    autoFiredRef,
-    setAutoAttemptIdx,
-    setAutoExhausted,
-    setFailedStreams,
-    setResolveError: setError,
-    setResolving,
-  });
+  const { onPlay, abortResolve, debridDown, resetDebridDown, p2pConfirm, confirmP2p, cancelP2p } =
+    usePickHandler({
+      meta,
+      imdbId: s.imdbId,
+      imdbIdVerified: s.imdbIdVerified,
+      episode,
+      resume,
+      debrids: s.debrids,
+      isCached: s.isCached,
+      seasonLock,
+      p2pAutoConsent,
+      streamMode: settings.streamMode,
+      inSession,
+      canInvite,
+      inviteSentRef,
+      sendInvite,
+      claimHost,
+      openPlayer: openPlayerGated,
+      intent,
+      autoActive,
+      autoAttemptIdx,
+      autoCandidatesLength: autoCandidates.length,
+      autoFiredRef,
+      setAutoAttemptIdx,
+      setAutoExhausted,
+      setFailedStreams,
+      setResolveError: setError,
+      setResolving,
+    });
 
   useAutoFire({
     autoActive,
@@ -228,7 +224,7 @@ export function useBpStreamPlay(params: {
       abortResolve();
       setResolving(null);
       setAutoCancelled(true);
-      setError(humanError("timeout"));
+      setError(playError("timeout"));
     }, RESOLVE_TIMEOUT_MS);
     return () => window.clearTimeout(timer);
   }, [resolving, abortResolve]);
@@ -282,8 +278,7 @@ export function useBpStreamPlay(params: {
     cancelPreselect: () => setPreselect(null),
     // Scoped to auto only. A manual pick keeps the list on screen with the
     // spinner in its own row rather than blanking to a full-page loader.
-    autoBusy:
-      !error && autoActive && (!s.done || autoCandidates.length > 0 || resolving != null),
+    autoBusy: !error && autoActive && (!s.done || autoCandidates.length > 0 || resolving != null),
     autoExhausted,
     autoAttemptIdx,
     autoTriedCount: autoCandidates.length,

@@ -15,6 +15,7 @@ import { ModalButton, SettingsModal } from "../kit";
 import { TmdbGuideModal } from "../tmdb-tutorial-modal";
 import { TvdbGuideModal } from "../tvdb-tutorial-modal";
 import { ProviderKeyRow, type KeyEntry, type KeyId } from "./provider-key-row";
+import { PosterServiceMark } from "./poster-mark";
 import type { LibraryKey } from "../library-panel";
 
 export type ProviderKeysArgs = {
@@ -50,17 +51,18 @@ export function useProviderKeys({
   const t = useT();
 
   const [mdblistDraft, setMdblistDraft] = useState(settings.mdblistKey);
+  const [nytDraft, setNytDraft] = useState(settings.nytKey);
   const [posterSrvDraft, setPosterSrvDraft] = useState(settings.posterBaseUrl);
   const [auddDraft, setAuddDraft] = useState(settings.auddKey);
   const [songAiDraft, setSongAiDraft] = useState(settings.songIdAiKey);
   const [extraSaved, setExtraSaved] = useState<
-    "mdblist" | "postersrv" | "ai" | "audd" | "songai" | null
+    "mdblist" | "postersrv" | "ai" | "audd" | "songai" | "nyt" | null
   >(null);
   const [tmdbGuide, setTmdbGuide] = useState(false);
   const [tvdbGuide, setTvdbGuide] = useState(false);
   const [keyModal, setKeyModal] = useState<KeyId | null>(null);
   const extraTimerRef = useRef<number | null>(null);
-  const flashExtra = (k: "mdblist" | "postersrv" | "ai" | "audd" | "songai") => {
+  const flashExtra = (k: "mdblist" | "postersrv" | "ai" | "audd" | "songai" | "nyt") => {
     setExtraSaved(k);
     if (extraTimerRef.current) window.clearTimeout(extraTimerRef.current);
     extraTimerRef.current = window.setTimeout(() => setExtraSaved(null), 1800);
@@ -105,12 +107,13 @@ export function useProviderKeys({
           iconSrc={tmdbLogo}
           help={
             <>
-              Highly recommended. This is what gives you the full Harbor experience: Popular,
-              Trending, In Theaters, and per-service rails. Free at{" "}
+              {t(
+                "Highly recommended. This is what gives you the full Harbor experience: Popular, Trending, In Theaters, and per-service rails. Free at",
+              )}{" "}
               <ExtLink href="https://www.themoviedb.org/settings/api">
                 themoviedb.org/settings/api
               </ExtLink>
-              . Use the v3 key, not the read access token.
+              . {t("Use the v3 key, not the read access token.")}
             </>
           }
         />
@@ -133,9 +136,11 @@ export function useProviderKeys({
           iconSrc={omdbLogo}
           help={
             <>
-              Free at{" "}
-              <ExtLink href="https://www.omdbapi.com/apikey.aspx">omdbapi.com/apikey.aspx</ExtLink>.
-              They email an activation link the first time. Click it, then come back and save.
+              {t("Free at")}{" "}
+              <ExtLink href="https://www.omdbapi.com/apikey.aspx">omdbapi.com/apikey.aspx</ExtLink>.{" "}
+              {t(
+                "They email an activation link the first time. Click it, then come back and save.",
+              )}
             </>
           }
         />
@@ -162,12 +167,13 @@ export function useProviderKeys({
           iconSrc={tvdbLogo}
           help={
             <>
-              Episode titles, alternate names, network info, and the arc/DVD/absolute orderings.
-              Layered on TMDB so the better source wins per field. Free for personal use at{" "}
+              {t(
+                "Episode titles, alternate names, network info, and the arc/DVD/absolute orderings. Layered on TMDB so the better source wins per field. Free for personal use at",
+              )}{" "}
               <ExtLink href="https://thetvdb.com/api-information">
                 thetvdb.com/api-information
               </ExtLink>
-              {'. Choose the "Less than $50k per year" tier.'}
+              . {t('Choose the "Less than $50k per year" tier.')}
             </>
           }
         />
@@ -193,9 +199,11 @@ export function useProviderKeys({
           iconSrc={mdblistLogo}
           help={
             <>
-              Free key at <ExtLink href="https://mdblist.com/preferences/">mdblist.com</ExtLink>.
-              Adds Letterboxd and Trakt community ratings to detail pages, covering what OMDb
-              misses.
+              {t("Free key at")}{" "}
+              <ExtLink href="https://mdblist.com/preferences/">mdblist.com</ExtLink>.{" "}
+              {t(
+                "Adds Letterboxd and Trakt community ratings to detail pages, covering what OMDb misses.",
+              )}
             </>
           }
         />
@@ -218,9 +226,9 @@ export function useProviderKeys({
           iconSrc={fanartLogo}
           help={
             <>
-              Fills in where TMDB comes up empty (anime, older catalog). Free at{" "}
-              <ExtLink href="https://fanart.tv/get-an-api-key/">fanart.tv/get-an-api-key</ExtLink>.
-              Use the "personal" key, not the project one.
+              {t("Fills in where TMDB comes up empty (anime, older catalog). Free at")}{" "}
+              <ExtLink href="https://fanart.tv/get-an-api-key/">fanart.tv/get-an-api-key</ExtLink>.{" "}
+              {t('Use the "personal" key, not the project one.')}
             </>
           }
         />
@@ -243,9 +251,11 @@ export function useProviderKeys({
           iconSrc={rpdbLogo}
           help={
             <>
-              Paid plan at <ExtLink href="https://ratingposterdb.com">ratingposterdb.com</ExtLink>.
-              Once saved, every poster gets re-rendered with IMDb, Rotten Tomatoes, and Metacritic
-              stamped on it.
+              {t("Paid plan at")}{" "}
+              <ExtLink href="https://ratingposterdb.com">ratingposterdb.com</ExtLink>.{" "}
+              {t(
+                "Once saved, every poster gets re-rendered with IMDb, Rotten Tomatoes, and Metacritic stamped on it.",
+              )}
             </>
           }
         />
@@ -256,7 +266,7 @@ export function useProviderKeys({
       name: t("Custom poster service"),
       desc: t("Swap in Better Posters, PostersPlus, or your own URL template."),
       value: posterSrvDraft,
-      logo: rpdbLogo,
+      mark: <PosterServiceMark />,
       field: (
         <KeyField
           label={t("Custom poster service")}
@@ -268,18 +278,49 @@ export function useProviderKeys({
             flashExtra("postersrv");
           }}
           saved={extraSaved === "postersrv"}
-          iconSrc={rpdbLogo}
+          iconNode={<PosterServiceMark />}
           help={
             <>
-              Leave empty to use your RPDB key above. Or paste <strong>Better Posters</strong> (
-              <code>https://btttr.cc</code>), a bare RPDB-compatible server (your RPDB key is still
-              sent), or a full URL template using <code>{"{imdbId}"}</code>,{" "}
-              <code>{"{tmdbId}"}</code>, <code>{"{type}"}</code>, or <code>{"{id}"}</code>.
-              PostersPlus needs the template form, e.g.{" "}
+              {t("Leave empty to use your RPDB key above. Or paste")}{" "}
+              <strong>Better Posters</strong> (<code>https://btttr.cc</code>),{" "}
+              {t(
+                "a bare RPDB-compatible server (your RPDB key is still sent), or a full URL template using",
+              )}{" "}
+              <code>{"{imdbId}"}</code>, <code>{"{tmdbId}"}</code>, <code>{"{type}"}</code>,{" "}
+              {t("or")} <code>{"{id}"}</code>. {t("PostersPlus needs the template form, e.g.")}{" "}
               <code>
                 {"postersplus.elfhosted.com/poster?tmdb_id={tmdbId}&imdb_id={imdbId}&type={type}"}
               </code>
               .
+            </>
+          }
+        />
+      ),
+    },
+    {
+      id: "nyt",
+      name: t("New York Times"),
+      desc: t("Bestseller lists in the eBook section."),
+      value: nytDraft,
+      field: (
+        <KeyField
+          label={t("New York Times · bestseller lists")}
+          placeholder={t("NYT Books API key")}
+          value={nytDraft}
+          onChange={setNytDraft}
+          onSave={() => {
+            update({ nytKey: nytDraft.trim() });
+            flashExtra("nyt");
+          }}
+          saved={extraSaved === "nyt"}
+          help={
+            <>
+              Adds the New York Times bestseller lists to the eBook page, on the hero and as a
+              row, with rank and weeks on the list. Free key at{" "}
+              <ExtLink href="https://developer.nytimes.com/get-started">
+                developer.nytimes.com
+              </ExtLink>
+              . Enable the Books API on your app. Lists refresh weekly.
             </>
           }
         />
@@ -303,11 +344,11 @@ export function useProviderKeys({
           saved={extraSaved === "songai"}
           help={
             <>
-              Identifies the song with Google Gemini (free tier, no usage cap). Get a key at{" "}
+              {t("Identifies the song with Google Gemini (free tier, no usage cap). Get a key at")}{" "}
               <ExtLink href="https://aistudio.google.com/apikey">
                 aistudio.google.com/apikey
               </ExtLink>
-              . Windows only.
+              . {t("Windows only.")}
             </>
           }
         />
@@ -334,7 +375,7 @@ export function useProviderKeys({
           iconBg="#EE1066"
           help={
             <>
-              Powers the Identify-song button in the player. Get a token at{" "}
+              {t("Powers the Identify-song button in the player. Get a token at")}{" "}
               <ExtLink href="https://dashboard.audd.io/">dashboard.audd.io</ExtLink>.
             </>
           }

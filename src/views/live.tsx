@@ -260,7 +260,7 @@ export function LiveView({ active }: { active: boolean }) {
 
   if (sources.length === 0) {
     return (
-      <main data-rail-flush className="relative flex min-h-0 flex-1 flex-col overflow-y-auto pt-20">
+      <main data-rail-flush data-live-page className="relative flex min-h-0 flex-1 flex-col overflow-y-auto pt-20">
         <PlaylistEmpty onSave={(entry) => addPlaylist(entry)} />
       </main>
     );
@@ -269,6 +269,7 @@ export function LiveView({ active }: { active: boolean }) {
   return (
     <main
       data-rail-flush
+      data-live-page
       className={`relative flex min-h-0 flex-1 ${immersive ? "pt-0" : "pt-20"}`}
     >
       {playlist &&
@@ -368,7 +369,12 @@ export function LiveView({ active }: { active: boolean }) {
             />
           </div>
         ) : (
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 pt-5">
+          <div
+            ref={scrollRef}
+            className={`min-h-0 flex-1 ${
+              mode === "guide" ? "flex flex-col overflow-hidden" : "overflow-y-auto px-6 pt-5"
+            }`}
+          >
             {state.kind === "error" ? (
               <ErrorBlock
                 message={state.message}

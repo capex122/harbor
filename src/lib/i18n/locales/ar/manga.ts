@@ -341,7 +341,7 @@ const manga: Record<string, string> = {
     "ضمن «خادمك» أعلاه. كل ما تفعّله هناك يظهر هنا.",
   "update to v{version}": "التحديث إلى v{version}",
   "{label} · page {page}/{total}": "{label} · صفحة {page}/{total}",
-  "{n} chapter": "فصل واحد",
+  "{n} chapter": "{n} فصل",
   "{n} chapters": "{n} فصول",
   "{n} pages": "{n} صفحات",
   "{n}d ago": "قبل {n} يوم",

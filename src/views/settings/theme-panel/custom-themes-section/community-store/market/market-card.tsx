@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Download, Star } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { downloadTheme, type StoreTheme } from "@/lib/theme-store";
 import { getBundle, installBundle, type StoreBundle } from "@/lib/bundle-store";
 import { UserHoverCard } from "@/views/profile/user-hover-card";
@@ -54,8 +55,11 @@ function ThemeMarketCard({
   rank?: number;
   onOpen: (t: StoreTheme) => void;
 }) {
+  const t = useT();
   const { state, run } = useAcquireState(() =>
-    downloadTheme(theme.id, theme.cover ?? theme.screenshots[0] ?? null, theme.versionsCount).then(() => {}),
+    downloadTheme(theme.id, theme.cover ?? theme.screenshots[0] ?? null, theme.versionsCount).then(
+      () => {},
+    ),
   );
   const tokens = useMemo(() => tokensFromStoreTheme(theme), [theme]);
   return (
@@ -72,23 +76,25 @@ function ThemeMarketCard({
         {theme.ratingCount > 0 && <RatingChip avg={theme.ratingAvg} />}
         {rank != null && <RankChip rank={rank} />}
         <div className={ACTION_ROW}>
-          <MarketCta variant="acquire" size="sm" state={state} onClick={run} label="Get" />
+          <MarketCta variant="acquire" size="sm" state={state} onClick={run} label={t("Get")} />
         </div>
         <div className="absolute inset-x-0 bottom-0 z-10">
           <PaletteSeam swatch={theme.swatch} />
         </div>
       </div>
       <div className="flex min-w-0 flex-col gap-0.5 px-3.5 pb-3 pt-2.5">
-        <span className="truncate text-[14.5px] font-semibold tracking-tight text-ink">{theme.name}</span>
+        <span className="truncate text-[14.5px] font-semibold tracking-tight text-ink">
+          {theme.name}
+        </span>
         <span className="flex items-center gap-1.5 truncate text-[11.5px] text-ink-subtle">
           {theme.authorHandle ? (
             <UserHoverCard handle={theme.authorHandle}>
               <span className="truncate text-ink-muted transition-colors hover:text-ink">
-                {theme.author || "Anonymous"}
+                {theme.author || t("Anonymous")}
               </span>
             </UserHoverCard>
           ) : (
-            <span className="truncate text-ink-muted">{theme.author || "Anonymous"}</span>
+            <span className="truncate text-ink-muted">{theme.author || t("Anonymous")}</span>
           )}
           <span className="text-ink-subtle/60">·</span>
           <span className="inline-flex shrink-0 items-center gap-1 tabular-nums">
@@ -110,6 +116,7 @@ function BundleMarketCard({
   rank?: number;
   onOpen: (b: StoreBundle) => void;
 }) {
+  const t = useT();
   const { state, run } = useAcquireState(async () => {
     installBundle(bundle);
     await getBundle(bundle.id).catch(() => {});
@@ -128,11 +135,13 @@ function BundleMarketCard({
         {bundle.ratingCount > 0 && <RatingChip avg={bundle.ratingAvg} />}
         {rank != null && <RankChip rank={rank} />}
         <div className={ACTION_ROW}>
-          <MarketCta variant="acquire" size="sm" state={state} onClick={run} label="Install" />
+          <MarketCta variant="acquire" size="sm" state={state} onClick={run} label={t("Install")} />
         </div>
       </div>
       <div className="flex min-w-0 flex-col gap-0.5 px-3.5 pb-3 pt-2.5">
-        <span className="truncate text-[14.5px] font-semibold tracking-tight text-ink">{bundle.name}</span>
+        <span className="truncate text-[14.5px] font-semibold tracking-tight text-ink">
+          {bundle.name}
+        </span>
         <span className="flex items-center gap-1.5 truncate text-[11.5px] text-ink-subtle">
           {bundle.authorAvatar && (
             <img
@@ -142,7 +151,7 @@ function BundleMarketCard({
               className="h-4 w-4 shrink-0 rounded-full object-cover ring-1 ring-edge-soft"
             />
           )}
-          <span className="truncate text-ink-muted">{bundle.author || "Anonymous"}</span>
+          <span className="truncate text-ink-muted">{bundle.author || t("Anonymous")}</span>
           <span className="text-ink-subtle/60">·</span>
           <span className="inline-flex shrink-0 items-center gap-1 tabular-nums">
             <Download size={10.5} strokeWidth={2.2} />

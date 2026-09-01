@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, type RefObject } from "react";
-import { Captions, Languages } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { Captions, Check, Gauge, Languages, LoaderCircle } from "lucide-react";
 import { AllAddonsIcon } from "@/components/icons/harbor-glyphs";
 import type { SubtitleMenuProps } from "@/components/player/subtitle-menu/types";
 import type { PlayerBridge, PlayerSnapshot } from "@/lib/player/bridge";
@@ -10,7 +10,10 @@ import type { SpoilerMask } from "@/lib/spoilers";
 import type { ScoredStream } from "@/lib/streams/types";
 import type { SubChoiceInput } from "@/lib/subtitles/subtitle-memory";
 import type { EngineStats } from "@/lib/torrent/engine-stats";
-import type { PlayerSrc, PlayEpisode } from "@/lib/view";
+import { useView, type PlayerSrc, type PlayEpisode } from "@/lib/view";
+import { MEDIA_SERVER_QUALITIES } from "@/lib/media-server/quality";
+import { switchMediaServerQuality } from "@/lib/media-server/playback";
+import type { MediaServerQuality } from "@/lib/media-server/types";
 import { useBpT } from "@/views/big-picture/bp-i18n";
 import { BpConnecting } from "@/views/big-picture/player/bp-connecting";
 import { pushBpBack } from "@/views/big-picture/bp-back";
@@ -247,6 +250,22 @@ function BpTenFoot(props: BpTenFootProps) {
             />
           </BpPlayerSlot>
         )}
+
+        {!resuming && src.homeServer && (
+          <BpPlayerSlot
+            area="panel"
+            id="home-server-quality"
+            label={t("Quality")}
+            icon={<Gauge size={21} strokeWidth={2.2} />}
+            shellNav
+          >
+            <HomeServerQualityPanel
+              src={src}
+              positionMs={Math.max(0, snap.positionSec * 1000)}
+              playing={snap.status === "playing"}
+            />
+          </BpPlayerSlot>
+        )}
       </BpPlayerShell>
 
       {/* Its own portal above the shell, and it declares data-bp-overlay, which
@@ -355,4 +374,88 @@ function SourcesPanel(props: Omit<Parameters<typeof BpPlayerSources>[0], "onClos
   }, [props.currentUrl, closePanel]);
 
   return <BpPlayerSources {...props} onClose={closePanel} />;
+}
+
+function HomeServerQualityPanel({
+  src,
+  positionMs,
+  playing,
+}: {
+  src: PlayerSrc;
+  positionMs: number;
+  playing: boolean;
+}) {
+  const t = useBpT();
+  const { closePanel } = useBpPlayer();
+  const { replacePlayerSrc } = useView();
+  const [switching, setSwitching] = useState<MediaServerQuality | null>(null);
+  const [error, setError] = useState("");
+  const select = async (quality: MediaServerQuality) => {
+    if (quality === src.homeServer?.quality) {
+      closePanel();
+      return;
+    }
+    setSwitching(quality);
+    setError("");
+    try {
+      replacePlayerSrc(await switchMediaServerQuality({ src, quality, positionMs, playing }));
+      closePanel();
+    } catch (cause) {
+      setError(
+        `${cause instanceof Error ? cause.message : String(cause)} ${t("The current stream is still playing. Original remains available.")}`,
+      );
+    } finally {
+      setSwitching(null);
+    }
+  };
+  return (
+    <div
+      data-bp-dialog
+      className="flex h-full flex-col justify-center gap-[clamp(14px,2vh,28px)] px-[var(--bp-gutter)]"
+    >
+      <div>
+        <h2 className="font-display text-[clamp(24px,4vh,52px)] font-semibold text-ink">
+          {t("Home server quality")}
+        </h2>
+        <p className="mt-2 text-[clamp(13px,1.8vh,20px)] text-ink-subtle">
+          {t("Switch quality without losing your place.")}
+        </p>
+      </div>
+      <div
+        data-bp-scroll-y
+        className="grid max-h-[58vh] grid-cols-2 gap-[clamp(8px,1vw,16px)] overflow-y-auto"
+      >
+        {MEDIA_SERVER_QUALITIES.map((quality, index) => {
+          const active = quality.id === src.homeServer?.quality;
+          return (
+            <button
+              key={quality.id}
+              type="button"
+              data-bp-focusable
+              data-bp-chip
+              data-bp-autofocus={index === 0 ? "true" : undefined}
+              disabled={switching != null}
+              onClick={() => void select(quality.id)}
+              className={`flex min-h-[clamp(64px,8vh,92px)] items-center justify-between rounded-[var(--bp-r-md)] px-[clamp(18px,2vw,30px)] text-[clamp(15px,2.1vh,23px)] font-semibold ${active ? "bg-[var(--bp-on)] text-ink" : "border border-[var(--bp-edge)] bg-[var(--bp-panel)] text-ink-subtle"}`}
+            >
+              <span>{t(quality.label)}</span>
+              {switching === quality.id ? (
+                <LoaderCircle className="animate-spin" size={22} />
+              ) : active ? (
+                <Check size={22} />
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+      {error && (
+        <p
+          role="alert"
+          className="rounded-[var(--bp-r-sm)] bg-red-950/80 px-5 py-4 text-[clamp(13px,1.7vh,19px)] text-red-100 ring-1 ring-red-400/30"
+        >
+          {error}
+        </p>
+      )}
+    </div>
+  );
 }

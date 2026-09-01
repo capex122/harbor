@@ -3,6 +3,7 @@ import { SERVICES } from "@/lib/providers/streaming";
 import type { StreamingService } from "@/lib/settings";
 import type { Settings } from "@/lib/settings/types";
 import { ALL_LANGUAGE_NAMES } from "@/lib/subtitles/language";
+import { mediaServerConnections } from "@/lib/media-server/connections";
 
 export type BpCatId =
   | "picture"
@@ -30,6 +31,8 @@ export type BpControl =
       options: BpOption[];
       /** Draw each cell as the glyph at its own value rather than as a word. */
       letter?: boolean;
+      /** Split choices into real focus rows instead of one scrolling rail. */
+      columns?: 2;
     }
   | { kind: "multi"; id: string; label: string; render: "logo" | "text"; items: BpMultiItem[] }
   | { kind: "push"; id: string; label: string; detail: string; pane: BpPane }
@@ -210,6 +213,36 @@ export function bpSettingsControls(
 
   if (id === "playback") {
     return [
+      {
+        kind: "options",
+        id: "playbackSource",
+        label: t("Play button behavior"),
+        value: s.playbackSourcePreference,
+        options: [
+          { value: "ask", label: t("Ask every time") },
+          { value: "online", label: t("Online streams") },
+          { value: "local", label: t("Local Library") },
+          { value: "home-server", label: t("Home server") },
+        ],
+        columns: 2 as const,
+      },
+      ...(s.playbackSourcePreference === "home-server"
+        ? [
+            {
+              kind: "options" as const,
+              id: "preferredMediaServer",
+              label: t("Preferred home server"),
+              value: s.preferredMediaServerId ?? "",
+              options: [
+                { value: "", label: t("Ask which server") },
+                ...mediaServerConnections()
+                  .filter((connection) => connection.enabled)
+                  .map((connection) => ({ value: connection.id, label: connection.name })),
+              ],
+              columns: 2 as const,
+            },
+          ]
+        : []),
       {
         kind: "options",
         id: "engine",

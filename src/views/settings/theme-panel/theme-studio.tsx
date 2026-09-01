@@ -28,12 +28,14 @@ import {
 import { useSettings } from "@/lib/settings";
 import { pushOverlayPin } from "@/lib/overlay-pin";
 import { pushActivityHint } from "@/lib/discord/activity-hint";
+import { useT } from "@/lib/i18n";
 
 const STUDIO_STYLE_ID = "harbor-studio-preview-css";
 const STUDIO_HTML_ID = "harbor-studio-preview-html";
 const STUDIO_AUTHORITY_ID = "harbor-studio-authority-css";
 
 export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: () => void }) {
+  const t = useT();
   const { settings, update } = useSettings();
   const { draft, setDraft, undo, redo, canUndo, canRedo } = useDraftHistory(() => emptyDraft(seed));
   const drag = usePanelDrag();
@@ -44,6 +46,12 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
   const { inspectorHidden, setInspectorHidden } = useStudioPreview(draft.layout, draft.bokeh);
   const [initialJson] = useState(() => JSON.stringify(emptyDraft(seed)));
   const [confirmClose, setConfirmClose] = useState(false);
+  const activityName = draft.name.trim();
+  const activityDetails = activityName
+    ? t('Designing "{name}"', { name: activityName })
+    : t("Designing a theme");
+  const activityState = t("Theme Studio");
+  const untitledThemeName = t("Untitled theme");
   const dirty = useMemo(() => JSON.stringify(draft) !== initialJson, [draft, initialJson]);
   const requestClose = () => {
     if (dirty) setConfirmClose(true);
@@ -52,18 +60,15 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
 
   useEffect(() => pushOverlayPin(), []);
 
-  useEffect(() => {
-    const name = draft.name.trim();
-    return pushActivityHint({
-      details: name ? `Designing "${name}"` : "Designing a theme",
-      state: "Theme Studio",
-    });
-  }, [draft.name]);
+  useEffect(
+    () => pushActivityHint({ details: activityDetails, state: activityState }),
+    [activityDetails, activityState],
+  );
 
   const draftPreset = useMemo<ThemePreset>(
     () => ({
       id: "user:__studio_preview__" as never,
-      name: draft.name || "Untitled theme",
+      name: draft.name || untitledThemeName,
       blurb: draft.blurb,
       swatch: [draft.colors.canvas, draft.colors.surface, draft.colors.accent] as [
         string,
@@ -77,7 +82,7 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
       fontPair: draft.fontPair,
       bokeh: draft.bokeh,
     }),
-    [draft],
+    [draft, untitledThemeName],
   );
 
   useEffect(() => {
@@ -150,7 +155,8 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
       }
       if ((e.metaKey || e.ctrlKey) && (e.key === "z" || e.key === "Z")) {
         const el = e.target as HTMLElement | null;
-        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable))
+          return;
         e.preventDefault();
         if (e.shiftKey) redo();
         else undo();
@@ -224,7 +230,12 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
       fontPair: draft.fontPair,
       bokeh: draft.bokeh,
       ...(settings.theme.backgroundImage
-        ? { background: { image: settings.theme.backgroundImage, dim: settings.theme.backgroundDim } }
+        ? {
+            background: {
+              image: settings.theme.backgroundImage,
+              dim: settings.theme.backgroundDim,
+            },
+          }
         : {}),
       ...(draft.customFontId ? { customFontId: draft.customFontId } : {}),
       ...(draft.layout === "custom" ? { chrome: draft.chrome } : {}),
@@ -238,7 +249,8 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
   const onSave = () => {
     if (!canSave) return;
     const theme = buildTheme();
-    const previous = settings.theme.preset !== "custom" ? getThemeById(settings.theme.preset) : null;
+    const previous =
+      settings.theme.preset !== "custom" ? getThemeById(settings.theme.preset) : null;
     const image = nextBackgroundImage(settings.theme.backgroundImage, previous, theme);
     saveCustomTheme(theme);
     update({
@@ -288,7 +300,7 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
               disabled={!canSave}
               className="harbor-press-pop flex h-12 flex-1 items-center justify-center rounded-md bg-surface text-[15px] font-semibold text-ink-muted transition-colors hover:bg-raised hover:text-ink disabled:opacity-40"
             >
-              Export
+              {t("Export")}
             </button>
             <button
               type="button"
@@ -296,7 +308,7 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
               disabled={!canSave}
               className="harbor-press-pop flex h-12 flex-[1.6] items-center justify-center rounded-md bg-ink text-[15px] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Save theme
+              {t("Save theme")}
             </button>
           </footer>
         </StudioShell>
@@ -310,7 +322,7 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
           className="pointer-events-auto fixed bottom-6 end-6 z-[242] flex h-12 items-center gap-2 rounded-md bg-elevated px-5 text-[13px] font-semibold text-ink harbor-float transition-colors hover:bg-raised"
         >
           <SlidersHorizontal size={16} strokeWidth={2.2} />
-          Edit theme
+          {t("Edit theme")}
         </button>
       )}
 
@@ -319,7 +331,7 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
           css={draft.css}
           html={draft.html}
           js={draft.js}
-          themeName={draft.name || "Untitled theme"}
+          themeName={draft.name || untitledThemeName}
           initialTab={popoutTab}
           onChange={onPatch}
           onRunJs={runJs}
@@ -343,10 +355,12 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
           >
             <div className="flex flex-col px-6 pb-6 pt-5">
               <h2 className="text-[17px] font-semibold tracking-tight text-ink">
-                Leave without saving?
+                {t("Leave without saving?")}
               </h2>
               <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-muted">
-                Your changes to this theme aren&apos;t saved yet. They&apos;ll be lost if you leave now.
+                {t(
+                  "Your changes to this theme aren't saved yet. They'll be lost if you leave now.",
+                )}
               </p>
               <div className="mt-5 flex items-center justify-end gap-2.5">
                 <button
@@ -357,7 +371,7 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
                   }}
                   className="h-10 rounded-md px-4 text-[13.5px] font-semibold text-ink-subtle transition-colors hover:bg-danger/25 hover:text-danger"
                 >
-                  Discard
+                  {t("Discard")}
                 </button>
                 <button
                   type="button"
@@ -365,7 +379,7 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
                   onClick={() => setConfirmClose(false)}
                   className="h-10 rounded-md bg-ink px-5 text-[13.5px] font-semibold text-canvas transition-opacity hover:opacity-90"
                 >
-                  Keep editing
+                  {t("Keep editing")}
                 </button>
               </div>
             </div>

@@ -114,7 +114,7 @@ export function BpSettings() {
 
   return (
     <div className={PAGE}>
-      <BpSettingsColumnBox scrollRef={colRef}>
+      <BpSettingsColumnBox scrollRef={colRef} scrollable={depth === 2}>
         {depth === 1
           ? categories.map((c, i) => (
               <BpCategoryRow
@@ -129,15 +129,26 @@ export function BpSettings() {
               />
             ))
           : controls.map((control, i) => {
+              const index = controls
+                .slice(0, i)
+                .reduce(
+                  (rows, entry) =>
+                    rows +
+                    (entry.kind === "options" && entry.columns === 2
+                      ? Math.max(1, Math.ceil(entry.options.length / 2))
+                      : 1),
+                  0,
+                );
               if (control.kind === "options") {
                 return (
                   <BpOptionRow
                     key={control.id}
-                    index={i}
+                    index={index}
                     label={control.label}
                     value={control.value}
                     options={control.options}
                     letter={control.letter}
+                    columns={control.columns}
                     autofocus={i === 0}
                     onPick={(v) => commit(control.id, v)}
                     onCellFocus={control.id === "sound" ? auditionSound : undefined}
@@ -148,7 +159,7 @@ export function BpSettings() {
                 return (
                   <BpMultiRow
                     key={control.id}
-                    index={i}
+                    index={index}
                     label={control.label}
                     items={control.items}
                     render={control.render}
@@ -161,7 +172,7 @@ export function BpSettings() {
                 return (
                   <BpPushRow
                     key={control.id}
-                    index={i}
+                    index={index}
                     label={control.label}
                     detail={
                       control.pane === "connect"
@@ -180,7 +191,7 @@ export function BpSettings() {
               return (
                 <BpActionRow
                   key={control.id}
-                  index={i}
+                  index={index}
                   label={control.label}
                   autofocus={i === 0}
                   onPress={leave}

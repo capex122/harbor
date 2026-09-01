@@ -1,7 +1,19 @@
 import type { CSSProperties } from "react";
-import { ArrowDownToLine, Check, Download, ExternalLink, HardDrive, History, Loader2, Share2 } from "lucide-react";
+import {
+  ArrowDownToLine,
+  Check,
+  Download,
+  ExternalLink,
+  HardDrive,
+  History,
+  Loader2,
+  Share2,
+} from "lucide-react";
 import { Play } from "@/components/icons/play-filled";
 import { AddonLogo } from "@/components/addon-logo";
+import { LocalVersionBadges } from "@/components/local-version-badges";
+import { MediaServerBrand } from "@/components/media-server-brand";
+import { MediaServerVersionBadges } from "@/components/media-server-version-badges";
 import { DubSubPill, streamDubSub } from "@/components/dub-sub-pill";
 import { FlagStack } from "@/components/flag";
 import {
@@ -13,8 +25,11 @@ import {
 import { HostMatchChip } from "@/components/host-match-chip";
 import { QUALITY_LABEL, qualityKey } from "@/components/player/stream-switcher/quality";
 import type { LocalEntry } from "@/lib/local-library";
+import type { MediaServerConnection, PlayableCopy } from "@/lib/media-server/types";
+import type { MediaServerHealth } from "@/lib/media-server/health";
 import { episodeLabel } from "@/lib/local-library/player-src";
 import { useSettings } from "@/lib/settings";
+import { formatBytes } from "@/lib/together/source-descriptor";
 import { SFX } from "@/lib/sfx";
 import type { ScoredStream } from "@/lib/streams/types";
 import type { PlayEpisode } from "@/lib/view";
@@ -63,10 +78,13 @@ function editionText(edition: string): string {
 // Skin tone, VS16, ZWJ and the keycap are each outside Extended_Pictographic,
 // so dropping them leaves an invisible orphan behind the removed glyph.
 const PICTOGRAPH =
-  /[\p{Extended_Pictographic}\p{Regional_Indicator}\u{1F3FB}-\u{1F3FF}\u{FE0F}\u{200D}\u{20E3}]/gu;
+  /\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u{1F3FB}-\u{1F3FF}]|\u{FE0F}|\u{200D}|\u{20E3}/gu;
 
 function plainLine(text: string): string {
-  return text.replace(PICTOGRAPH, "").replace(/\s{2,}/g, " ").trim();
+  return text
+    .replace(PICTOGRAPH, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 function detailLine(description: string, summary: string[], headline: string): string {
@@ -104,23 +122,109 @@ export function BpLocalRow({
         SFX.click();
         onPick();
       }}
-      aria-label={`${t("On your disk")} ${entry.filename}`}
+      aria-label={`${t("Local Library")} ${entry.filename}`}
       className={`${ROW} items-center border-transparent text-ink`}
     >
-      <span className={`${SLOT} h-[clamp(46px,5.2vh,64px)] w-[clamp(46px,5.2vh,64px)] rounded-[var(--bp-r-sm)]`}>
+      <span
+        className={`${SLOT} h-[clamp(46px,5.2vh,64px)] w-[clamp(46px,5.2vh,64px)] rounded-[var(--bp-r-sm)]`}
+      >
         <HardDrive size={21} strokeWidth={2} className="text-[var(--bp-live)]" />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-[clamp(3px,0.4vh,7px)]">
         <span className={`${META} ${TAG}`}>
-          {t("On your disk")}
+          {t("Local Library")}
           {ep && <span className="tracking-normal">{ep}</span>}
+          <LocalVersionBadges entry={entry} size="md" showSize={false} />
         </span>
-        <span className="line-clamp-1 text-[clamp(14px,1.95vh,23px)] font-semibold leading-tight">
+        <span className="line-clamp-1 text-[clamp(12.5px,1.65vh,18px)] font-medium leading-snug text-ink-muted [overflow-wrap:anywhere]">
           {entry.filename}
         </span>
+        {entry.size != null && (
+          <span className="text-[clamp(11.5px,1.5vh,17px)] font-medium tabular-nums text-ink-subtle">
+            {formatBytes(entry.size)}
+          </span>
+        )}
       </span>
-      <span className={ACTION}>
-        <Play size={19} className="fill-current" strokeWidth={0} />
+      <span className="flex shrink-0 items-center gap-[clamp(7px,0.7vw,13px)] self-center">
+        <span className={PILL}>
+          <HardDrive size={14} strokeWidth={2.4} />
+          {t("Local")}
+        </span>
+        <span className={ACTION}>
+          <Play size={19} className="fill-current" strokeWidth={0} />
+        </span>
+      </span>
+    </button>
+  );
+}
+
+export function BpHomeServerRow({
+  copy,
+  connection,
+  status,
+  unavailable,
+  autofocus,
+  onPick,
+}: {
+  copy: PlayableCopy;
+  connection: MediaServerConnection;
+  status: MediaServerHealth;
+  unavailable?: boolean;
+  autofocus?: boolean;
+  onPick: () => void;
+}) {
+  const t = useBpT();
+  return (
+    <button
+      type="button"
+      data-bp-focusable
+      data-bp-tile="wide"
+      data-bp-autofocus={autofocus ? "true" : undefined}
+      disabled={unavailable}
+      style={LIFT}
+      onClick={() => {
+        SFX.click();
+        onPick();
+      }}
+      aria-label={`${connection.name} ${copy.label}`}
+      className={`${ROW} items-center border-transparent text-ink disabled:cursor-not-allowed disabled:opacity-45`}
+    >
+      <span
+        className={`${SLOT} h-[clamp(46px,5.2vh,64px)] w-[clamp(46px,5.2vh,64px)] rounded-[var(--bp-r-sm)]`}
+      >
+        <MediaServerBrand provider={connection.provider} name={connection.name} compact />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-[clamp(3px,0.4vh,7px)]">
+        <span className={META}>
+          <span className={TAG}>{connection.name}</span>
+          <MediaServerVersionBadges
+            version={copy.version}
+            filename={copy.label}
+            size="md"
+            showSize={false}
+          />
+        </span>
+        <span className="line-clamp-1 text-[clamp(12.5px,1.65vh,18px)] font-medium leading-snug text-ink-muted [overflow-wrap:anywhere]">
+          {copy.label}
+        </span>
+        {copy.version.sizeBytes != null && (
+          <span className="text-[clamp(11.5px,1.5vh,17px)] font-medium tabular-nums text-ink-subtle">
+            {formatBytes(copy.version.sizeBytes)}
+          </span>
+        )}
+      </span>
+      <span className="flex shrink-0 items-center gap-[clamp(7px,0.7vw,13px)] self-center">
+        <span className={PILL}>
+          <MediaServerBrand provider={connection.provider} name={connection.name} />
+        </span>
+        {unavailable && (
+          <span className={PILL_STATE}>
+            {status === "checking" ? t("Checking…") : t("Offline")}
+          </span>
+        )}
+        <span className={ACTION}>
+          <Play size={19} className="fill-current" strokeWidth={0} />
+        </span>
       </span>
     </button>
   );
@@ -171,11 +275,7 @@ export function BpStreamRow({
   const addonName = contributorLabel(stream) || stream.addonId;
   const headline = plainLine(displayTitle(stream, showName, episode) || addonName);
   const rawDescription = stream.title?.trim() || stream.description?.trim() || "";
-  const fullDescription = rawDescription
-    .split("\n")
-    .map(plainLine)
-    .filter(Boolean)
-    .join("\n");
+  const fullDescription = rawDescription.split("\n").map(plainLine).filter(Boolean).join("\n");
   const filename = settings.pickerShowFilename ? torrentFilename(stream) : "";
   const badges = settings.showQualityBadge ? streamBadges(stream) : [];
   const dubSub = settings.showDubBadge ? streamDubSub(stream.audioLanguages, isAnime) : null;
@@ -205,7 +305,9 @@ export function BpStreamRow({
             : "border-transparent"
       }`}
     >
-      <span className={`${SLOT} h-[clamp(46px,5.2vh,64px)] w-[clamp(46px,5.2vh,64px)] overflow-hidden rounded-[var(--bp-r-sm)]`}>
+      <span
+        className={`${SLOT} h-[clamp(46px,5.2vh,64px)] w-[clamp(46px,5.2vh,64px)] overflow-hidden rounded-[var(--bp-r-sm)]`}
+      >
         <AddonLogo
           addonId={stream.addonId}
           addonName={stream.addonName ?? stream.addonId}

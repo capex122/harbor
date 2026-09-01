@@ -22,7 +22,7 @@ const CW_LIMIT = 16;
 const VISIBLE_ROWS = 60;
 
 export function BpShows({ onSelect }: { onSelect: (m: Meta) => void }) {
-  const { rows, hero, loading, failed, retry } = useBpShows();
+  const { rows, hero, runtimeTitleKeys, loading, failed, retry } = useBpShows();
   const cwPool = useMobileCw(CW_POOL);
   const cwReady = useMobileCwReady();
   const t = useBpT();
@@ -101,7 +101,7 @@ export function BpShows({ onSelect }: { onSelect: (m: Meta) => void }) {
     // the page it would be pressed from. It opens the row's own feed as a grid,
     // so Right at the end of a row answers on every catalog page alike.
     ...visible.map((row, i) => {
-      const title = t(row.name);
+      const title = runtimeTitleKeys.has(row.key) ? row.name : t(row.name);
       return {
         key: row.key,
         node: (

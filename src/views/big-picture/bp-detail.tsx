@@ -1,16 +1,10 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { Meta } from "@/lib/cinemeta";
 import { type PlayEpisode } from "@/lib/view";
 import { useHeroLogos } from "@/components/anime-hero/use-hero-logos";
 import { useHideAnimeMetas } from "@/lib/anime-hide";
 import { useInLocalLibrary } from "@/lib/local-library";
+import { useTitleMediaServers } from "@/hooks/use-title-media-servers";
 import { useSettings } from "@/lib/settings";
 import { ratingTarget } from "@/lib/ratings/types";
 import type { AwardType } from "@/lib/providers/wikidata";
@@ -67,6 +61,7 @@ export function BpDetail({
     episode: PlayEpisode | undefined,
     resume: boolean,
     auto: boolean,
+    applyPreference: boolean,
   ) => void;
 }) {
   const { meta, detail: tmdbDetail, collection, providers, loading } = useBpDetail(metaId);
@@ -129,6 +124,7 @@ export function BpDetail({
     enabled: isSeries && !anime.owns,
   });
   const inLibrary = useInLocalLibrary(meta?.id, [imdbId]);
+  const homeServers = useTitleMediaServers(meta?.id, imdbId);
   const awardGroups = useBpTitleAwards(shell, imdbId);
   // No ref: a hero is on screen by definition. Surface "detail" is load bearing.
   // Harbor keeps two independent settings families, showXBadge for cards and
@@ -156,8 +152,10 @@ export function BpDetail({
       !ep ||
       !mark.ep ||
       (ep.season === mark.ep.season && ep.episode === mark.ep.episode);
-    const auto = settings.instantPlay || (fromStrip && settings.seasonSourceLock);
-    onSources(meta, ep, onResumeTarget, auto);
+    const auto =
+      settings.playbackSourcePreference === "online" &&
+      (settings.instantPlay || (fromStrip && settings.seasonSourceLock));
+    onSources(meta, ep, onResumeTarget, auto, true);
   };
 
   const trailerYtId = detail?.trailerYtId ?? shell.trailerStreams?.[0]?.ytId ?? null;
@@ -177,6 +175,7 @@ export function BpDetail({
         onSources(
           meta,
           mark.ep ?? (isSeries ? bpEpisodeAt(1, 1, episodeIds) : undefined),
+          false,
           false,
           false,
         );
@@ -227,7 +226,9 @@ export function BpDetail({
         body={
           loading
             ? ""
-            : t("Harbor couldn't reach the catalog servers. Check the connection and reopen Big Picture.")
+            : t(
+                "Harbor couldn't reach the catalog servers. Check the connection and reopen Big Picture.",
+              )
         }
         action={t("Go back")}
         onAction={() => runBpBack()}
@@ -306,12 +307,12 @@ export function BpDetail({
 
   return (
     <>
-      <div ref={scrollRef} data-bp-scroll-y className="relative h-full overflow-y-auto pb-[var(--bp-hint-h)] pt-[var(--bp-page-top)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div
-          ref={groundRef}
-          aria-hidden
-          className="pointer-events-none fixed inset-0 -z-10"
-        />
+      <div
+        ref={scrollRef}
+        data-bp-scroll-y
+        className="relative h-full overflow-y-auto pb-[var(--bp-hint-h)] pt-[var(--bp-page-top)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <div ref={groundRef} aria-hidden className="pointer-events-none fixed inset-0 -z-10" />
         <BpDetailHero
           meta={meta}
           detail={detail}
@@ -319,6 +320,7 @@ export function BpDetail({
           badges={badges}
           imdbId={imdbId}
           inLibrary={inLibrary}
+          homeServers={homeServers}
           mark={mark}
           cwEntry={cwEntry}
           actions={actions}
@@ -358,9 +360,7 @@ export function BpDetail({
       {dialog === "facts" && detail && (
         <BpFactsDialog detail={detail} title={title} onClose={() => setDialog(null)} />
       )}
-      {activeTracker && (
-        <BpStatusDialog tracker={activeTracker} onClose={() => setDialog(null)} />
-      )}
+      {activeTracker && <BpStatusDialog tracker={activeTracker} onClose={() => setDialog(null)} />}
       {openAward && (
         <BpAwardDetailDialog
           type={openAward.type}
@@ -368,9 +368,7 @@ export function BpDetail({
           onClose={() => setAwardType(null)}
         />
       )}
-      {download && (
-        <BpStreams meta={meta} intent="download" onClose={() => setDownload(false)} />
-      )}
+      {download && <BpStreams meta={meta} intent="download" onClose={() => setDownload(false)} />}
       {seasonMenu && !anime.owns && episodeStrip.seasons.length > 1 && (
         <BpSeasonMenu
           seasons={episodeStrip.seasons}

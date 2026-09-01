@@ -13,6 +13,13 @@ const CELL = bpBoxCss(BOX);
 function BpCollaboratorCard({ person }: { person: Collaborator }) {
   const t = useBpT();
   const shared = t("{n} titles together", { n: person.titles });
+  const ariaLabel = person.role
+    ? t("{name}, {role}, {shared}", {
+        name: person.name,
+        role: person.role,
+        shared,
+      })
+    : t("{name}, {shared}", { name: person.name, shared });
   return (
     <button
       type="button"
@@ -23,7 +30,7 @@ function BpCollaboratorCard({ person }: { person: Collaborator }) {
         SFX.click();
         pushBigPicture({ kind: "person", personId: person.id, name: person.name });
       }}
-      aria-label={person.role ? `${person.name}, ${t(person.role)}, ${shared}` : `${person.name}, ${shared}`}
+      aria-label={ariaLabel}
       className="flex shrink-0 flex-col overflow-hidden rounded-[var(--bp-r-md)] bg-[var(--bp-panel)] text-start transition-[transform,box-shadow] duration-[var(--bp-dur)] ease-[var(--bp-ease)]"
       style={{ width: CELL }}
     >
@@ -47,7 +54,7 @@ function BpCollaboratorCard({ person }: { person: Collaborator }) {
         <span className="line-clamp-1 w-full text-[clamp(10px,1.3vh,14.5px)] font-medium leading-tight tabular-nums text-ink-subtle">
           {person.role && (
             <>
-              {t(person.role)}
+              {person.role}
               <span aria-hidden className="mx-[0.4em] opacity-40">
                 •
               </span>

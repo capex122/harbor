@@ -1,5 +1,8 @@
-import { HardDrive } from "lucide-react";
 import type { Meta } from "@/lib/cinemeta";
+import { LocalLibraryBrand } from "@/components/local-library-brand";
+import { HoverTooltip } from "@/components/hover-tooltip";
+import { MediaServerBrand, mediaServerProviderName } from "@/components/media-server-brand";
+import type { MediaServerConnection } from "@/lib/media-server/types";
 import { useBpT } from "../bp-i18n";
 import { BP_METRIC_CHIP } from "./bp-detail-chrome";
 
@@ -8,18 +11,45 @@ const MARK = `${BP_METRIC_CHIP} text-[0.86em]`;
 // The provenance of a title is invisible on this page today: something served
 // by the user's own addon looks identical to a Cinemeta record. The addon ships
 // its own logo, so the mark is the asset rather than another grey rectangle.
-export function BpHeroMarks({ meta, inLibrary }: { meta: Meta; inLibrary: boolean }) {
+export function BpHeroMarks({
+  meta,
+  inLibrary,
+  homeServers,
+}: {
+  meta: Meta;
+  inLibrary: boolean;
+  homeServers: readonly MediaServerConnection[];
+}) {
   const t = useBpT();
   const origin = meta.addonOrigin;
 
   return (
     <>
       {inLibrary && (
-        <span className={MARK}>
-          <HardDrive size={14} strokeWidth={2.2} className="shrink-0" />
-          {t("Local library")}
-        </span>
+        <HoverTooltip label={t("In your local library")} side="top" align="center" arrow large>
+          <span className={MARK} aria-label={t("In your local library")}>
+            <LocalLibraryBrand className="h-[18px] w-[18px]" />
+          </span>
+        </HoverTooltip>
       )}
+      {homeServers.map((connection) => {
+        const provider = mediaServerProviderName(connection.provider);
+        return (
+          <HoverTooltip
+            key={connection.id}
+            label={t("Available in {name}", { name: provider })}
+            sublabel={connection.name !== provider ? connection.name : undefined}
+            side="top"
+            align="center"
+            arrow
+            large
+          >
+            <span className={MARK} aria-label={t("Available in {name}", { name: provider })}>
+              <MediaServerBrand provider={connection.provider} name={connection.name} compact />
+            </span>
+          </HoverTooltip>
+        );
+      })}
       {origin?.name && (
         <span className={MARK}>
           {origin.logo && (

@@ -2149,7 +2149,7 @@ function sourceFallback(ebook: EBook): EBook {
   );
   return {
     ...ebook,
-    title: localized || alternatives[0] || ebook.title,
+    title: localized || ebook.title || alternatives[0],
   };
 }
 

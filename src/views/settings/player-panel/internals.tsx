@@ -1,15 +1,17 @@
 import type { ReactNode } from "react";
+import { useT } from "@/lib/i18n";
 
 export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 export function DesktopOnlyBlock({ children }: { children: ReactNode }) {
+  const t = useT();
   if (isTauri) return <>{children}</>;
   return (
     <div className="relative">
       <div className="pointer-events-none select-none opacity-40">{children}</div>
       <div className="pointer-events-none absolute inset-0 flex items-start justify-center pt-3">
         <span className="rounded-md bg-elevated px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
-          Desktop only
+          {t("Desktop only")}
         </span>
       </div>
     </div>
@@ -37,7 +39,9 @@ export function SubField({
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <Label>{label}</Label>
-        {value && <span className="font-mono text-[12.5px] tabular-nums text-ink-muted">{value}</span>}
+        {value && (
+          <span className="font-mono text-[12.5px] tabular-nums text-ink-muted">{value}</span>
+        )}
       </div>
       {children}
     </div>

@@ -1,11 +1,11 @@
 // @ts-expect-error Node test types are intentionally outside the browser-only tsconfig.
 import assert from "node:assert/strict";
 // @ts-expect-error Node test types are intentionally outside the browser-only tsconfig.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 // @ts-expect-error Node test types are intentionally outside the browser-only tsconfig.
 import test from "node:test";
 
-import { readTvContract } from "./_tv-panel-kotlin.ts";
+import { readTvContract, type TvContract } from "./_tv-panel-kotlin.ts";
 import type { TvRow } from "../src/views/settings/tv-panel/model.ts";
 import {
   SUB_LOOK_GROUP,
@@ -43,7 +43,19 @@ const OFF_GRID_THE_TV_SNAPS = [
   "row.subLookGap 6 becomes 4",
 ];
 
-const kt = readTvContract();
+const hasTvSource = existsSync(
+  new URL("../android-native/app/src/main/java/com/harbor/tv/SettingsPage.kt", import.meta.url),
+);
+const contractTest = hasTvSource ? test : test.skip;
+const kt: TvContract = hasTvSource
+  ? readTvContract()
+  : {
+      items: [],
+      settingsWire: new Map(),
+      layoutWire: new Map(),
+      numbers: new Map(),
+      enums: new Map(),
+    };
 const byKey = new Map<string, TvRow>(SUB_LOOK_ROWS.map((r) => [r.key, r]));
 
 function span(key: string): { min: number; max: number; step: number } {
@@ -62,7 +74,7 @@ function snapped(value: number, min: number, max: number, step: number): number 
   return Math.min(max, Math.max(min, min + Math.trunc((held - min) / step) * step));
 }
 
-test("the layout wire and the desktop subtitle rows carry the same keys", () => {
+contractTest("the layout wire and the desktop subtitle rows carry the same keys", () => {
   assert.equal(byKey.size, SUB_LOOK_ROWS.length, "model-look.ts declares the same key twice");
   assert.deepEqual(
     SUB_LOOK_ROWS.map((r) => r.key).filter((k) => !kt.layoutWire.has(k)),
@@ -77,7 +89,7 @@ test("the layout wire and the desktop subtitle rows carry the same keys", () => 
   assert.equal(SUB_LOOK_GROUP.wire, "playerlayout", "the subtitle group writes to the wrong doc");
 });
 
-test("layout kinds agree with the wire", () => {
+contractTest("layout kinds agree with the wire", () => {
   for (const row of SUB_LOOK_ROWS) {
     const letter = kt.layoutWire.get(row.key);
     if (letter === "b") {
@@ -92,13 +104,13 @@ test("layout kinds agree with the wire", () => {
   }
 });
 
-test("layout keys never leak onto the settings wire", () => {
+contractTest("layout keys never leak onto the settings wire", () => {
   for (const row of SUB_LOOK_ROWS) {
     assert.ok(!kt.settingsWire.has(row.key), `${row.key} is on both wires`);
   }
 });
 
-test("step rows match the Kotlin span and stride", () => {
+contractTest("step rows match the Kotlin span and stride", () => {
   for (const row of SUB_LOOK_ROWS) {
     if (row.kind !== "step") continue;
     const want = span(row.key);
@@ -112,7 +124,7 @@ test("step rows match the Kotlin span and stride", () => {
   }
 });
 
-test("choice rows match the Kotlin enum, values and labels", () => {
+contractTest("choice rows match the Kotlin enum, values and labels", () => {
   for (const row of SUB_LOOK_ROWS) {
     if (row.kind !== "choice") continue;
     const name = NAMED[row.key];
@@ -136,7 +148,7 @@ test("choice rows match the Kotlin enum, values and labels", () => {
   }
 });
 
-test("tint swatches keep every enum name", () => {
+contractTest("tint swatches keep every enum name", () => {
   const entries = kt.enums.get("SubTint");
   assert.ok(entries, "enum SubTint is gone");
   assert.deepEqual(
@@ -146,7 +158,7 @@ test("tint swatches keep every enum name", () => {
   );
 });
 
-test("no new value lands off the stride the TV snaps to", () => {
+contractTest("no new value lands off the stride the TV snaps to", () => {
   const found: string[] = [];
   const note = (owner: string, key: string, raw: number) => {
     const want = span(key);
@@ -169,7 +181,7 @@ test("no new value lands off the stride the TV snaps to", () => {
   );
 });
 
-test("model-look.ts stays ASCII", () => {
+contractTest("model-look.ts stays ASCII", () => {
   const raw = readFileSync(
     new URL("../src/views/settings/tv-panel/model-look.ts", import.meta.url),
   ) as Uint8Array;

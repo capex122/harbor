@@ -29,7 +29,7 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
       await signIn(email, password, remember);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign-in failed");
+      setError(err instanceof Error ? err.message : t("Sign-in failed"));
       setBusy(false);
     }
   };
@@ -96,12 +96,16 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
           </span>
           <span className="flex flex-col">
             <span className="text-[13px] font-medium text-ink">{t("Remember me")}</span>
-            <span className="text-[11.5px] text-ink-subtle">{t("Stays signed in on this device only.")}</span>
+            <span className="text-[11.5px] text-ink-subtle">
+              {t("Stays signed in on this device only.")}
+            </span>
           </span>
         </button>
 
         {error && (
-          <p className="rounded-md bg-danger/10 px-3.5 py-2.5 text-[12.5px] leading-snug text-danger">{error}</p>
+          <p className="rounded-md bg-danger/10 px-3.5 py-2.5 text-[12.5px] leading-snug text-danger">
+            {error}
+          </p>
         )}
 
         <button

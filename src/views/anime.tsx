@@ -1,4 +1,4 @@
-import { Pencil, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { RotateCcw, SlidersHorizontal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { AnimeGenrePicker } from "@/components/anime-genre-picker";
 import { preloadAnimeGenreArt } from "@/lib/anime-genre-art-map";
@@ -14,6 +14,7 @@ import { createAddonCatalogFetcher, isCollectionCatalog, loadAddonRows, normaliz
 import type { Meta } from "@/lib/cinemeta";
 import { awardFranchiseKey, uniqueWinnerFranchisesAcrossSources } from "@/lib/anime-awards";
 import { publishResumeStates } from "@/lib/hover-preview/store";
+import { PencilOutlineIcon } from "@/components/icons/pencil-outline";
 import { useT } from "@/lib/i18n";
 import { useAnimeTopPicks } from "@/lib/use-anime-top-picks";
 import { useCrunchyrollAwardMetas } from "@/lib/use-crunchyroll-award-metas";
@@ -869,7 +870,7 @@ export function AnimeView({ active = true }: { active?: boolean }) {
                   : "border-edge-soft/40 bg-canvas/80 text-ink-muted hover:bg-canvas hover:text-ink"
               }`}
             >
-              <Pencil size={12} strokeWidth={2.4} />
+              <PencilOutlineIcon size={12} />
               {editMode ? t("Done editing") : t("Customize anime")}
             </button>
           </div>

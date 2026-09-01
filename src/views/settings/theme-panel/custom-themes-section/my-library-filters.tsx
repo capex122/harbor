@@ -1,4 +1,5 @@
 import { Search } from "@/components/icons/search-icon";
+import { useT } from "@/lib/i18n";
 
 export type LibCat = "all" | "Featured" | "Built-in" | "Template" | "Yours";
 
@@ -27,6 +28,7 @@ export function MyLibraryFilters({
   shown: number;
   total: number;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex h-9 items-center gap-2 rounded-md bg-canvas px-3.5">
@@ -34,7 +36,8 @@ export function MyLibraryFilters({
         <input
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="Search your library"
+          placeholder={t("Search your library")}
+          aria-label={t("Search your library")}
           className="w-48 bg-transparent text-[13px] text-ink placeholder:text-ink-subtle focus:outline-none"
         />
       </div>
@@ -53,13 +56,15 @@ export function MyLibraryFilters({
                 : "border-edge-soft bg-elevated text-ink-muted hover:bg-raised hover:text-ink"
             }`}
           >
-            {c.label}
-            <span className={`tabular-nums ${on ? "text-canvas/70" : "text-ink-subtle"}`}>{count}</span>
+            {t(c.label)}
+            <span className={`tabular-nums ${on ? "text-canvas/70" : "text-ink-subtle"}`}>
+              {count}
+            </span>
           </button>
         );
       })}
       <span className="ms-auto text-[12.5px] tabular-nums text-ink-subtle">
-        {shown} of {total}
+        {t("{shown} of {total}", { shown, total })}
       </span>
     </div>
   );

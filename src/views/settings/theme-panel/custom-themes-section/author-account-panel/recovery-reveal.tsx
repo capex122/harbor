@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Copy } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { useModalExit } from "@/components/modal-shell";
 
 export function RecoveryReveal({ code, onDone }: { code: string; onDone: () => void }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const { closing, close } = useModalExit(onDone);
@@ -28,10 +30,13 @@ export function RecoveryReveal({ code, onDone }: { code: string; onDone: () => v
         className={`${closing ? "animate-dialog-out" : "animate-dialog-in"} flex max-h-[86vh] w-[min(560px,100%)] flex-col overflow-hidden rounded-md bg-surface`}
       >
         <div className="flex flex-col gap-1 px-6 pt-6">
-          <h2 className="text-[17px] font-semibold tracking-tight text-ink">Save your recovery code</h2>
+          <h2 className="text-[17px] font-semibold tracking-tight text-ink">
+            {t("Save your recovery code")}
+          </h2>
           <p className="text-[12.5px] leading-relaxed text-ink-subtle">
-            This is the only time you'll see it. If you ever forget your password, this code is the only way back into your
-            account. Store it somewhere safe.
+            {t(
+              "This is the only time you'll see it. If you ever forget your password, this code is the only way back into your account. Store it somewhere safe.",
+            )}
           </p>
         </div>
 
@@ -44,7 +49,8 @@ export function RecoveryReveal({ code, onDone }: { code: string; onDone: () => v
               onClick={copy}
               className="harbor-press-pop flex h-9 items-center justify-center gap-1.5 rounded-md bg-elevated text-[12.5px] font-semibold text-ink-muted transition-colors hover:text-ink"
             >
-              {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied" : "Copy code"}
+              {copied ? <Check size={14} /> : <Copy size={14} />}{" "}
+              {copied ? t("Copied") : t("Copy code")}
             </button>
           </div>
 
@@ -59,7 +65,7 @@ export function RecoveryReveal({ code, onDone }: { code: string; onDone: () => v
             >
               {saved && <Check size={14} strokeWidth={3} />}
             </span>
-            I've saved my recovery code somewhere safe.
+            {t("I've saved my recovery code somewhere safe.")}
           </button>
         </div>
 
@@ -69,7 +75,7 @@ export function RecoveryReveal({ code, onDone }: { code: string; onDone: () => v
             disabled={!saved}
             className="harbor-press-pop h-9 rounded-md bg-ink px-4 text-[12.5px] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            Continue
+            {t("Continue")}
           </button>
         </div>
       </div>

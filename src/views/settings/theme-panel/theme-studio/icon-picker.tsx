@@ -1,6 +1,7 @@
 import { Ban, Upload } from "lucide-react";
 import { Search } from "@/components/icons/search-icon";
 import { useMemo, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { CHROME_ICONS } from "./chrome-icons";
 
 export function IconPicker({
@@ -10,6 +11,7 @@ export function IconPicker({
   value?: string;
   onSelect: (v: string | null) => void;
 }) {
+  const t = useT();
   const [q, setQ] = useState("");
   const [hover, setHover] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -26,12 +28,12 @@ export function IconPicker({
 
   const caption =
     hover === "__none"
-      ? "No icon (text only)"
+      ? t("No icon (text only)")
       : hover === "__upload"
-        ? "Upload your own image"
+        ? t("Upload your own image")
         : hover
-          ? hover.replace(/-/g, " ")
-          : `${CHROME_ICONS.length} icons, or upload your own`;
+          ? t(hover.replace(/-/g, " "))
+          : t("{count} icons, or upload your own", { count: CHROME_ICONS.length });
 
   return (
     <div className="flex flex-col gap-2 border-t border-edge-soft px-2.5 py-2.5">
@@ -41,7 +43,7 @@ export function IconPicker({
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search icons"
+            placeholder={t("Search icons")}
             className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-subtle"
           />
         </div>
@@ -53,7 +55,7 @@ export function IconPicker({
           className="flex h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-[12.5px] font-medium text-ink-muted transition-colors hover: hover:text-ink transition-colors focus:bg-elevated"
         >
           <Upload size={14} strokeWidth={2} />
-          Upload
+          {t("Upload")}
         </button>
         <input
           ref={fileRef}
@@ -71,6 +73,7 @@ export function IconPicker({
       <div className="grid max-h-[208px] grid-cols-7 gap-1 overflow-y-auto [scrollbar-width:thin]">
         <Tile
           active={!value}
+          label={t("No icon (text only)")}
           onHover={(on) => setHover(on ? "__none" : null)}
           onClick={() => onSelect(null)}
         >
@@ -79,6 +82,7 @@ export function IconPicker({
         {filtered.map(({ id, Icon }) => (
           <Tile
             key={id}
+            label={t(id.replace(/-/g, " "))}
             active={value === id}
             onHover={(on) => setHover(on ? id : null)}
             onClick={() => onSelect(id)}
@@ -88,7 +92,7 @@ export function IconPicker({
         ))}
         {filtered.length === 0 && (
           <p className="col-span-7 px-1 py-3 text-center text-[12.5px] text-ink-subtle">
-            No icons match that search. Try Upload.
+            {t("No icons match that search. Try Upload.")}
           </p>
         )}
       </div>
@@ -102,10 +106,12 @@ export function IconPicker({
 
 function Tile({
   active,
+  label,
   onClick,
   onHover,
   children,
 }: {
+  label: string;
   active: boolean;
   onClick: () => void;
   onHover: (on: boolean) => void;
@@ -117,6 +123,7 @@ function Tile({
       onClick={onClick}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
+      aria-label={label}
       className={`flex aspect-square items-center justify-center rounded-md border transition-colors ${
         active
           ? "border-accent bg-accent-soft text-ink"

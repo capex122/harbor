@@ -3,6 +3,7 @@ import { useState } from "react";
 import { downloadShader } from "@/lib/shaders";
 import type { ShaderCatalogEntry } from "@/lib/player/shader-catalog";
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 import { ExtLink, Segmented, ToggleRow } from "../shared";
 import { SettingRow } from "../kit";
 import { BeforeAfter } from "./before-after";
@@ -21,6 +22,7 @@ const TIER_LABEL: Record<ShaderCatalogEntry["tier"], string> = {
 };
 
 export function ShaderCard({ entry }: { entry: ShaderCatalogEntry }) {
+  const t = useT();
   const { settings, update } = useSettings();
   const state = settings.playerShaders?.[entry.id];
   const installed = !!state?.dir;
@@ -31,7 +33,9 @@ export function ShaderCard({ entry }: { entry: ShaderCatalogEntry }) {
   const lockReason = entry.conflictsWith?.some((c) =>
     c === "hdrToSdr" ? settings.playerHdrToSdr : c === "rtxHdr" ? settings.playerRtxHdr : false,
   )
-    ? "Harbor's built-in HDR to SDR conversion is on. Turn it off in Video tuning to use this instead. Running both double-processes the picture."
+    ? t(
+        "Harbor's built-in HDR to SDR conversion is on. Turn it off in Video tuning to use this instead. Running both double-processes the picture.",
+      )
     : undefined;
 
   const patch = (next: { enabled?: boolean; variant?: string; dir?: string }) => {
@@ -51,7 +55,9 @@ export function ShaderCard({ entry }: { entry: ShaderCatalogEntry }) {
         window.setTimeout(() => setJustUpdated(false), 2200);
       }
     } catch (e) {
-      setError(typeof e === "string" ? e : "Download failed. Check your connection and try again.");
+      setError(
+        typeof e === "string" ? e : t("Download failed. Check your connection and try again."),
+      );
     } finally {
       setBusy(false);
     }
@@ -67,14 +73,14 @@ export function ShaderCard({ entry }: { entry: ShaderCatalogEntry }) {
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[13.5px] font-semibold text-ink">{entry.name}</span>
           <span className="rounded-full bg-raised px-2 py-[3px] text-[10.5px] font-semibold uppercase tracking-wider text-ink-subtle">
-            {CONTENT_LABEL[entry.content]}
+            {t(CONTENT_LABEL[entry.content])}
           </span>
           <span className="rounded-full bg-raised px-2 py-[3px] text-[10.5px] font-semibold uppercase tracking-wider text-ink-subtle">
-            {TIER_LABEL[entry.tier]}
+            {t(TIER_LABEL[entry.tier])}
           </span>
           {entry.verify && (
             <span className="rounded-full bg-accent-soft px-2 py-[3px] text-[10.5px] font-semibold uppercase tracking-wider text-accent">
-              Verify
+              {t("Verify")}
             </span>
           )}
         </div>
@@ -97,19 +103,25 @@ export function ShaderCard({ entry }: { entry: ShaderCatalogEntry }) {
           disabled={busy}
           className="harbor-press-pop flex h-11 w-fit items-center gap-2 rounded-md bg-ink px-5 text-[13.5px] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-70"
         >
-          {busy ? <Loader2 size={16} className="animate-spin motion-reduce:hidden" /> : <Download size={16} strokeWidth={2.2} />}
-          {busy ? "Downloading…" : "Download shader"}
+          {busy ? (
+            <Loader2 size={16} className="animate-spin motion-reduce:hidden" />
+          ) : (
+            <Download size={16} strokeWidth={2.2} />
+          )}
+          {busy ? t("Downloading…") : t("Download shader")}
         </button>
       ) : (
         <>
           <ToggleRow
-            label="Enable"
+            label={t("Enable")}
             sub={
               entry.content === "hdr"
-                ? "Applies only to HDR sources when you play them."
+                ? t("Applies only to HDR sources when you play them.")
                 : entry.content === "anime"
-                  ? "Applies to anime when you play it."
-                  : "Applies when you play something. Only visibly changes the picture when the video is being scaled."
+                  ? t("Applies to anime when you play it.")
+                  : t(
+                      "Applies when you play something. Only visibly changes the picture when the video is being scaled.",
+                    )
             }
             value={!!state?.enabled}
             onChange={(v) => patch({ enabled: v })}
@@ -118,7 +130,7 @@ export function ShaderCard({ entry }: { entry: ShaderCatalogEntry }) {
 
           {entry.variants && entry.variants.length > 1 && (
             <SettingRow
-              label="Variant"
+              label={t("Variant")}
               desc={entry.variants.find((v) => v.id === variantId)?.sub}
             >
               <Segmented
@@ -132,7 +144,7 @@ export function ShaderCard({ entry }: { entry: ShaderCatalogEntry }) {
           <div className="flex items-center justify-between gap-3 rounded-md bg-elevated px-4 py-3">
             <span className="flex items-center gap-1.5 text-[12.5px] text-ink-subtle">
               <Check size={14} className="text-success" strokeWidth={2.6} />
-              Installed
+              {t("Installed")}
             </span>
             <button
               type="button"
@@ -144,18 +156,22 @@ export function ShaderCard({ entry }: { entry: ShaderCatalogEntry }) {
             >
               {busy ? (
                 <>
-                  <Loader2 size={12} className="animate-spin motion-reduce:hidden" strokeWidth={2.6} />
-                  Updating…
+                  <Loader2
+                    size={12}
+                    className="animate-spin motion-reduce:hidden"
+                    strokeWidth={2.6}
+                  />
+                  {t("Updating…")}
                 </>
               ) : justUpdated ? (
                 <>
                   <Check size={12} strokeWidth={3} />
-                  Updated
+                  {t("Updated")}
                 </>
               ) : (
                 <>
                   <RefreshCw size={12} strokeWidth={2.4} />
-                  Re-download
+                  {t("Re-download")}
                 </>
               )}
             </button>

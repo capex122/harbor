@@ -3,11 +3,9 @@ import { flagSrc } from "@/components/flag";
 import { LANGUAGES, setUiLanguage, type UiLanguage } from "@/lib/i18n";
 import { SFX } from "@/lib/sfx";
 import { useSettings } from "@/lib/settings";
+import { useBpT } from "@/views/big-picture/bp-i18n";
 import { advanceBpOnboardRing } from "../bp-onboard-ring";
-import {
-  BP_ROW_FLUSH,
-  BpDecisionScroll,
-} from "../bp-step-parts";
+import { BP_ROW_FLUSH, BpDecisionScroll } from "../bp-step-parts";
 
 const ROW_SCOPE = { ...BP_ROW_FLUSH, containIntrinsicSize: "auto 96px" } as const;
 
@@ -33,6 +31,7 @@ function flagsFor(label: string): string[] {
  * the user has not seen. Vertical geometry never needed them.
  */
 export function BpStepLanguage() {
+  const t = useBpT();
   const { settings, update } = useSettings();
   const at = LANGUAGES.findIndex((l) => l.code === settings.uiLanguage);
   const ordered = at > 0 ? [LANGUAGES[at], ...LANGUAGES.filter((_, i) => i !== at)] : LANGUAGES;
@@ -124,7 +123,7 @@ export function BpStepLanguage() {
                     {lang.nativeLabel}
                   </span>
                   <span className="truncate text-[clamp(12px,1.65vh,19px)] font-medium opacity-65">
-                    {lang.label}
+                    {t(lang.label)}
                   </span>
                 </span>
                 <span

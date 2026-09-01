@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { recoverIdentity } from "@/lib/account/identity";
 import { finishDiscordRecovery, startDiscordRecovery } from "@/lib/account/discord-link";
-import { accountErrorMessage } from "@/lib/account/error-messages";
+import { accountErrorMessage, type AccountErrorMessage } from "@/lib/account/error-messages";
 import { canDiscordAuth } from "@/lib/discord-auth";
 import { DiscordIcon } from "@/components/discord-icon";
 import { PasswordField, TextField } from "./fields";
@@ -28,7 +28,7 @@ export function AccountRecoverForm({
   const [pin, setPin] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AccountErrorMessage | null>(null);
   const canDiscord = canDiscordAuth();
 
   const usernameOk = USERNAME_RE.test(username.trim());
@@ -143,7 +143,11 @@ export function AccountRecoverForm({
             onEnter={submitKey}
           />
 
-          {error && <p className="text-[12.5px] text-danger">{error}</p>}
+          {error && (
+            <p className="text-[12.5px] text-danger">
+              {error.kind === "built-in" ? t(error.key) : error.detail}
+            </p>
+          )}
 
           <button
             type="submit"
@@ -193,7 +197,11 @@ export function AccountRecoverForm({
             autoComplete="username"
           />
 
-          {error && <p className="text-[12.5px] text-danger">{error}</p>}
+          {error && (
+            <p className="text-[12.5px] text-danger">
+              {error.kind === "built-in" ? t(error.key) : error.detail}
+            </p>
+          )}
 
           <button
             type="submit"
@@ -230,7 +238,11 @@ export function AccountRecoverForm({
             onEnter={confirmDiscordCode}
           />
 
-          {error && <p className="text-[12.5px] text-danger">{error}</p>}
+          {error && (
+            <p className="text-[12.5px] text-danger">
+              {error.kind === "built-in" ? t(error.key) : error.detail}
+            </p>
+          )}
 
           <button
             type="submit"

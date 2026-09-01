@@ -60,25 +60,27 @@ export function UpdateCard() {
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="text-[15px] font-semibold text-ink">
               {u.status === "downloaded"
-                ? "Update ready to install"
+                ? t("update.ready")
                 : u.status === "installing"
-                  ? "Installing update"
+                  ? t("update.installing")
                   : u.status === "downloading"
-                    ? "Downloading update"
+                    ? t("update.downloading")
                     : u.status === "error"
                       ? u.installFailed
-                        ? "Finish updating Harbor"
-                        : "Update failed"
-                      : "Update available"}
+                        ? t("Finish updating Harbor")
+                        : t("update.failed")
+                      : t("update.available")}
             </span>
             {u.version && (
-              <span className="text-[12.5px] text-ink-subtle">Harbor {u.version}</span>
+              <span className="text-[12.5px] text-ink-subtle">
+                {t("update.harborVersion", { version: u.version })}
+              </span>
             )}
           </div>
           {u.status !== "installing" && u.status !== "downloading" && (
             <button
               onClick={closeUpdatePanel}
-              aria-label="Close"
+              aria-label={t("common.close")}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
             >
               <X size={16} strokeWidth={2.2} />
@@ -123,10 +125,13 @@ export function UpdateCard() {
             <div className="mt-1.5 flex items-center justify-between text-[11.5px] text-ink-subtle">
               <span>
                 {u.status === "downloaded"
-                  ? "Download complete"
+                  ? t("update.downloadComplete")
                   : determinate
-                    ? `${mb(u.downloadedBytes)} of ${mb(u.totalBytes)}`
-                    : "Fetching the latest build"}
+                    ? t("update.of", {
+                        downloaded: mb(u.downloadedBytes),
+                        total: mb(u.totalBytes),
+                      })
+                    : t("update.fetching")}
               </span>
               {u.status === "downloading" && determinate && <span>{pct}%</span>}
             </div>
@@ -135,10 +140,12 @@ export function UpdateCard() {
 
         {u.status === "error" && (
           <div className="mx-5 mb-1 rounded-xl border border-danger/40 bg-danger/10 px-3.5 py-3 text-[12.5px] leading-relaxed text-ink-muted">
-            {u.error ?? "Something went wrong reaching the update server."}
+            {u.error ?? t("update.errorServer")}
             {u.installFailed && (
               <span className="mt-1.5 block text-ink-subtle">
-                Download and run the installer to finish updating. If it keeps failing, run it as administrator once.
+                {t(
+                  "Download and run the installer to finish updating. If it keeps failing, run it as administrator once.",
+                )}
               </span>
             )}
           </div>
@@ -147,19 +154,21 @@ export function UpdateCard() {
         <div className="flex items-center justify-end gap-2 px-5 pb-4 pt-3">
           {u.status === "available" && (
             <>
-              <GhostButton onClick={dismissUpdate}>Later</GhostButton>
+              <GhostButton onClick={dismissUpdate}>{t("update.later")}</GhostButton>
               <PrimaryButton onClick={() => void downloadUpdate()}>
                 <Download size={16} strokeWidth={2.2} />{" "}
-                {u.handoff && !u.handoff.verifiable ? t("Download installer") : "Download"}
+                {u.handoff && !u.handoff.verifiable
+                  ? t("Download installer")
+                  : t("update.download")}
               </PrimaryButton>
             </>
           )}
           {u.status === "downloaded" && (
             <>
-              <GhostButton onClick={dismissUpdate}>Later</GhostButton>
+              <GhostButton onClick={dismissUpdate}>{t("update.later")}</GhostButton>
               <PrimaryButton onClick={() => void installUpdate()}>
                 <RotateCw size={16} strokeWidth={2.2} />{" "}
-                {u.handoff ? t("Install and reopen") : "Install & restart"}
+                {u.handoff ? t("Install and reopen") : t("update.installRestart")}
               </PrimaryButton>
             </>
           )}
@@ -167,28 +176,28 @@ export function UpdateCard() {
             <span className="text-[12px] text-ink-subtle">
               {u.handoff
                 ? t("Harbor is closing. Harbor Setup will finish and reopen it.")
-                : "Harbor will restart automatically."}
+                : t("update.restartAuto")}
             </span>
           )}
           {u.status === "error" && (
             <>
-              <GhostButton onClick={closeUpdatePanel}>Close</GhostButton>
+              <GhostButton onClick={closeUpdatePanel}>{t("common.close")}</GhostButton>
               {u.installFailed ? (
                 <PrimaryButton
                   onClick={() => void (u.handoff ? openHandoffDownload() : openManualDownload())}
                 >
-                  <Download size={16} strokeWidth={2.2} /> Download installer
+                  <Download size={16} strokeWidth={2.2} /> {t("Download installer")}
                 </PrimaryButton>
               ) : (
                 <PrimaryButton onClick={() => void checkForUpdate(true)}>
-                  <RefreshCw size={16} strokeWidth={2.2} /> Try again
+                  <RefreshCw size={16} strokeWidth={2.2} /> {t("update.tryAgain")}
                 </PrimaryButton>
               )}
             </>
           )}
           {u.status === "downloading" && (
             <span className="flex items-center gap-1.5 text-[12px] text-ink-subtle">
-              <Check size={14} strokeWidth={2.4} className="text-accent" /> Keep using Harbor while it downloads
+              <Check size={14} strokeWidth={2.4} className="text-accent" /> {t("update.keepUsing")}
             </span>
           )}
         </div>

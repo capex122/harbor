@@ -1,5 +1,6 @@
 import { AlertCircle, ArrowDownToLine, Check, ChevronRight, Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
+import { useT } from "@/lib/i18n";
 import { IconFan, type IconThumb } from "./icon-fan";
 import type { AcquireState } from "./use-acquire";
 import { fmtCount } from "../format";
@@ -33,8 +34,13 @@ export function MarketCta({
   preview?: IconThumb[];
   children?: ReactNode;
 }) {
+  const t = useT();
   if (variant === "browse") {
-    const meta = sublabel ?? (count != null ? `${fmtCount(count)} ${noun ?? "packs"} · updated weekly` : "");
+    const meta =
+      sublabel ??
+      (count != null
+        ? t("{count} {noun} · updated weekly", { count: fmtCount(count), noun: t(noun ?? "packs") })
+        : "");
     return (
       <button
         type="button"
@@ -43,7 +49,9 @@ export function MarketCta({
       >
         <IconFan icons={preview ?? []} />
         <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-semibold text-ink">{label ?? "Browse community"}</span>
+          <span className="block text-[13.5px] font-semibold text-ink">
+            {label ? t(label) : t("Browse community")}
+          </span>
           {meta && <span className="block text-[12.5px] text-ink-subtle tabular-nums">{meta}</span>}
         </span>
         <ChevronRight
@@ -61,7 +69,7 @@ export function MarketCta({
         onClick={onClick}
         className={`inline-flex items-center justify-center rounded-md bg-elevated font-semibold text-ink ring-1 ring-edge-soft transition-[transform,box-shadow] duration-150 hover:ring-edge active:scale-[0.97] motion-reduce:transform-none ${SIZE[size]}`}
       >
-        {children ?? label ?? "View details"}
+        {children ?? (label ? t(label) : t("View details"))}
       </button>
     );
   }
@@ -72,7 +80,14 @@ export function MarketCta({
       : state === "error"
         ? "bg-danger text-white"
         : "bg-ink text-canvas";
-  const text = state === "done" ? "Added" : state === "error" ? "Try again" : (label ?? "Get");
+  const text =
+    state === "done"
+      ? t("Added")
+      : state === "error"
+        ? t("Try again")
+        : label
+          ? t(label)
+          : t("Get");
   return (
     <button
       type="button"

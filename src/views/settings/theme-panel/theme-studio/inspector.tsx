@@ -1,6 +1,7 @@
 import { RotateCcw, Shuffle } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { CodeLang } from "@/components/code-editor";
+import { useT } from "@/lib/i18n";
 import {
   DEFAULT_CUSTOM_COLORS,
   THEME_PRESETS,
@@ -47,6 +48,7 @@ export function Inspector({
 }) {
   const [tab, setTab] = useState<Tab>("look");
   const [cardCssOpen, setCardCssOpen] = useState(false);
+  const t = useT();
 
   const shuffle = () => {
     const list = Object.values(THEME_PRESETS);
@@ -57,21 +59,24 @@ export function Inspector({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 px-5 pb-1 pt-4">
         <div className="flex items-center gap-1 rounded-md bg-raised p-1">
-          {TABS.map((t) => {
-            const active = tab === t.id;
+          {TABS.map((item) => {
+            const active = tab === item.id;
             return (
               <button
-                key={t.id}
+                key={item.id}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => setTab(item.id)}
                 className={`harbor-studio-tab flex h-10 flex-1 items-center justify-center rounded-md text-[13.5px] font-semibold transition-colors ${
                   active
                     ? "bg-canvas text-ink ring-1 ring-edge"
                     : "text-ink-muted hover:bg-surface hover:text-ink"
                 }`}
               >
-                <span key={active ? "on" : "off"} className={active ? "harbor-studio-pop" : undefined}>
-                  {t.label}
+                <span
+                  key={active ? "on" : "off"}
+                  className={active ? "harbor-studio-pop" : undefined}
+                >
+                  {t(item.label)}
                 </span>
               </button>
             );
@@ -86,18 +91,24 @@ export function Inspector({
               <IdentityRow name={draft.name} blurb={draft.blurb} onChange={(p) => onPatch(p)} />
               <div className="h-5" />
               <StudioSection
-                title="Start from"
-                action={<HeaderAction icon={<Shuffle size={14} strokeWidth={2.2} />} label="Shuffle" onClick={shuffle} />}
+                title={t("Start from")}
+                action={
+                  <HeaderAction
+                    icon={<Shuffle size={14} strokeWidth={2.2} />}
+                    label={t("Shuffle")}
+                    onClick={shuffle}
+                  />
+                }
               >
                 <PresetGallery onSeed={onSeed} />
               </StudioSection>
               <Hairline />
               <StudioSection
-                title="Palette"
+                title={t("Palette")}
                 action={
                   <HeaderAction
                     icon={<RotateCcw size={14} strokeWidth={2.2} />}
-                    label="Reset"
+                    label={t("Reset")}
                     onClick={() => onPatch({ colors: { ...DEFAULT_CUSTOM_COLORS } })}
                   />
                 }
@@ -105,7 +116,7 @@ export function Inspector({
                 <ColorsGrid colors={draft.colors} onChange={(colors) => onPatch({ colors })} />
               </StudioSection>
               <Hairline />
-              <StudioSection title="Type">
+              <StudioSection title={t("Type")}>
                 <FontPicker
                   pairValue={draft.fontPair}
                   customValue={draft.customFontId}
@@ -113,10 +124,10 @@ export function Inspector({
                   onPickCustom={(id) => onPatch({ customFontId: id })}
                 />
               </StudioSection>
-              <StudioSection title="Surfaces">
+              <StudioSection title={t("Surfaces")}>
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
-                    <span className="text-[12.5px] text-ink-subtle">Cards</span>
+                    <span className="text-[12.5px] text-ink-subtle">{t("Cards")}</span>
                     <StylePicker
                       kind="card"
                       value={draft.cardStyle}
@@ -125,7 +136,7 @@ export function Inspector({
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <span className="text-[12.5px] text-ink-subtle">Buttons</span>
+                    <span className="text-[12.5px] text-ink-subtle">{t("Buttons")}</span>
                     <StylePicker
                       kind="button"
                       value={draft.buttonStyle}
@@ -140,7 +151,10 @@ export function Inspector({
 
           {tab === "layout" && (
             <div className="flex flex-col">
-              <StudioSection title="Layout" hint="Where the navigation lives. Pick one to see it live.">
+              <StudioSection
+                title={t("Layout")}
+                hint={t("Where the navigation lives. Pick one to see it live.")}
+              >
                 <LayoutPicker value={draft.layout} onChange={(layout) => onPatch({ layout })} />
               </StudioSection>
               {draft.layout === "custom" && (
@@ -153,7 +167,10 @@ export function Inspector({
                 />
               )}
               {draft.layout !== "custom" && (
-                <StudioSection title="Navigation items" hint="Reorder, rename, or hide what appears in your nav.">
+                <StudioSection
+                  title={t("Navigation items")}
+                  hint={t("Reorder, rename, or hide what appears in your nav.")}
+                >
                   <NavEditor layout={draft.layout} />
                 </StudioSection>
               )}
@@ -162,9 +179,11 @@ export function Inspector({
 
           {tab === "code" && (
             <StudioSection
-              title="Code"
+              title={t("Code")}
               collapsible
-              hint="CSS, HTML and JS layered over the whole app. Optional for built-in layouts, required for custom chrome."
+              hint={t(
+                "CSS, HTML and JS layered over the whole app. Optional for built-in layouts, required for custom chrome.",
+              )}
             >
               <CodeSection css={draft.css} js={draft.js} html={draft.html} onExpand={onExpand} />
             </StudioSection>
@@ -183,7 +202,15 @@ function Hairline() {
   return <div className="mb-6 h-px bg-edge-soft" />;
 }
 
-function HeaderAction({ icon, label, onClick }: { icon: ReactNode; label: string; onClick: () => void }) {
+function HeaderAction({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
@@ -197,17 +224,23 @@ function HeaderAction({ icon, label, onClick }: { icon: ReactNode; label: string
 }
 
 function BokehToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  const t = useT();
   return (
     <label className="-mx-1 flex cursor-pointer items-center justify-between gap-3 rounded-md px-1 py-1 transition-colors hover:bg-elevated">
       <div className="flex min-w-0 flex-col">
-        <span className="text-[13.5px] font-semibold text-ink">Bokeh background</span>
-        <span className="text-[13px] text-ink-muted">Floating orbs over the canvas.</span>
+        <span className="text-[13.5px] font-semibold text-ink">{t("Bokeh background")}</span>
+        <span className="text-[13px] text-ink-muted">{t("Floating orbs over the canvas.")}</span>
       </div>
       <span
         className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
         style={{ background: value ? "var(--color-accent)" : "var(--color-edge)" }}
       >
-        <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} className="sr-only" />
+        <input
+          type="checkbox"
+          checked={value}
+          onChange={(e) => onChange(e.target.checked)}
+          className="sr-only"
+        />
         <span
           className="absolute h-5 w-5 rounded-full bg-canvas shadow-[0_2px_6px_-2px_rgba(0,0,0,0.4)] transition-transform"
           style={{ transform: value ? "translateX(22px)" : "translateX(2px)" }}

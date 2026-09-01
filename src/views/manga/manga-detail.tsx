@@ -3,15 +3,7 @@ import { UiIcon } from "@/components/ui-icon";
 import { PopIcon } from "@/components/pop-icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CoverImg } from "@/components/cover-img";
-import {
-  Award,
-  BookOpen,
-  ChevronLeft,
-  Flame,
-  RotateCcw,
-  Sparkles,
-  Star,
-} from "lucide-react";
+import { Award, BookOpen, ChevronLeft, Flame, RotateCcw, Sparkles, Star } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const COLLECTION_ICON: Record<string, LucideIcon> = {
@@ -423,7 +415,7 @@ export function MangaDetail({
                         className="inline-flex items-center gap-1.5 rounded-full bg-elevated/60 py-1 pl-2 pr-2.5 text-[12px] font-medium text-accent ring-1 ring-edge-soft backdrop-blur-sm"
                       >
                         <Icon size={12.5} strokeWidth={2.4} />
-                        {c.badge}
+                        {t(c.badge)}
                       </span>
                     );
                   })}

@@ -8,12 +8,22 @@ import { BpStreamMenu, type BpMenuOption } from "./bp-stream-menu";
 import type { BpStreamMode } from "./bp-stream-filters";
 import type { BpStreams } from "./use-bp-streams";
 
-const MODE_CYCLE: BpStreamMode[] = ["both", "addons", "p2p"];
+export type BpSourceKind = "all" | "local" | "media-server" | "online";
 
 const TRACK =
   "flex items-center gap-[clamp(8px,0.75vw,15px)] overflow-x-auto px-[var(--bp-gutter)] pt-[clamp(22px,2.6vh,40px)] pb-[60px] -mb-[38px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
-export function BpStreamChips({ s, onClose }: { s: BpStreams; onClose: () => void }) {
+export function BpStreamChips({
+  s,
+  sourceKind,
+  onSourceKind,
+  onClose,
+}: {
+  s: BpStreams;
+  sourceKind: BpSourceKind;
+  onSourceKind: (kind: BpSourceKind) => void;
+  onClose: () => void;
+}) {
   const t = useBpT();
   const [menu, setMenu] = useState<string | null>(null);
 
@@ -23,6 +33,19 @@ export function BpStreamChips({ s, onClose }: { s: BpStreams; onClose: () => voi
     addons: t("Addons only"),
     p2p: t("P2P only"),
   };
+  const sourceLabel =
+    sourceKind === "local"
+      ? t("Local Library")
+      : sourceKind === "media-server"
+        ? t("Media servers")
+        : modeLabel[s.streamMode];
+  const sourceMenuOptions: BpMenuOption[] = [
+    { id: "all", label: t("All sources") },
+    { id: "local", label: t("Local Library"), count: s.localFiles.length },
+    { id: "media-server", label: t("Media servers"), count: s.homeServerCopies.length },
+    { id: "addons", label: t("Addons only"), count: s.total },
+    { id: "p2p", label: t("P2P only") },
+  ];
   const activeFilterName = s.customFilters.find((f) => f.id === s.activeFilterId)?.name.trim();
   const addonName =
     s.addonFilter === "all"
@@ -121,11 +144,9 @@ export function BpStreamChips({ s, onClose }: { s: BpStreams; onClose: () => voi
           )}
 
           <BpChip
-            label={modeLabel[s.streamMode]}
-            selected={s.streamMode !== "both"}
-            onSelect={() =>
-              s.setStreamMode(MODE_CYCLE[(MODE_CYCLE.indexOf(s.streamMode) + 1) % MODE_CYCLE.length])
-            }
+            label={sourceLabel}
+            selected={sourceKind !== "all" || s.streamMode !== "both"}
+            onSelect={() => setMenu("source-kind")}
           />
 
           {s.customFilters.length > 0 && (
@@ -189,6 +210,29 @@ export function BpStreamChips({ s, onClose }: { s: BpStreams; onClose: () => voi
           value={s.activeFilterId ?? "none"}
           onPick={(id) => {
             s.setActiveFilterId(id === "none" ? null : id);
+            setMenu(null);
+          }}
+          onClose={() => setMenu(null)}
+        />
+      )}
+
+      {menu === "source-kind" && (
+        <BpStreamMenu
+          title={t("Sources")}
+          options={sourceMenuOptions}
+          value={
+            sourceKind === "online" || (sourceKind === "all" && s.streamMode !== "both")
+              ? s.streamMode
+              : sourceKind
+          }
+          onPick={(id) => {
+            if (id === "addons" || id === "p2p") {
+              s.setStreamMode(id);
+              onSourceKind("online");
+            } else {
+              s.setStreamMode("both");
+              onSourceKind(id as BpSourceKind);
+            }
             setMenu(null);
           }}
           onClose={() => setMenu(null)}

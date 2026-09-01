@@ -4,6 +4,7 @@ import { AWARD_CATALOG } from "@/lib/awards-catalog";
 import { pushBigPicture } from "@/lib/big-picture";
 import type { Meta } from "@/lib/cinemeta";
 import { IMG } from "@/lib/providers/tmdb/tmdb-client";
+import { tmdbDepartmentLabelKey } from "@/lib/providers/tmdb/tmdb-people";
 import { SFX } from "@/lib/sfx";
 import {
   MIN_VOTES_MOVIE,
@@ -138,6 +139,14 @@ export function BpPerson({
     setMinRating,
   } = useBpPerson(personId);
   const [expanded, setExpanded] = useState(false);
+  const departmentKey = person?.knownForDepartment
+    ? tmdbDepartmentLabelKey(person.knownForDepartment)
+    : undefined;
+  const departmentLabel = person?.knownForDepartment
+    ? departmentKey
+      ? t(departmentKey)
+      : person.knownForDepartment
+    : null;
   const topRatings = useCreditImdbRatings(topRated);
 
   const sectionTitle = (id: BpFilmSectionId, n: number): string => {
@@ -160,7 +169,8 @@ export function BpPerson({
 
   const bio = person?.biography?.trim() ?? "";
   const { ref: bioRef, clipped } = useBioClipped(bio, expanded);
-  const focusId = knownFor.length > 0 ? "knownFor" : topRated.length > 0 ? "topRated" : sections[0]?.id;
+  const focusId =
+    knownFor.length > 0 ? "knownFor" : topRated.length > 0 ? "topRated" : sections[0]?.id;
 
   // Person was one of two BP pages whose rows carried no rail index, so vertical
   // ran on geometry and oscillated between two credit rows instead of walking
@@ -204,9 +214,7 @@ export function BpPerson({
   if (total > 0) {
     rows.push({
       key: "filmography",
-      node: (
-        <h2 className={BP_DETAIL_HEADING}>{t("Filmography")}</h2>
-      ),
+      node: <h2 className={BP_DETAIL_HEADING}>{t("Filmography")}</h2>,
     });
     rows.push({
       key: "sort",
@@ -310,8 +318,11 @@ export function BpPerson({
             {(person?.knownForDepartment || deptRank != null) && (
               <div className="flex flex-wrap items-center gap-[clamp(7px,0.7vw,14px)]">
                 {person?.knownForDepartment && (
-                  <span data-bp-eyebrow className="text-[clamp(11px,1.5vh,17px)] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
-                    {t(person.knownForDepartment)}
+                  <span
+                    data-bp-eyebrow
+                    className="text-[clamp(11px,1.5vh,17px)] font-semibold uppercase tracking-[0.16em] text-ink-subtle"
+                  >
+                    {departmentLabel}
                   </span>
                 )}
                 {/* A rank is neither actionable nor live, so it stays unsaturated
@@ -324,11 +335,17 @@ export function BpPerson({
                 )}
               </div>
             )}
-            <h1 data-bp-person-name className="font-display text-[clamp(26px,4.6vh,64px)] font-semibold leading-[1.04] tracking-[-0.025em] text-ink">
+            <h1
+              data-bp-person-name
+              className="font-display text-[clamp(26px,4.6vh,64px)] font-semibold leading-[1.04] tracking-[-0.025em] text-ink"
+            >
               {person?.name ?? name}
             </h1>
             {facts.length > 0 && (
-              <div data-bp-person-facts className="flex flex-wrap items-center gap-x-[clamp(9px,1vw,18px)] gap-y-1 text-[clamp(12px,1.7vh,20px)] font-semibold text-ink-muted">
+              <div
+                data-bp-person-facts
+                className="flex flex-wrap items-center gap-x-[clamp(9px,1vw,18px)] gap-y-1 text-[clamp(12px,1.7vh,20px)] font-semibold text-ink-muted"
+              >
                 {facts.map((f, i) => (
                   <span key={f} className="flex items-center gap-[clamp(9px,1vw,18px)]">
                     {i > 0 && (

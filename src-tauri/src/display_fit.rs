@@ -52,7 +52,10 @@ pub fn fit_to_monitor(window: &WebviewWindow) {
 
     let left = mon_pos.x as f64 + ((mon_w - want_w) / 2.0) * scale;
     let top = mon_pos.y as f64 + ((mon_h - want_h) / 2.0) * scale;
-    let _ = window.set_position(PhysicalPosition::new(left.round() as i32, top.round() as i32));
+    let _ = window.set_position(PhysicalPosition::new(
+        left.round() as i32,
+        top.round() as i32,
+    ));
 }
 
 pub fn install(app: &tauri::AppHandle) {

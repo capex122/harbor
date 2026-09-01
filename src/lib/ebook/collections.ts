@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { setItemWithRecovery } from "@/lib/storage-recovery";
 import type { EBook } from "./api";
 
@@ -21,8 +22,8 @@ export type EBookAwardCollection = {
 export const EBOOK_AWARD_COLLECTIONS: EBookAwardCollection[] = [
   {
     id: "hugo",
-    name: "Hugo Award Winners",
-    subtitle: "Landmark winners in science fiction and fantasy",
+    name: t("Hugo Award Winners"),
+    subtitle: t("Landmark winners in science fiction and fantasy"),
     titles: [
       { title: "Dune", aliases: ["كثيب"] },
       { title: "The Left Hand of Darkness", aliases: ["اليد اليسرى للظلام"] },
@@ -40,8 +41,8 @@ export const EBOOK_AWARD_COLLECTIONS: EBookAwardCollection[] = [
   },
   {
     id: "nebula",
-    name: "Nebula Award Winners",
-    subtitle: "Awarded by science-fiction and fantasy writers",
+    name: t("Nebula Award Winners"),
+    subtitle: t("Awarded by science-fiction and fantasy writers"),
     titles: [
       { title: "Dune", aliases: ["كثيب"] },
       { title: "Flowers for Algernon", aliases: ["أزهار لألجرنون"] },
@@ -60,8 +61,8 @@ export const EBOOK_AWARD_COLLECTIONS: EBookAwardCollection[] = [
   },
   {
     id: "booker",
-    name: "Booker Prize Winners",
-    subtitle: "Celebrated works of literary fiction",
+    name: t("Booker Prize Winners"),
+    subtitle: t("Celebrated works of literary fiction"),
     titles: [
       { title: "Midnight's Children", aliases: ["أطفال منتصف الليل"] },
       { title: "The Remains of the Day", aliases: ["بقايا النهار"] },
@@ -77,8 +78,8 @@ export const EBOOK_AWARD_COLLECTIONS: EBookAwardCollection[] = [
   },
   {
     id: "pulitzer-fiction",
-    name: "Pulitzer Prize for Fiction",
-    subtitle: "Distinguished fiction honored by the Pulitzer Prize",
+    name: t("Pulitzer Prize for Fiction"),
+    subtitle: t("Distinguished fiction honored by the Pulitzer Prize"),
     titles: [
       { title: "To Kill a Mockingbird", aliases: ["أن تقتل طائرا بريئا"] },
       { title: "The Color Purple", aliases: ["اللون الأرجواني"] },
@@ -134,17 +135,12 @@ function awardTitleKeys(title: EBookAwardTitle): string[] {
   return [title.title, ...(title.aliases ?? [])].map(normalize).filter(Boolean);
 }
 
-export function findAwardSourceBook(
-  title: EBookAwardTitle,
-  books: EBook[],
-): EBook | undefined {
+export function findAwardSourceBook(title: EBookAwardTitle, books: EBook[]): EBook | undefined {
   const wanted = awardTitleKeys(title);
   return books.find((book) => {
     const candidates = bookTitleKeys(book);
     return candidates.some((candidate) =>
-      wanted.some(
-        (key) => candidate === key || candidate.includes(key) || key.includes(candidate),
-      ),
+      wanted.some((key) => candidate === key || candidate.includes(key) || key.includes(candidate)),
     );
   });
 }
@@ -185,11 +181,11 @@ function collectionFingerprint(collections: EBookSourceCollection[]): string {
     .join("|");
 }
 
-export function eBookCollectionCacheScope(
-  providerId: string,
-  providerIds: string[],
-): string {
-  const installed = providerIds.filter((id) => id !== "all").sort().join("|");
+export function eBookCollectionCacheScope(providerId: string, providerIds: string[]): string {
+  const installed = providerIds
+    .filter((id) => id !== "all")
+    .sort()
+    .join("|");
   return `${providerId || "all"}::${installed}`;
 }
 
@@ -199,6 +195,50 @@ export function preferredEBookPopular(
 ): EBook[] | null {
   if (sourceBooks === null) return null;
   return sourceBooks.length ? sourceBooks : metadataBooks;
+}
+function awardCopy(id: string): Pick<EBookAwardCollection, "name" | "subtitle"> | null {
+  switch (id) {
+    case "hugo":
+      return {
+        name: t("Hugo Award Winners"),
+        subtitle: t("Landmark winners in science fiction and fantasy"),
+      };
+    case "nebula":
+      return {
+        name: t("Nebula Award Winners"),
+        subtitle: t("Awarded by science-fiction and fantasy writers"),
+      };
+    case "booker":
+      return {
+        name: t("Booker Prize Winners"),
+        subtitle: t("Celebrated works of literary fiction"),
+      };
+    case "pulitzer-fiction":
+      return {
+        name: t("Pulitzer Prize for Fiction"),
+        subtitle: t("Distinguished fiction honored by the Pulitzer Prize"),
+      };
+    default:
+      return null;
+  }
+}
+
+function localizeCollection(collection: EBookSourceCollection): EBookSourceCollection {
+  if (collection.kind === "series") {
+    return {
+      ...collection,
+      subtitle: t("{count} books from this source", { count: collection.books.length }),
+    };
+  }
+  if (collection.kind === "catalog") {
+    return {
+      ...collection,
+      name: t("Most Popular"),
+      subtitle: t("Popular titles from the installed source"),
+    };
+  }
+  const award = awardCopy(collection.id.replace(/^award:/, ""));
+  return award ? { ...collection, ...award } : collection;
 }
 
 export function buildSourceEBookCollections(items: EBook[]): EBookSourceCollection[] {
@@ -223,7 +263,7 @@ export function buildSourceEBookCollections(items: EBook[]): EBookSourceCollecti
     collections.push({
       id: `series:${key}`,
       name: group.name,
-      subtitle: `${books.length} books from this source`,
+      subtitle: t("{count} books from this source", { count: books.length }),
       kind: "series",
       books,
     });
@@ -233,8 +273,8 @@ export function buildSourceEBookCollections(items: EBook[]): EBookSourceCollecti
   if (catalogBooks.length) {
     collections.push({
       id: "catalog:popular",
-      name: "Most Popular",
-      subtitle: "Popular titles from the installed source",
+      name: t("Most Popular"),
+      subtitle: t("Popular titles from the installed source"),
       kind: "catalog",
       books: catalogBooks,
     });
@@ -246,10 +286,11 @@ export function buildSourceEBookCollections(items: EBook[]): EBookSourceCollecti
       award.titles.flatMap((title) => findAwardSourceBook(title, awardBooks) ?? []),
     );
     if (!books.length) continue;
+    const copy = awardCopy(award.id);
+    if (!copy) continue;
     collections.push({
       id: `award:${award.id}`,
-      name: award.name,
-      subtitle: award.subtitle,
+      ...copy,
       kind: "award",
       books: books.slice(0, RAIL_LIMIT),
     });
@@ -261,21 +302,23 @@ export function buildSourceEBookCollections(items: EBook[]): EBookSourceCollecti
 export function readSourceEBookCollections(scope: string): EBookSourceCollection[] {
   if (!scope) return [];
   const memory = memoryCache.get(scope);
-  if (memory) return memory;
+  if (memory) return memory.map(localizeCollection);
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return [];
     const store = JSON.parse(raw) as Record<string, CollectionCacheEntry>;
     const entry = store[scope];
     if (!entry || Date.now() - entry.at > CACHE_TTL) return [];
-    const collections = entry.collections.filter(
-      (collection) =>
-        (collection.kind === "series" ||
-          collection.kind === "catalog" ||
-          collection.kind === "award") &&
-        Array.isArray(collection.books) &&
-        collection.books.length > 0,
-    );
+    const collections = entry.collections
+      .filter(
+        (collection) =>
+          (collection.kind === "series" ||
+            collection.kind === "catalog" ||
+            collection.kind === "award") &&
+          Array.isArray(collection.books) &&
+          collection.books.length > 0,
+      )
+      .map(localizeCollection);
     memoryCache.set(scope, collections);
     writtenFingerprints.set(scope, collectionFingerprint(collections));
     return collections;

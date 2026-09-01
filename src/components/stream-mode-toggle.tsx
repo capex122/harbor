@@ -1,10 +1,8 @@
+import { useT } from "@/lib/i18n";
+
 export type StreamMode = "both" | "addons" | "p2p";
 
-const MODES: Array<{ v: StreamMode; label: string }> = [
-  { v: "both", label: "Both" },
-  { v: "addons", label: "Addons" },
-  { v: "p2p", label: "P2P" },
-];
+const MODES: StreamMode[] = ["both", "addons", "p2p"];
 
 export function StreamModeToggle({
   mode,
@@ -15,30 +13,31 @@ export function StreamModeToggle({
   onChange: (m: StreamMode) => void;
   className?: string;
 }) {
+  const t = useT();
   return (
     <div
       role="group"
-      aria-label="Source mode"
+      aria-label={t("Source mode")}
       className={`inline-flex shrink-0 items-center gap-0.5 rounded-full border border-edge-soft bg-surface/70 p-0.5 ${className}`}
     >
       {MODES.map((m) => (
         <button
-          key={m.v}
+          key={m}
           type="button"
-          onClick={() => onChange(m.v)}
-          aria-pressed={mode === m.v}
+          onClick={() => onChange(m)}
+          aria-pressed={mode === m}
           title={
-            m.v === "both"
-              ? "Use debrid/addon sources and fall back to peer-to-peer"
-              : m.v === "addons"
-                ? "Only addon/debrid sources, never peer-to-peer"
-                : "Only peer-to-peer torrent sources"
+            m === "both"
+              ? t("Use debrid/addon sources and fall back to peer-to-peer")
+              : m === "addons"
+                ? t("Only addon/debrid sources, never peer-to-peer")
+                : t("Only peer-to-peer torrent sources")
           }
           className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${
-            mode === m.v ? "bg-accent text-canvas" : "text-ink-muted hover:text-ink"
+            mode === m ? "bg-accent text-canvas" : "text-ink-muted hover:text-ink"
           }`}
         >
-          {m.label}
+          {m === "both" ? t("Both") : m === "addons" ? t("Addons") : t("P2P")}
         </button>
       ))}
     </div>

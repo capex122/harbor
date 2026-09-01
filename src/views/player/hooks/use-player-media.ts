@@ -12,6 +12,7 @@ import type { PlayerBridge, PlayerSnapshot } from "@/lib/player/bridge";
 import { useSettings } from "@/lib/settings";
 import { useSimklScrobble } from "@/lib/simkl/scrobble-hook";
 import { useTraktScrobble } from "@/lib/trakt/scrobble-hook";
+import { useMediaServerProgress } from "@/lib/media-server/progress-sync";
 import {
   claimTorrentPlaybackHandoff,
   confirmTorrentUsage,
@@ -253,6 +254,7 @@ export function usePlayerMedia(params: {
 
   useTraktScrobble({ src, snap });
   useSimklScrobble({ src, snap });
+  useMediaServerProgress({ src, snap });
   const download = useVideoDownload({
     url: src.url,
     meta: src.meta,

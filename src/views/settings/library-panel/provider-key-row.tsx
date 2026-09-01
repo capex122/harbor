@@ -4,7 +4,7 @@ import { useT } from "@/lib/i18n";
 import { SettingRow } from "../kit";
 import type { LibraryKey } from "../library-panel";
 
-export type KeyId = LibraryKey | "mdblist" | "postersrv" | "audd" | "songai";
+export type KeyId = LibraryKey | "mdblist" | "postersrv" | "audd" | "songai" | "nyt";
 
 export type KeyEntry = {
   id: KeyId;
@@ -12,6 +12,7 @@ export type KeyEntry = {
   desc: string;
   value: string;
   logo?: string;
+  mark?: ReactNode;
   badge?: string;
   guide?: ReactNode;
   field: ReactNode;
@@ -23,7 +24,9 @@ export function ProviderKeyRow({ entry, onOpen }: { entry: KeyEntry; onOpen: () 
   return (
     <SettingRow
       icon={
-        entry.logo ? (
+        entry.mark ? (
+          entry.mark
+        ) : entry.logo ? (
           <img
             src={entry.logo}
             alt=""

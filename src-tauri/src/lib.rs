@@ -15,6 +15,7 @@ mod fonts;
 mod gamepad;
 mod http_fetch;
 mod local_lib;
+mod media_server;
 mod power;
 mod proc_guard;
 mod proc_mem;
@@ -856,6 +857,7 @@ pub fn run() {
             settings_store::settings_write,
             settings_store::secrets_read,
             settings_store::secrets_write,
+            media_server::media_server_request,
             proc_mem::harbor_process_memory,
             diagnostics::diagnostics_collect,
             diagnostics::diagnostics_cleanup,

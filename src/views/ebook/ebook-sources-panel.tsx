@@ -6,13 +6,11 @@ import {
   Check,
   ChevronDown,
   ChevronLeft,
-  Database,
   Download,
   FileText,
   Folder,
   FolderOpen,
   Languages,
-  Library,
   Loader2,
   PackageOpen,
   Plus,
@@ -41,6 +39,8 @@ import {
 } from "@/lib/ebook/extensions";
 import {
   addEBookFolder,
+  addEBookGutendex,
+  hasEBookGutendex,
   listEBookSources,
   removeEBookSource,
   subscribeEBookSources,
@@ -54,13 +54,124 @@ import {
   validateGoogleBooksApiKey,
 } from "@/lib/ebook/api";
 import deepseekLogo from "@/assets/ai-logos/deepseek.png";
+import gutenbergLogo from "@/assets/gutenberg.png";
 import {
   loadEBookTranslationSettings,
   saveEBookTranslationSettings,
   testEBookTranslationSettings,
   type EBookTranslationSettings,
 } from "@/lib/ebook/translation";
+import { LANGUAGES as UI_LANGUAGES, useT } from "@/lib/i18n";
 import { openUrl } from "@/lib/window";
+
+const CASE_SHELVES: Array<{
+  base: number;
+  books: Array<[number, number, number]>;
+  accent: number;
+  stack?: [number, number];
+}> = [
+  {
+    base: 104,
+    books: [
+      [30, 15, 70],
+      [48, 12, 79],
+      [63, 20, 64],
+      [86, 11, 74],
+      [100, 16, 60],
+      [119, 13, 68],
+    ],
+    accent: -1,
+    stack: [168, 44],
+  },
+  {
+    base: 197,
+    books: [
+      [96, 14, 62],
+      [113, 19, 73],
+      [135, 11, 56],
+      [149, 16, 68],
+      [168, 12, 64],
+      [183, 17, 58],
+    ],
+    accent: 3,
+    stack: [30, 52],
+  },
+  {
+    base: 290,
+    books: [
+      [30, 18, 66],
+      [51, 12, 75],
+      [66, 15, 59],
+      [84, 11, 70],
+      [98, 20, 64],
+      [121, 13, 56],
+      [137, 16, 69],
+      [156, 12, 61],
+    ],
+    accent: -1,
+  },
+];
+
+function BookcaseArt() {
+  return (
+    <svg
+      className="ebook-sources-case"
+      viewBox="0 0 240 306"
+      role="img"
+      aria-label="An illustration of a bookcase"
+      focusable="false"
+    >
+      <g className="ebook-case-frame">
+        <path d="M12 6v294M228 6v294M12 8h216" />
+        {CASE_SHELVES.map((shelf) => (
+          <path key={shelf.base} d={`M12 ${shelf.base + 5}h216`} />
+        ))}
+      </g>
+      {CASE_SHELVES.map((shelf) =>
+        shelf.books.map(([x, width, height], index) => (
+          <rect
+            key={`${shelf.base}-${x}`}
+            className={index === shelf.accent ? "ebook-case-book is-accent" : "ebook-case-book"}
+            x={x}
+            y={shelf.base - height}
+            width={width}
+            height={height}
+            rx="1.5"
+            opacity={index % 2 ? 1 : 0.78}
+          />
+        )),
+      )}
+      {CASE_SHELVES.map((shelf) =>
+        shelf.stack ? (
+          <g key={`stack-${shelf.base}`}>
+            {[0, 1, 2].map((row) => (
+              <rect
+                key={row}
+                className="ebook-case-book"
+                x={shelf.stack![0] + row * 3}
+                y={shelf.base - 10 - row * 9}
+                width={shelf.stack![1] - row * 6}
+                height="8"
+                rx="1.5"
+                opacity={0.7 + row * 0.1}
+              />
+            ))}
+          </g>
+        ) : null,
+      )}
+      <g className="ebook-case-lean">
+        <rect
+          x="0"
+          y="0"
+          width="13"
+          height="58"
+          rx="1.5"
+          transform="translate(137 46) rotate(11)"
+        />
+      </g>
+    </svg>
+  );
+}
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -71,6 +182,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 }
 
 function MetadataProviders() {
+  const t = useT();
   const [key, setKey] = useState(googleBooksApiKey);
   const [state, setState] = useState<"idle" | "testing" | "saved" | "error">("idle");
   const [error, setError] = useState("");
@@ -84,19 +196,20 @@ function MetadataProviders() {
       setState("saved");
       window.setTimeout(() => setState("idle"), 1600);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not validate this API key.");
+      setError(cause instanceof Error ? cause.message : t("Could not validate this API key."));
       setState("error");
     }
   };
   return (
     <div className="flex flex-col gap-3">
-      <SectionLabel>Metadata</SectionLabel>
+      <SectionLabel>{t("Metadata")}</SectionLabel>
       <div className={`${CARD} flex flex-col gap-3 p-5`}>
         <div>
           <p className="text-[15px] font-semibold text-ink">Google Books</p>
           <p className="text-[13px] text-ink-muted">
-            Add a Google Books API key for book titles, covers, authors, and descriptions. Wikidata
-            works automatically as the final metadata fallback.
+            {t(
+              "Add a Google Books API key for book titles, covers, authors, and descriptions. Wikidata works automatically as the final metadata fallback.",
+            )}
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_7.5rem]">
@@ -109,7 +222,7 @@ function MetadataProviders() {
               setError("");
             }}
             onKeyDown={(event) => event.key === "Enter" && void save()}
-            placeholder="Google Books API key"
+            placeholder={t("Google Books API key")}
             autoComplete="off"
             className={`${INPUT} min-w-0 flex-1`}
           />
@@ -125,7 +238,7 @@ function MetadataProviders() {
             ) : (
               <Check size={17} />
             )}
-            {state === "testing" ? "Testing" : state === "saved" ? "Saved" : "Save"}
+            {state === "testing" ? t("Testing") : state === "saved" ? t("Saved") : t("Save")}
           </button>
         </div>
         {error && (
@@ -150,6 +263,7 @@ function TranslationSelect({
   options: Array<{ value: string; label: string; sub?: string }>;
   onChange: (value: string) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const selected = options.find((option) => option.value === value) ?? options[0];
@@ -187,7 +301,7 @@ function TranslationSelect({
         >
           <span className="h-2 w-2 shrink-0 rounded-full bg-accent shadow-[0_0_10px_rgba(255,159,77,0.55)]" />
           <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-ink">
-            {selected?.label ?? "Loading models…"}
+            {selected?.label ?? t("Loading models…")}
           </span>
           <ChevronDown
             size={16}
@@ -244,6 +358,7 @@ function TranslationSelect({
 }
 
 function Translation() {
+  const t = useT();
   const [settings, setSettings] = useState(loadEBookTranslationSettings);
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -258,7 +373,7 @@ function Translation() {
     };
     const persisted = saveEBookTranslationSettings(next);
     if (!persisted) {
-      setTestResult("Storage is full. Clear Harbor cache storage, then try saving again.");
+      setTestResult(t("Storage is full. Clear Harbor cache storage, then try saving again."));
       return;
     }
     setSettings(next);
@@ -271,119 +386,120 @@ function Translation() {
     setTestResult("");
     try {
       await testEBookTranslationSettings(settings);
-      setTestResult("DeepSeek model is working.");
+      setTestResult(t("DeepSeek model is working."));
     } catch (error) {
-      setTestResult(error instanceof Error ? error.message : "Translation test failed");
+      setTestResult(error instanceof Error ? error.message : t("Translation test failed"));
     } finally {
       setTesting(false);
     }
   };
   return (
     <div className="flex flex-col gap-3">
-      <SectionLabel>Translation</SectionLabel>
+      <SectionLabel>{t("Translation")}</SectionLabel>
       <div className={`${CARD} flex flex-col gap-4 p-5`}>
         <TranslationSelect
-          label="Translate to"
+          label={t("Translate to")}
           value={settings.targetLanguage}
           onChange={(targetLanguage) =>
             patch({
               targetLanguage: targetLanguage as EBookTranslationSettings["targetLanguage"],
             })
           }
-          options={[
-            { value: "en", label: "English", sub: "English" },
-            { value: "ar", label: "Arabic", sub: "العربية" },
-            { value: "pt", label: "Portuguese", sub: "Português" },
-            { value: "ru", label: "Russian", sub: "Русский" },
-          ]}
+          options={UI_LANGUAGES.map(({ code, label, nativeLabel }) => ({
+            value: code,
+            label: t(label),
+            sub: nativeLabel,
+          }))}
         />
         <p className="text-[12.5px] leading-relaxed text-ink-subtle">
-          Translation runs when a chapter opens and keeps the original if a request fails or is
-          truncated.
+          {t(
+            "Translation runs when a chapter opens and keeps the original if a request fails or is truncated.",
+          )}
         </p>
       </div>
       <div>
         <div className={`${CARD} flex flex-col gap-4 p-5`}>
-        <div className="flex items-center gap-3.5">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white ring-1 ring-black/10">
-            <img src={deepseekLogo} alt="" className="h-7 w-7 object-contain" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="flex items-center gap-2 text-[15px] font-semibold text-ink">
-              <Languages size={17} /> DeepSeek chapter translation
+          <div className="flex items-center gap-3.5">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white ring-1 ring-black/10">
+              <img src={deepseekLogo} alt="" className="h-7 w-7 object-contain" />
             </span>
-            <span className="text-[13px] leading-relaxed text-ink-muted">
-              Sends only the chapter you open to DeepSeek. Volumes, chapters, and metadata stay
-              unchanged.
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+                <Languages size={17} /> {t("DeepSeek chapter translation")}
+              </span>
+              <span className="text-[13px] leading-relaxed text-ink-muted">
+                {t(
+                  "Sends only the chapter you open to DeepSeek. Volumes, chapters, and metadata stay unchanged.",
+                )}
+              </span>
             </span>
-          </span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={settings.enabled}
-            onClick={() => patch({ enabled: !settings.enabled })}
-            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${settings.enabled ? "bg-accent" : "bg-edge"}`}
-          >
-            <span
-              className={`absolute top-1 h-5 w-5 rounded-full bg-canvas shadow-sm transition-transform ${settings.enabled ? "start-6" : "start-1"}`}
-            />
-          </button>
-        </div>
-        <TranslationSelect
-          label="Model"
-          value={settings.model}
-          onChange={(model) => patch({ model })}
-          options={[
-            {
-              value: "deepseek-v4-flash",
-              label: "DeepSeek V4 Flash",
-              sub: "Fast · recommended for chapters",
-            },
-            {
-              value: "deepseek-v4-pro",
-              label: "DeepSeek V4 Pro",
-              sub: "Higher quality · slower",
-            },
-          ]}
-        />
-        <div className="flex gap-2">
-          <input
-            type="password"
-            value={settings.apiKey}
-            onChange={(event) => patch({ apiKey: event.target.value })}
-            placeholder="DeepSeek API key (sk-...)"
-            autoComplete="off"
-            className={`${INPUT} min-w-0 flex-1`}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.enabled}
+              onClick={() => patch({ enabled: !settings.enabled })}
+              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${settings.enabled ? "bg-accent" : "bg-edge"}`}
+            >
+              <span
+                className={`absolute top-1 h-5 w-5 rounded-full bg-canvas shadow-sm transition-transform ${settings.enabled ? "start-6" : "start-1"}`}
+              />
+            </button>
+          </div>
+          <TranslationSelect
+            label={t("Model")}
+            value={settings.model}
+            onChange={(model) => patch({ model })}
+            options={[
+              {
+                value: "deepseek-v4-flash",
+                label: "DeepSeek V4 Flash",
+                sub: t("Fast · recommended for chapters"),
+              },
+              {
+                value: "deepseek-v4-pro",
+                label: "DeepSeek V4 Pro",
+                sub: t("Higher quality · slower"),
+              },
+            ]}
           />
-          <button
-            type="button"
-            disabled={testing}
-            onClick={() => void test()}
-            className="flex h-12 items-center justify-center gap-2 rounded-xl border border-edge px-4 text-[13px] font-semibold text-ink transition hover:bg-elevated disabled:cursor-wait disabled:opacity-50"
-          >
-            {testing ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-            Test
-          </button>
-          <button type="button" onClick={save} className={`${PRIMARY_BTN} px-5`}>
-            <Check size={17} /> {saved ? "Saved" : "Save"}
-          </button>
-        </div>
-        <p className="text-[12.5px] leading-relaxed text-ink-subtle">
-          Use your API key to Translate Chapters to Your Language. Get a key from the{" "}
-          <a
-            href="https://platform.deepseek.com/"
-            target="_blank"
-            rel="noreferrer"
-            onClick={(event) => {
-              event.preventDefault();
-              void openUrl("https://platform.deepseek.com/");
-            }}
-            className="font-medium text-accent underline decoration-accent/45 underline-offset-2 transition-colors hover:text-ink"
-          >
-            DeepSeek Platform
-          </a>
-          .
-        </p>
+          <div className="flex gap-2">
+            <input
+              type="password"
+              value={settings.apiKey}
+              onChange={(event) => patch({ apiKey: event.target.value })}
+              placeholder={t("DeepSeek API key (sk-...)")}
+              autoComplete="off"
+              className={`${INPUT} min-w-0 flex-1`}
+            />
+            <button
+              type="button"
+              disabled={testing}
+              onClick={() => void test()}
+              className="flex h-12 items-center justify-center gap-2 rounded-xl border border-edge px-4 text-[13px] font-semibold text-ink transition hover:bg-elevated disabled:cursor-wait disabled:opacity-50"
+            >
+              {testing ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+              {t("Test")}
+            </button>
+            <button type="button" onClick={save} className={`${PRIMARY_BTN} px-5`}>
+              <Check size={17} /> {saved ? t("Saved") : t("Save")}
+            </button>
+          </div>
+          <p className="text-[12.5px] leading-relaxed text-ink-subtle">
+            {t("Use your API key to Translate Chapters to Your Language. Get a key from the")}{" "}
+            <a
+              href="https://platform.deepseek.com/"
+              target="_blank"
+              rel="noreferrer"
+              onClick={(event) => {
+                event.preventDefault();
+                void openUrl("https://platform.deepseek.com/");
+              }}
+              className="font-medium text-accent underline decoration-accent/45 underline-offset-2 transition-colors hover:text-ink"
+            >
+              DeepSeek Platform
+            </a>
+            .
+          </p>
         </div>
       </div>
       {testResult && (
@@ -395,8 +511,19 @@ function Translation() {
   );
 }
 
+function GutenbergMark({ size = "h-12 w-12" }: { size?: string }) {
+  return (
+    <img
+      src={gutenbergLogo}
+      alt=""
+      className={`${size} shrink-0 rounded-xl object-cover ring-1 ring-edge-soft`}
+    />
+  );
+}
+
 function SourceIcon({ source }: { source: EBookSource }) {
   const [failed, setFailed] = useState(false);
+  if (source.kind === "gutendex") return <GutenbergMark />;
   return (
     <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-canvas text-ink-muted ring-1 ring-edge-soft">
       {source.iconUrl && !failed ? (
@@ -416,6 +543,7 @@ function SourceIcon({ source }: { source: EBookSource }) {
 }
 
 function SourceRow({ source }: { source: EBookSource }) {
+  const t = useT();
   const [removing, setRemoving] = useState(false);
   return (
     <div
@@ -429,11 +557,11 @@ function SourceRow({ source }: { source: EBookSource }) {
             <span className="truncate text-[13px] text-ink-subtle">{source.location}</span>
           </span>
           <span className="rounded-md bg-raised px-2 py-0.5 text-[11px] font-bold text-ink-muted ring-1 ring-edge-soft">
-            {source.kind === "local" ? "Folder" : "Site"}
+            {source.kind === "local" ? t("Folder") : t("Site")}
           </span>
           <button
             type="button"
-            aria-label={`Remove ${source.name}`}
+            aria-label={t("Remove {name}", { name: source.name })}
             onClick={() => {
               setRemoving(true);
               window.setTimeout(() => removeEBookSource(source.id), 240);
@@ -449,6 +577,7 @@ function SourceRow({ source }: { source: EBookSource }) {
 }
 
 function LocalFolderTutorial({ onClose, onChoose }: { onClose: () => void; onChoose: () => void }) {
+  const t = useT();
   return createPortal(
     <div
       className="animate-fade-in fixed inset-0 z-[80] grid place-items-center bg-black/60 p-6 backdrop-blur-sm"
@@ -460,11 +589,11 @@ function LocalFolderTutorial({ onClose, onChoose }: { onClose: () => void; onCho
       >
         <div className="flex items-start justify-between gap-4">
           <h2 className="font-display text-[21px] font-medium tracking-tight text-ink">
-            Add a local folder
+            {t("Add a local folder")}
           </h2>
           <button
             type="button"
-            aria-label="Close"
+            aria-label={t("Close")}
             onClick={onClose}
             className="grid h-9 w-9 place-items-center rounded-xl border border-edge-soft text-ink-subtle hover:bg-elevated hover:text-ink"
           >
@@ -472,12 +601,13 @@ function LocalFolderTutorial({ onClose, onChoose }: { onClose: () => void; onCho
           </button>
         </div>
         <p className="text-[14px] leading-relaxed text-ink-muted">
-          Pick one library folder. Each subfolder is one eBook. Put its chapters inside as TXT,
-          Markdown, HTML, or EPUB files and optionally add a cover image.
+          {t(
+            "Pick one library folder. Each subfolder is one eBook. Put its chapters inside as TXT, Markdown, HTML, or EPUB files and optionally add a cover image.",
+          )}
         </p>
         <div className="flex flex-col gap-2 rounded-xl bg-canvas p-4 text-[13.5px] ring-1 ring-edge-soft">
           <span className="flex items-center gap-2 text-ink-muted">
-            <FolderOpen size={16} /> My eBooks
+            <FolderOpen size={16} /> {t("My eBooks")}
           </span>
           <span className="ms-6 flex items-center gap-2 font-semibold text-ink">
             <Folder size={16} className="text-accent" /> Lord of Mysteries
@@ -500,7 +630,7 @@ function LocalFolderTutorial({ onClose, onChoose }: { onClose: () => void; onCho
           }}
           className={PRIMARY_BTN}
         >
-          <FolderOpen size={18} /> Choose folder
+          <FolderOpen size={18} /> {t("Choose folder")}
         </button>
       </div>
     </div>,
@@ -508,16 +638,47 @@ function LocalFolderTutorial({ onClose, onChoose }: { onClose: () => void; onCho
   );
 }
 
+function GutenbergQuickAdd() {
+  const [added, setAdded] = useState(() => hasEBookGutendex());
+  return (
+    <div className={`group transition-all hover:ring-edge ${CARD}`}>
+      <button
+        type="button"
+        disabled={added}
+        onClick={() => setAdded(addEBookGutendex())}
+        className="flex w-full items-center gap-4 px-5 py-4 text-start active:scale-[0.99] disabled:active:scale-100"
+      >
+        <GutenbergMark />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-[16px] font-semibold text-ink">Project Gutenberg</span>
+          <span className="truncate text-[13px] text-ink-muted">
+            75,000 free public domain books, no account needed
+          </span>
+        </span>
+        <span className="grid h-9 w-9 place-items-center rounded-lg bg-raised text-ink-muted ring-1 ring-edge-soft">
+          {added ? <Check size={18} /> : <Plus size={18} />}
+        </span>
+      </button>
+    </div>
+  );
+}
+
 function LocalFolder() {
+  const t = useT();
   const [tutorial, setTutorial] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const choose = async () => {
     try {
       const { open } = await import("@tauri-apps/plugin-dialog");
-      const path = await open({ directory: true, multiple: false, title: "Choose eBook folder" });
-      if (typeof path === "string" && !addEBookFolder(path)) setError("Could not add that folder");
+      const path = await open({
+        directory: true,
+        multiple: false,
+        title: t("Choose eBook folder"),
+      });
+      if (typeof path === "string" && !addEBookFolder(path))
+        setError(t("Could not add that folder"));
     } catch {
-      setError("Folder selection is available in the Harbor app");
+      setError(t("Folder selection is available in the Harbor app"));
     }
   };
   return (
@@ -532,9 +693,9 @@ function LocalFolder() {
             <FolderOpen size={20} />
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="text-[16px] font-semibold text-ink">Local folder</span>
+            <span className="text-[16px] font-semibold text-ink">{t("Local folder")}</span>
             <span className="truncate text-[13px] text-ink-muted">
-              Read eBook files you already have
+              {t("Read eBook files you already have")}
             </span>
           </span>
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-raised text-ink-muted ring-1 ring-edge-soft">
@@ -549,6 +710,7 @@ function LocalFolder() {
 }
 
 function InstalledSourceRow({ item }: { item: ReturnType<typeof installedEBookPlugins>[number] }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-3.5 px-5 py-3.5">
       <span className="grid h-10 w-10 place-items-center rounded-xl bg-canvas text-[12px] font-bold text-ink-muted ring-1 ring-edge-soft">
@@ -566,7 +728,7 @@ function InstalledSourceRow({ item }: { item: ReturnType<typeof installedEBookPl
       <button
         type="button"
         role="switch"
-        aria-label={`Enable ${item.name}`}
+        aria-label={t("Enable {name}", { name: item.name })}
         aria-checked={item.enabled}
         onClick={() => void setEBookPluginEnabled(item.id, !item.enabled)}
         className={`relative h-6 w-10 rounded-full ${item.enabled ? "bg-ink" : "bg-edge"}`}
@@ -577,7 +739,7 @@ function InstalledSourceRow({ item }: { item: ReturnType<typeof installedEBookPl
       </button>
       <button
         type="button"
-        aria-label={`Remove ${item.name}`}
+        aria-label={t("Remove {name}", { name: item.name })}
         onClick={() => void removeEBookPlugin(item.id)}
         className="grid h-9 w-9 place-items-center rounded-lg bg-raised text-ink-subtle ring-1 ring-edge-soft hover:text-danger"
       >
@@ -588,6 +750,7 @@ function InstalledSourceRow({ item }: { item: ReturnType<typeof installedEBookPl
 }
 
 function PluginRow({ item, repoUrl }: { item: EBookPluginManifest; repoUrl: string }) {
+  const t = useT();
   const installed = installedEBookPlugins().find((plugin) => plugin.id === item.id);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -598,7 +761,7 @@ function PluginRow({ item, repoUrl }: { item: EBookPluginManifest; repoUrl: stri
       if (!installed) await installEBookPlugin(item, repoUrl);
       else await removeEBookPlugin(item.id);
     } catch {
-      setError("Install failed");
+      setError(t("Install failed"));
     } finally {
       setBusy(false);
     }
@@ -622,6 +785,7 @@ function PluginRow({ item, repoUrl }: { item: EBookPluginManifest; repoUrl: stri
         <button
           type="button"
           role="switch"
+          aria-label={t("Enable {name}", { name: item.name })}
           aria-checked={installed.enabled}
           onClick={() => void setEBookPluginEnabled(installed.id, !installed.enabled)}
           className={`relative h-6 w-10 rounded-full ${installed.enabled ? "bg-ink" : "bg-edge"}`}
@@ -644,13 +808,14 @@ function PluginRow({ item, repoUrl }: { item: EBookPluginManifest; repoUrl: stri
         ) : (
           <Download size={15} />
         )}
-        {installed ? "Remove" : "Install"}
+        {installed ? t("Remove") : t("Install")}
       </button>
     </div>
   );
 }
 
 function RepoCard({ url }: { url: string }) {
+  const t = useT();
   const [repo, setRepo] = useState<EBookPluginRepo | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [updating, setUpdating] = useState(false);
@@ -703,8 +868,8 @@ function RepoCard({ url }: { url: string }) {
         </span>
         <button
           type="button"
-          aria-label="Update repository"
-          title="Update repository"
+          aria-label={t("Update repository")}
+          title={t("Update repository")}
           disabled={updating || state === "loading"}
           onClick={() => void update()}
           className="grid h-9 w-9 place-items-center rounded-lg bg-raised text-ink-subtle ring-1 ring-edge-soft hover:text-accent disabled:opacity-50"
@@ -713,7 +878,7 @@ function RepoCard({ url }: { url: string }) {
         </button>
         <button
           type="button"
-          aria-label="Remove repository"
+          aria-label={t("Remove repository")}
           onClick={() => void removeEBookRepo(url)}
           className="grid h-9 w-9 place-items-center rounded-lg bg-raised text-ink-subtle ring-1 ring-edge-soft hover:text-danger"
         >
@@ -722,17 +887,17 @@ function RepoCard({ url }: { url: string }) {
       </div>
       {updateError && (
         <p className="border-t border-edge-soft px-5 py-2.5 text-[13px] font-medium text-danger">
-          Repository update failed.
+          {t("Repository update failed.")}
         </p>
       )}
       {state === "loading" && (
         <div className="flex items-center justify-center gap-2 border-t border-edge-soft py-8 text-[13.5px] text-ink-subtle">
-          <Loader2 size={17} className="animate-spin" /> Loading extensions…
+          <Loader2 size={17} className="animate-spin" /> {t("Loading extensions…")}
         </div>
       )}
       {state === "error" && (
         <div className="flex items-center justify-center gap-2 border-t border-edge-soft py-8 text-[13.5px] text-ink-muted">
-          <AlertCircle size={16} className="text-danger" /> Could not reach this repository.
+          <AlertCircle size={16} className="text-danger" /> {t("Could not reach this repository.")}
         </div>
       )}
       {state === "ready" &&
@@ -745,7 +910,7 @@ function RepoCard({ url }: { url: string }) {
           </div>
         ) : (
           <div className="border-t border-edge-soft py-8 text-center text-[13.5px] text-ink-muted">
-            This repository lists no eBook extensions.
+            {t("This repository lists no eBook extensions.")}
           </div>
         ))}
     </div>
@@ -753,6 +918,7 @@ function RepoCard({ url }: { url: string }) {
 }
 
 function Extensions() {
+  const t = useT();
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -763,29 +929,32 @@ function Extensions() {
       await addEBookRepo(url.trim());
       setUrl("");
     } catch {
-      setError("Could not load that eBook extension repository");
+      setError(t("Could not load that eBook extension repository"));
     } finally {
       setBusy(false);
     }
   };
   return (
     <div className="flex flex-col gap-3">
-      <SectionLabel>Extensions</SectionLabel>
+      <SectionLabel>{t("Extensions")}</SectionLabel>
       <div className={`flex flex-col gap-3 px-5 py-4 ${CARD}`}>
         <div className="flex items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-canvas text-ink-muted ring-1 ring-edge-soft">
             <ShieldCheck size={18} />
           </span>
-          <span className="text-[15.5px] font-semibold text-ink">Bring your own extensions</span>
+          <span className="text-[15.5px] font-semibold text-ink">
+            {t("Bring your own extensions")}
+          </span>
         </div>
         <p className="text-[13.5px] leading-relaxed text-ink-muted">
-          eBook extensions use Harbor’s isolated worker, HTTP bridge, and HTML parser—the same
-          sandbox used by Manga extensions. Only add repositories you trust.
+          {t(
+            "eBook extensions use Harbor’s isolated worker, HTTP bridge, and HTML parser—the same sandbox used by Manga extensions. Only add repositories you trust.",
+          )}
         </p>
       </div>
       <div className={`flex flex-col gap-2.5 px-5 py-4 ${CARD}`}>
         <div className="flex items-center gap-2 text-[13.5px] font-semibold text-ink">
-          <Blocks size={16} /> Add a repository
+          <Blocks size={16} /> {t("Add a repository")}
         </div>
         <div className="flex gap-2.5">
           <input
@@ -801,7 +970,7 @@ function Extensions() {
             disabled={busy || !url.trim()}
             className="flex h-12 items-center gap-2 rounded-xl bg-accent px-5 text-[14.5px] font-semibold text-canvas disabled:opacity-60"
           >
-            {busy ? <Loader2 size={17} className="animate-spin" /> : <Plus size={17} />} Add
+            {busy ? <Loader2 size={17} className="animate-spin" /> : <Plus size={17} />} {t("Add")}
           </button>
         </div>
         {error && <p className="text-[13px] font-medium text-danger">{error}</p>}
@@ -810,7 +979,7 @@ function Extensions() {
         ebookRepoUrls().map((item) => <RepoCard key={item} url={item} />)
       ) : (
         <p className="px-1 text-[13.5px] text-ink-subtle">
-          No repositories yet. Add one above to browse eBook extensions.
+          {t("No repositories yet. Add one above to browse eBook extensions.")}
         </p>
       )}
     </div>
@@ -822,25 +991,22 @@ function WorkspaceSection({
   eyebrow,
   title,
   description,
-  icon,
   children,
 }: {
   id: string;
   eyebrow: string;
   title: string;
   description: string;
-  icon: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section id={id} className="ebook-source-workspace-section scroll-mt-6">
       <header className="ebook-source-workspace-heading">
-        <span className="ebook-source-workspace-icon">{icon}</span>
         <span className="min-w-0">
-          <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-accent">
+          <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
             {eyebrow}
           </span>
-          <h2 className="mt-1 font-display text-[27px] font-medium tracking-tight text-ink">
+          <h2 className="mt-1 font-display text-[21px] font-medium tracking-tight text-ink">
             {title}
           </h2>
           <p className="mt-1 max-w-2xl text-[13.5px] leading-relaxed text-ink-muted">
@@ -854,6 +1020,7 @@ function WorkspaceSection({
 }
 
 export function EBookSourcesView({ onBack }: { onBack: () => void }) {
+  const t = useT();
   const [tick, setTick] = useState(0);
   useEffect(() => {
     void loadEBookExtensions();
@@ -897,21 +1064,18 @@ export function EBookSourcesView({ onBack }: { onBack: () => void }) {
   const contents = [
     {
       id: "ebook-source-library",
-      label: "Library",
-      sub: `${sources.length + installed.length} connected`,
-      icon: <Library size={17} />,
+      label: t("Library"),
+      sub: t("{count} connected", { count: sources.length + installed.length }),
     },
     {
       id: "ebook-source-intelligence",
-      label: "Intelligence",
-      sub: "Metadata & translation",
-      icon: <Sparkles size={17} />,
+      label: t("Intelligence"),
+      sub: t("Metadata & translation"),
     },
     {
       id: "ebook-source-extensions",
-      label: "Extensions",
-      sub: `${ebookRepoUrls().length} repositories`,
-      icon: <Blocks size={17} />,
+      label: t("Extensions"),
+      sub: t("{count} repositories", { count: ebookRepoUrls().length }),
     },
   ];
   return (
@@ -925,7 +1089,7 @@ export function EBookSourcesView({ onBack }: { onBack: () => void }) {
           onClick={onBack}
           className="inline-flex items-center gap-1.5 rounded-xl bg-elevated px-4 py-2.5 text-[15px] font-medium text-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.4)] ring-1 ring-edge-soft hover:bg-raised active:scale-[0.97]"
         >
-          <ChevronLeft size={19} /> Back
+          <ChevronLeft size={19} /> {t("Back")}
         </button>
         {total > 0 && (
           <button
@@ -933,56 +1097,52 @@ export function EBookSourcesView({ onBack }: { onBack: () => void }) {
             onClick={onBack}
             className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-[15px] font-semibold text-canvas active:scale-[0.97]"
           >
-            Done <span className="text-canvas/80">· {total}</span>
+            {t("Done")} <span className="text-canvas/80">· {total}</span>
             <ArrowRight size={18} />
           </button>
         )}
       </div>
       <section className="ebook-sources-hero">
         <div className="ebook-sources-hero-copy">
-          <span className="ebook-sources-kicker">
-            <BookOpen size={15} /> Harbor reading room
-          </span>
-          <h1 className="font-display text-[clamp(38px,5vw,62px)] font-medium leading-[0.98] tracking-[-0.04em] text-ink">
-            Build your own
-            <span className="block text-accent">living library.</span>
+          <h1 className="font-display text-[28px] font-medium leading-tight text-ink">
+            {t("Build your own library")}
           </h1>
-          <p className="max-w-2xl text-[15px] leading-relaxed text-ink-muted">
-            Connect books you own, trusted reading sources, and metadata services. Harbor keeps the
-            shelf coherent while every source stays under your control.
+          <p className="max-w-2xl text-[14px] leading-relaxed text-ink-muted">
+            {t(
+              "Connect books you own, reading sources, and metadata services. Harbor keeps the shelf coherent while every source stays under your control.",
+            )}
           </p>
-          <div className="ebook-sources-stats" aria-label="Source overview">
-            <span><strong>{total}</strong><small>Connected</small></span>
-            <span><strong>{enabled}</strong><small>Active</small></span>
-            <span><strong>{ebookRepoUrls().length}</strong><small>Repositories</small></span>
+          <div className="ebook-sources-stats" aria-label={t("Source overview")}>
+            <span>
+              <strong>{total}</strong>
+              <small>{t("Connected")}</small>
+            </span>
+            <span>
+              <strong>{enabled}</strong>
+              <small>{t("Active")}</small>
+            </span>
+            <span>
+              <strong>{ebookRepoUrls().length}</strong>
+              <small>{t("Repositories")}</small>
+            </span>
           </div>
         </div>
-        <div className="ebook-sources-bookplate" aria-hidden="true">
-          <div className="ebook-sources-bookplate-mark"><BookOpen size={34} /></div>
-          <p>EX LIBRIS</p>
-          <strong>HARBOR</strong>
-          <span>Private reading collection</span>
-          <div className="ebook-sources-spines">
-            <i /><i /><i /><i /><i />
-          </div>
-        </div>
+        <BookcaseArt />
       </section>
 
       <div className="grid items-start gap-7 lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="ebook-sources-contents lg:sticky lg:top-4">
           <p className="px-3 pb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ink-subtle">
-            Contents
+            {t("Contents")}
           </p>
-          <nav className="flex flex-col gap-1" aria-label="eBook source settings">
-            {contents.map((item, index) => (
+          <nav className="flex flex-col gap-1" aria-label={t("eBook source settings")}>
+            {contents.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => jumpTo(item.id)}
                 className={`ebook-sources-content-link ${activeSection === item.id ? "is-active" : ""}`}
               >
-                <span className="ebook-sources-content-number">0{index + 1}</span>
-                <span className="ebook-sources-content-icon">{item.icon}</span>
                 <span className="min-w-0 flex-1 text-start">
                   <strong>{item.label}</strong>
                   <small>{item.sub}</small>
@@ -992,21 +1152,25 @@ export function EBookSourcesView({ onBack }: { onBack: () => void }) {
           </nav>
           <div className="ebook-sources-privacy-note">
             <ShieldCheck size={17} />
-            <p><strong>Your shelf, your rules.</strong><span>Harbor never hosts your books.</span></p>
+            <p>
+              <strong>{t("Your shelf, your rules.")}</strong>
+              <span>{t("Harbor never hosts your books.")}</span>
+            </p>
           </div>
         </aside>
 
         <div className="flex min-w-0 flex-col gap-7">
           <WorkspaceSection
             id="ebook-source-library"
-            eyebrow="01 · Collection"
-            title="Library sources"
-            description="Manage every place Harbor can read from, whether it lives on disk or across the web."
-            icon={<Library size={22} />}
+            eyebrow={t("Collection")}
+            title={t("Library sources")}
+            description={t(
+              "Manage every place Harbor can read from, whether it lives on disk or across the web.",
+            )}
           >
             {installed.length > 0 && (
               <div className="flex flex-col gap-3">
-                <SectionLabel>Installed sources</SectionLabel>
+                <SectionLabel>{t("Installed sources")}</SectionLabel>
                 <div className={`${CARD} divide-y divide-edge-soft overflow-hidden`}>
                   {installed.map((source) => (
                     <InstalledSourceRow key={source.id} item={source} />
@@ -1016,15 +1180,16 @@ export function EBookSourcesView({ onBack }: { onBack: () => void }) {
             )}
             {sources.length > 0 && (
               <div className="flex flex-col gap-3">
-                <SectionLabel>Your sources</SectionLabel>
+                <SectionLabel>{t("Your sources")}</SectionLabel>
                 {sources.map((source) => (
                   <SourceRow key={source.id} source={source} />
                 ))}
               </div>
             )}
             <div className="flex flex-col gap-3">
-              <SectionLabel>Bring your own</SectionLabel>
+              <SectionLabel>{t("Bring your own")}</SectionLabel>
               <div className="grid gap-3">
+                <GutenbergQuickAdd />
                 <LocalFolder />
               </div>
             </div>
@@ -1032,10 +1197,11 @@ export function EBookSourcesView({ onBack }: { onBack: () => void }) {
 
           <WorkspaceSection
             id="ebook-source-intelligence"
-            eyebrow="02 · Enrichment"
-            title="Library intelligence"
-            description="Shape the metadata and reading language Harbor uses without changing your original files."
-            icon={<Database size={22} />}
+            eyebrow={t("Enrichment")}
+            title={t("Library intelligence")}
+            description={t(
+              "Shape the metadata and reading language Harbor uses without changing your original files.",
+            )}
           >
             <MetadataProviders />
             <Translation />
@@ -1043,10 +1209,11 @@ export function EBookSourcesView({ onBack }: { onBack: () => void }) {
 
           <WorkspaceSection
             id="ebook-source-extensions"
-            eyebrow="03 · Expand"
-            title="Extension dock"
-            description="Bring trusted source packages aboard through Harbor’s isolated extension worker."
-            icon={<Blocks size={22} />}
+            eyebrow={t("Expand")}
+            title={t("Extension dock")}
+            description={t(
+              "Bring trusted source packages aboard through Harbor’s isolated extension worker.",
+            )}
           >
             <Extensions />
             <PluginGuide kind="ebook" />

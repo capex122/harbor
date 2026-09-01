@@ -111,6 +111,7 @@ export function KeyField({
   help,
   iconSrc,
   iconBg,
+  iconNode,
   headerExtra,
   badge,
 }: {
@@ -123,6 +124,7 @@ export function KeyField({
   help: React.ReactNode;
   iconSrc?: string;
   iconBg?: string;
+  iconNode?: React.ReactNode;
   headerExtra?: React.ReactNode;
   badge?: string;
 }) {
@@ -183,7 +185,9 @@ export function KeyField({
           focused ? "bg-raised" : "bg-elevated"
         }`}
       >
-        {iconSrc ? (
+        {iconNode ? (
+          iconNode
+        ) : iconSrc ? (
           iconBg ? (
             <span
               className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md p-1"

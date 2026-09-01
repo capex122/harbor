@@ -6,6 +6,8 @@ import type { PlayerSrc } from "@/lib/view";
 import { Topbar } from "@/chrome/topbar";
 import { useT } from "@/lib/i18n";
 import { useActiveKid } from "@/lib/profiles";
+import { resolveLogo } from "@/lib/logo";
+import { useSettings } from "@/lib/settings";
 import { useTitleLogo } from "@/lib/title-logo";
 import { LoaderLogoOrText } from "./loader-logo-or-text";
 import { readinessScore, type EngineStats } from "@/lib/torrent/engine-stats";
@@ -41,7 +43,22 @@ export function CinematicPlayerLoader({
 }) {
   const t = useT();
   const kid = useActiveKid();
+  const { settings } = useSettings();
   const pinnedLogo = useTitleLogo(src.meta.id);
+  const [localizedLogo, setLocalizedLogo] = useState<string | undefined>();
+  useEffect(() => {
+    let cancelled = false;
+    setLocalizedLogo(undefined);
+    if (pinnedLogo) return;
+    void resolveLogo(settings.tmdbKey, src.meta)
+      .then((logo) => {
+        if (!cancelled) setLocalizedLogo(logo);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [pinnedLogo, settings.tmdbKey, src.meta]);
   const isLocal = isLocalUrl(src.url);
   const isInfoHash =
     (isBundledEngineUrl(src.url) || isLocalEngineUrl(src.url)) && !src.url.includes("/hlsv2/");
@@ -159,7 +176,7 @@ export function CinematicPlayerLoader({
         className="relative flex h-full flex-col items-center justify-center gap-7 px-8 text-center"
       >
         <LoaderLogoOrText
-          logo={pinnedLogo ?? src.meta.logo ?? null}
+          logo={pinnedLogo ?? localizedLogo ?? src.meta.logo ?? null}
           fallbackText={src.meta.name ?? src.title}
         />
         {src.episode && (

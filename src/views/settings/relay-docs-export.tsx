@@ -28,21 +28,22 @@ export function DownloadMenu({
     setOpen(false);
     const root = docsRef.current;
     if (!root) return;
+    const documentTitle = t("Harbor Relay Documentation");
     if (kind === "pdf") {
-      printDocs(root);
+      printDocs(root, documentTitle);
       return;
     }
     const isTxt = kind === "txt";
     const content = isTxt
-      ? buildTxt(root)
-      : JSON.stringify(buildJson(root), null, 2);
+      ? buildTxt(root, documentTitle)
+      : JSON.stringify(buildJson(root, documentTitle), null, 2);
     setBusy(true);
     try {
       const { path } = await saveTextFileWithPath(
         isTxt ? "harbor-relay-docs.txt" : "harbor-relay-docs.json",
         content,
         [isTxt ? "txt" : "json"],
-        "Harbor Relay docs",
+        t("Harbor Relay docs"),
       );
       if (path) onSaved(path);
     } finally {
@@ -175,7 +176,7 @@ const PRINT_CSS = `
   @page { margin: 14mm; }
 `;
 
-function printDocs(root: HTMLElement) {
+function printDocs(root: HTMLElement, title: string) {
   const iframe = document.createElement("iframe");
   iframe.setAttribute("aria-hidden", "true");
   iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;";
@@ -187,8 +188,9 @@ function printDocs(root: HTMLElement) {
   }
   doc.open();
   doc.write(
-    `<!doctype html><html><head><meta charset="utf-8"><title>Harbor Relay Documentation</title><style>${PRINT_CSS}</style></head><body><main>${root.innerHTML}</main></body></html>`,
+    `<!doctype html><html><head><meta charset="utf-8"><title></title><style>${PRINT_CSS}</style></head><body><main>${root.innerHTML}</main></body></html>`,
   );
+  doc.title = title;
   doc.close();
   const win = iframe.contentWindow;
   let done = false;
@@ -205,7 +207,7 @@ function printDocs(root: HTMLElement) {
   }, 180);
 }
 
-function buildTxt(root: HTMLElement): string {
+function buildTxt(root: HTMLElement, title: string): string {
   const lines: string[] = [];
   root.querySelectorAll("h2, h3, p, li, pre").forEach((el) => {
     const tag = el.tagName.toLowerCase();
@@ -225,10 +227,10 @@ function buildTxt(root: HTMLElement): string {
       lines.push(text);
     }
   });
-  return `Harbor Relay Documentation\n${"=".repeat(28)}\n${lines.join("\n").trim()}\n`;
+  return `${title}\n${"=".repeat(Math.min(title.length, 60))}\n${lines.join("\n").trim()}\n`;
 }
 
-function buildJson(root: HTMLElement) {
+function buildJson(root: HTMLElement, title: string) {
   const sections: Array<{ heading: string; blocks: Array<unknown> }> = [];
   let current: { heading: string; blocks: Array<unknown> } | null = null;
   const ensureSection = (heading: string) => {
@@ -239,24 +241,31 @@ function buildJson(root: HTMLElement) {
     const head = sec.querySelector("h2, h3");
     if (head) ensureSection((head.textContent ?? "").trim());
     else if (!current) ensureSection("");
-    sec.querySelectorAll(":scope > p, :scope > ul, :scope > ol, :scope > pre, :scope > div table").forEach((el) => {
-      const tag = el.tagName.toLowerCase();
-      if (tag === "p") current!.blocks.push({ type: "paragraph", text: (el.textContent ?? "").trim() });
-      else if (tag === "pre") current!.blocks.push({ type: "code", text: el.textContent ?? "" });
-      else if (tag === "ul" || tag === "ol") {
-        const items = Array.from(el.querySelectorAll(":scope > li")).map((li) => (li.textContent ?? "").trim());
-        current!.blocks.push({ type: tag === "ol" ? "ordered_list" : "list", items });
-      } else if (tag === "table") {
-        const rows = Array.from(el.querySelectorAll("tbody tr")).map((tr) =>
-          Array.from(tr.querySelectorAll("td")).map((td) => (td.textContent ?? "").trim()),
-        );
-        const headers = Array.from(el.querySelectorAll("thead th")).map((th) => (th.textContent ?? "").trim());
-        current!.blocks.push({ type: "table", headers, rows });
-      }
-    });
+    sec
+      .querySelectorAll(":scope > p, :scope > ul, :scope > ol, :scope > pre, :scope > div table")
+      .forEach((el) => {
+        const tag = el.tagName.toLowerCase();
+        if (tag === "p")
+          current!.blocks.push({ type: "paragraph", text: (el.textContent ?? "").trim() });
+        else if (tag === "pre") current!.blocks.push({ type: "code", text: el.textContent ?? "" });
+        else if (tag === "ul" || tag === "ol") {
+          const items = Array.from(el.querySelectorAll(":scope > li")).map((li) =>
+            (li.textContent ?? "").trim(),
+          );
+          current!.blocks.push({ type: tag === "ol" ? "ordered_list" : "list", items });
+        } else if (tag === "table") {
+          const rows = Array.from(el.querySelectorAll("tbody tr")).map((tr) =>
+            Array.from(tr.querySelectorAll("td")).map((td) => (td.textContent ?? "").trim()),
+          );
+          const headers = Array.from(el.querySelectorAll("thead th")).map((th) =>
+            (th.textContent ?? "").trim(),
+          );
+          current!.blocks.push({ type: "table", headers, rows });
+        }
+      });
   });
   return {
-    title: "Harbor Relay Documentation",
+    title,
     generatedAt: new Date().toISOString(),
     sections,
   };

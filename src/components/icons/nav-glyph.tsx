@@ -5,6 +5,7 @@ import calendar from "@/assets/nav-icons/calendar.svg?raw";
 import catalogs from "@/assets/nav-icons/catalogs.svg?raw";
 import collections from "@/assets/nav-icons/collections.svg?raw";
 import download from "@/assets/nav-icons/download.svg?raw";
+import ebook from "@/assets/nav-icons/ebook.svg?raw";
 import explore from "@/assets/nav-icons/explore.svg?raw";
 import guide from "@/assets/nav-icons/guide.svg?raw";
 import home from "@/assets/nav-icons/home.svg?raw";
@@ -38,6 +39,7 @@ const GLYPHS = {
   catalogs: prep(catalogs),
   collections: prep(collections),
   download: prep(download),
+  ebook: prep(ebook),
   explore: prep(explore),
   guide: prep(guide),
   home: prep(home),
@@ -66,7 +68,7 @@ export function NavGlyph({
     <span
       aria-hidden
       style={style}
-      className={`inline-flex shrink-0 select-none items-center justify-center [&>svg]:h-full [&>svg]:w-full ${className ?? ""}`}
+      className={`inline-flex shrink-0 select-none items-center justify-center [&>svg]:h-full [&>svg]:w-full [&>svg]:overflow-visible ${className ?? ""}`}
       dangerouslySetInnerHTML={{ __html: GLYPHS[name] }}
     />
   );

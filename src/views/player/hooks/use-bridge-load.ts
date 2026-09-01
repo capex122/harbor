@@ -122,12 +122,19 @@ export function useBridgeLoad(params: {
         console.warn("[player] load failed", e);
         return;
       }
-      const startMs = resolved.ms;
+      const startMs = src.startPositionMs ?? resolved.ms;
       const runtimeMin = src.episode?.runtime ?? null;
       const durationMs = runtimeMin && runtimeMin > 0 ? runtimeMin * 60_000 : 0;
       const finishedNearEnd =
         resolved.finished || (durationMs > 0 && startMs / durationMs >= RESTART_THRESHOLD);
-      const startSec = (!resumePlaybackRef.current || finishedNearEnd ? 0 : startMs) / 1000;
+      // A source replacement (for example a home-server quality switch) carries
+      // an explicit position and must preserve it regardless of the user's
+      // automatic resume preference. That preference only governs stored resume
+      // progress when opening an item normally.
+      const hasExplicitStart = src.startPositionMs != null;
+      const startSec =
+        (hasExplicitStart ? startMs : !resumePlaybackRef.current || finishedNearEnd ? 0 : startMs) /
+        1000;
       const guestInRoom = inRoomRef.current && !isHostRef.current;
       const eligibleForPrompt =
         isFirstLoad &&
@@ -155,8 +162,10 @@ export function useBridgeLoad(params: {
         setPendingSeekSec(startSec);
         return;
       }
-      if (!inRoomRef.current) {
+      if (!inRoomRef.current && !src.startPaused) {
         bridge.play().catch(() => {});
+      } else if (src.startPaused) {
+        bridge.pause();
       }
     })();
     return () => {
@@ -171,6 +180,8 @@ export function useBridgeLoad(params: {
     src.playbackTraceId,
     src.meta.id,
     src.subtitles,
+    src.startPositionMs,
+    src.startPaused,
     season,
     episode,
     transcodedUrl,

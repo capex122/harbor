@@ -18,7 +18,7 @@ import { useBpT } from "./bp-i18n";
 const VISIBLE_ROWS = 60;
 
 export function BpMovies({ onSelect }: { onSelect: (m: Meta) => void }) {
-  const { hero, rows, loading, failed, retry } = useBpMovies();
+  const { hero, rows, runtimeTitleKeys, loading, failed, retry } = useBpMovies();
   const t = useBpT();
   const grid = useBpRowGrid();
 
@@ -63,7 +63,7 @@ export function BpMovies({ onSelect }: { onSelect: (m: Meta) => void }) {
   // the tab a movies row belongs to is Movies, so the press would reload the
   // page it was pressed from. It opens the row's own feed as a grid instead.
   const entries: BpRailEntry[] = visible.map((row, i) => {
-    const title = t(row.name);
+    const title = runtimeTitleKeys.has(row.key) ? row.name : t(row.name);
     return {
       key: row.key,
       node: (

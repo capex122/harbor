@@ -16,9 +16,21 @@ export function SubtitleStylePanel() {
   const t = useT();
 
   const styles: Array<{ id: "shadow" | "outline" | "box"; label: string; sub: string }> = [
-    { id: "shadow", label: t("Drop shadow"), sub: t("Soft halo around the text. Cleanest on most content.") },
-    { id: "outline", label: t("Outline"), sub: t("Hard stroke around each letter. High contrast.") },
-    { id: "box", label: t("Black bar"), sub: t("Rounded background panel behind the text. Most readable.") },
+    {
+      id: "shadow",
+      label: t("Drop shadow"),
+      sub: t("Soft halo around the text. Cleanest on most content."),
+    },
+    {
+      id: "outline",
+      label: t("Outline"),
+      sub: t("Hard stroke around each letter. High contrast."),
+    },
+    {
+      id: "box",
+      label: t("Black bar"),
+      sub: t("Rounded background panel behind the text. Most readable."),
+    },
   ];
 
   const aligns: Array<{ id: "left" | "center" | "right"; label: string }> = [
@@ -28,9 +40,27 @@ export function SubtitleStylePanel() {
   ];
 
   const assModes: Array<{ id: "no" | "scale" | "force"; label: string; sub: string }> = [
-    { id: "no", label: t("Keep original"), sub: t("Styled (ASS) subs keep their own font, color, and size. Truest to the release, but the size can vary a lot between files.") },
-    { id: "scale", label: t("Resize only"), sub: t("Keep the original look, scaled by your size. It multiplies the built-in size, so different releases can still differ.") },
-    { id: "force", label: t("Use my style"), sub: t("Force your size, font, and color onto styled subs so every file looks consistent. Best fix if embedded sizes keep changing, or for Arabic and subs showing boxes. Can affect karaoke and signs.") },
+    {
+      id: "no",
+      label: t("Keep original"),
+      sub: t(
+        "Styled (ASS) subs keep their own font, color, and size. Truest to the release, but the size can vary a lot between files.",
+      ),
+    },
+    {
+      id: "scale",
+      label: t("Resize only"),
+      sub: t(
+        "Keep the original look, scaled by your size. It multiplies the built-in size, so different releases can still differ.",
+      ),
+    },
+    {
+      id: "force",
+      label: t("Use my style"),
+      sub: t(
+        "Force your size, font, and color onto styled subs so every file looks consistent. Best fix if embedded sizes keep changing, or for Arabic and subs showing boxes. Can affect karaoke and signs.",
+      ),
+    },
   ];
 
   const isDefault =
@@ -111,21 +141,28 @@ export function SubtitleStylePanel() {
           })}
         </div>
         <p className="text-[11.5px] leading-snug text-ink-muted">
-          {t("Embedded subtitles changing size between titles, or showing empty boxes? Switch to Use my style for a consistent size. For boxes, also choose Arabic under Font.")}
+          {t(
+            "Embedded subtitles changing size between titles, or showing empty boxes? Switch to Use my style for a consistent size. For boxes, also choose Arabic under Font.",
+          )}
         </p>
       </div>
 
       {(settings.subAssOverride === "no" || settings.subAssOverride === "scale") && (
         <ToggleRow
           label={t("Normalize embedded subtitle size")}
-          sub={t("Auto-adjusts styled (ASS) subtitles so dialogue stays the same size across files, while keeping their colors, fonts, and sign placement.")}
+          sub={t(
+            "Auto-adjusts styled (ASS) subtitles so dialogue stays the same size across files, while keeping their colors, fonts, and sign placement.",
+          )}
           value={settings.subAssNormalizeSize}
           onChange={(v) => update({ subAssNormalizeSize: v })}
         />
       )}
 
       {settings.subStyle === "box" && (
-        <SubField label={t("Background opacity")} value={`${Math.round(settings.subBoxOpacity * 100)}%`}>
+        <SubField
+          label={t("Background opacity")}
+          value={`${Math.round(settings.subBoxOpacity * 100)}%`}
+        >
           <input
             type="range"
             min={0.2}
@@ -134,8 +171,8 @@ export function SubtitleStylePanel() {
             value={settings.subBoxOpacity}
             onChange={(e) => update({ subBoxOpacity: parseFloat(e.target.value) })}
             className="harbor-slider w-full"
-        style={fillStyle(settings.subBoxOpacity, 0.2, 1)}
-      />
+            style={fillStyle(settings.subBoxOpacity, 0.2, 1)}
+          />
         </SubField>
       )}
 
@@ -152,8 +189,8 @@ export function SubtitleStylePanel() {
               if (Number.isFinite(v)) update({ subBorderSize: Math.min(6, Math.max(1, v)) });
             }}
             className="harbor-slider w-full"
-        style={fillStyle(Math.max(1, settings.subBorderSize), 1, 6)}
-      />
+            style={fillStyle(Math.max(1, settings.subBorderSize), 1, 6)}
+          />
         </SubField>
       )}
 
@@ -182,8 +219,8 @@ export function SubtitleStylePanel() {
           value={settings.subFontSize}
           onChange={(e) => update({ subFontSize: parseInt(e.target.value, 10) })}
           className="harbor-slider w-full"
-        style={fillStyle(settings.subFontSize, 16, 120)}
-      />
+          style={fillStyle(settings.subFontSize, 16, 120)}
+        />
       </SubField>
 
       <SubField label={t("Opacity")} value={`${Math.round((settings.subOpacity ?? 1) * 100)}%`}>
@@ -198,8 +235,8 @@ export function SubtitleStylePanel() {
             if (Number.isFinite(v)) update({ subOpacity: Math.max(0.2, Math.min(1, v)) });
           }}
           className="harbor-slider w-full"
-        style={fillStyle(settings.subOpacity ?? 1, 0.2, 1)}
-      />
+          style={fillStyle(settings.subOpacity ?? 1, 0.2, 1)}
+        />
       </SubField>
 
       <SubField label={t("Distance from bottom")} value={`${settings.subMarginY}%`}>
@@ -211,8 +248,8 @@ export function SubtitleStylePanel() {
           value={settings.subMarginY}
           onChange={(e) => update({ subMarginY: parseInt(e.target.value, 10) })}
           className="harbor-slider w-full"
-        style={fillStyle(settings.subMarginY, 0, 100)}
-      />
+          style={fillStyle(settings.subMarginY, 0, 100)}
+        />
       </SubField>
 
       <div className="flex flex-col gap-2.5">
@@ -226,7 +263,9 @@ export function SubtitleStylePanel() {
                 type="button"
                 onClick={() => update({ subAlignX: a.id })}
                 className={`flex h-10 items-center justify-center rounded-md border text-[12.5px] font-semibold transition-colors ${
-                  sel ? "border-ink bg-elevated text-ink" : "border-edge-soft bg-canvas text-ink-muted hover:border-edge hover:text-ink"
+                  sel
+                    ? "border-ink bg-elevated text-ink"
+                    : "border-edge-soft bg-canvas text-ink-muted hover:border-edge hover:text-ink"
                 }`}
               >
                 {a.label}
@@ -311,7 +350,7 @@ export function SubtitleStylePanel() {
           type="button"
           onClick={resetDefaults}
           disabled={isDefault}
- className="flex h-9 items-center gap-2 rounded-full bg-canvas px-4 text-[12.5px] font-semibold text-ink-muted transition-colors hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-canvas disabled:hover:text-ink-muted"
+          className="flex h-9 items-center gap-2 rounded-full bg-canvas px-4 text-[12.5px] font-semibold text-ink-muted transition-colors hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-canvas disabled:hover:text-ink-muted"
         >
           {t("Reset to defaults")}
         </button>
@@ -340,7 +379,8 @@ function SubtitlePreview() {
     }
     textShadow = offsets.map(([dx, dy]) => `${dx * 0.55}px ${dy * 0.55}px 0 ${c}`).join(", ");
   } else if (settings.subStyle === "shadow") {
-    textShadow = "0 1px 2px rgba(0,0,0,0.95), 0 2px 6px rgba(0,0,0,0.85), 0 0 18px rgba(0,0,0,0.55)";
+    textShadow =
+      "0 1px 2px rgba(0,0,0,0.95), 0 2px 6px rgba(0,0,0,0.85), 0 0 18px rgba(0,0,0,0.55)";
   }
 
   const boxRgb = (() => {
@@ -362,7 +402,8 @@ function SubtitlePreview() {
       : undefined;
 
   const align = settings.subAlignX || "center";
-  const justify = align === "left" ? "justify-start" : align === "right" ? "justify-end" : "justify-center";
+  const justify =
+    align === "left" ? "justify-start" : align === "right" ? "justify-end" : "justify-center";
 
   return (
     <div
@@ -370,7 +411,10 @@ function SubtitlePreview() {
       style={{ backgroundImage: `url(${godfatherStill})` }}
     >
       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
-      <div className={`absolute inset-x-0 flex ${justify} px-[6%]`} style={{ bottom: `${settings.subMarginY}%`, opacity: settings.subOpacity }}>
+      <div
+        className={`absolute inset-x-0 flex ${justify} px-[6%]`}
+        style={{ bottom: `${settings.subMarginY}%`, opacity: settings.subOpacity }}
+      >
         <div style={boxStyle}>
           <div
             style={{
@@ -384,7 +428,7 @@ function SubtitlePreview() {
               textAlign: align as "left" | "center" | "right",
             }}
           >
-                  I&apos;m gonna make him an offer he can&apos;t refuse.
+            I&apos;m gonna make him an offer he can&apos;t refuse.
           </div>
         </div>
       </div>
@@ -392,7 +436,10 @@ function SubtitlePreview() {
   );
 }
 
-const PRESET_FONTS: Array<{ id: "inter" | "system" | "rounded" | "serif" | "arabic"; label: string }> = [
+const PRESET_FONTS: Array<{
+  id: "inter" | "system" | "rounded" | "serif" | "arabic";
+  label: string;
+}> = [
   { id: "inter", label: "Inter" },
   { id: "system", label: "System" },
   { id: "rounded", label: "Rounded" },
@@ -400,16 +447,31 @@ const PRESET_FONTS: Array<{ id: "inter" | "system" | "rounded" | "serif" | "arab
   { id: "arabic", label: "Arabic" },
 ];
 
-const FONT_ACCEPT = ".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2,application/x-font-ttf,application/x-font-otf,application/font-woff,application/font-woff2";
+const FONT_ACCEPT =
+  ".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2,application/x-font-ttf,application/x-font-otf,application/font-woff,application/font-woff2";
 const MAX_FONT_BYTES = 4 * 1024 * 1024;
+type FontImportError =
+  | { kind: "too-large"; sizeMb: string }
+  | { kind: "unsupported"; extension: string }
+  | { kind: "save-failed" };
 
 function FontPicker() {
   const { settings, update } = useSettings();
   const t = useT();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FontImportError | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const customFonts = settings.customFonts ?? [];
+  const errorMessage =
+    error?.kind === "too-large"
+      ? t("That font is {size} MB. Max is 4 MB.", { size: error.sizeMb })
+      : error?.kind === "unsupported"
+        ? t('Unsupported font type ".{extension}". Use TTF, OTF, WOFF, or WOFF2.', {
+            extension: error.extension,
+          })
+        : error?.kind === "save-failed"
+          ? t("Couldn't save that font. It may be invalid, or storage is full.")
+          : null;
 
   useEffect(() => {
     if (!error) return;
@@ -420,7 +482,7 @@ function FontPicker() {
   const onFile = async (file: File) => {
     setError(null);
     if (file.size > MAX_FONT_BYTES) {
-      setError(`That font is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Max is 4 MB.`);
+      setError({ kind: "too-large", sizeMb: (file.size / (1024 * 1024)).toFixed(1) });
       return;
     }
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
@@ -431,13 +493,14 @@ function FontPicker() {
       woff2: "woff2",
     };
     if (!formatMap[ext]) {
-      setError(`Unsupported font type ".${ext}". Use TTF, OTF, WOFF, or WOFF2.`);
+      setError({ kind: "unsupported", extension: ext });
       return;
     }
     try {
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const r = new FileReader();
-        r.onload = () => (typeof r.result === "string" ? resolve(r.result) : reject(new Error("read failed")));
+        r.onload = () =>
+          typeof r.result === "string" ? resolve(r.result) : reject(new Error("read failed"));
         r.onerror = () => reject(r.error);
         r.readAsDataURL(file);
       });
@@ -451,12 +514,17 @@ function FontPicker() {
       const baseName = file.name.replace(/\.(ttf|otf|woff2?|ttc)$/i, "");
       const next = [
         ...customFonts,
-        { id, name: baseName || `Custom ${customFonts.length + 1}`, family, format: formatMap[ext] },
+        {
+          id,
+          name: baseName || `Custom ${customFonts.length + 1}`,
+          family,
+          format: formatMap[ext],
+        },
       ];
       update({ customFonts: next, subFontFamily: `custom:${id}` });
     } catch (e) {
       console.warn("[fonts] read failed", e);
-      setError("Couldn't save that font. It may be invalid, or storage is full.");
+      setError({ kind: "save-failed" });
     }
   };
 
@@ -521,10 +589,12 @@ function FontPicker() {
               <button
                 type="button"
                 onClick={() => update({ subFontFamily: f.id })}
-                title={broken ? t("This font did not load. Remove it and upload it again.") : undefined}
+                title={
+                  broken ? t("This font did not load. Remove it and upload it again.") : undefined
+                }
                 className={`flex h-11 w-full items-center justify-center rounded-md border px-2 text-[13px] font-semibold transition-colors ${
                   broken
-                    ? "border-danger bg-danger/15 text-danger"
+                    ? "border-danger/40 bg-danger/10 text-danger"
                     : sel
                       ? "border-ink bg-elevated text-ink"
                       : "border-edge-soft bg-canvas text-ink-muted hover:border-edge hover:text-ink"
@@ -569,9 +639,9 @@ function FontPicker() {
           e.target.value = "";
         }}
       />
-      {error && (
+      {errorMessage && (
         <p className="rounded-md bg-danger/15 px-2.5 py-2 text-[11.5px] leading-snug text-danger ring-1 ring-danger">
-          {error}
+          {errorMessage}
         </p>
       )}
       {confirmFont && (

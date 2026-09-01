@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AlertCircle, RefreshCw, Sparkles, Upload } from "lucide-react";
 import { Search } from "@/components/icons/search-icon";
+import { useT } from "@/lib/i18n";
 import { getTheme, type StoreTheme } from "@/lib/theme-store";
 import type { Mood } from "./color-rank";
 import { ThemeDetail } from "./theme-detail";
@@ -16,6 +17,7 @@ import { BundleUploadFlow } from "./bundle-upload-flow";
 import type { BundleKind } from "@/lib/bundle-store";
 
 export function CommunityStore({ initialTab = "discover" }: { initialTab?: StoreTab } = {}) {
+  const t = useT();
   const { data, loading, error, reload } = useStoreThemes();
   const [tab, setTab] = useState<StoreTab>(initialTab);
   const [query, setQuery] = useState("");
@@ -28,7 +30,8 @@ export function CommunityStore({ initialTab = "discover" }: { initialTab?: Store
   const empty = ready && data.all.length === 0;
   const interactive = ready && !empty;
   const themeTab = tab === "discover" || tab === "themes";
-  const bundleKind: BundleKind | null = tab === "badges" ? "badge" : tab === "awards" ? "award" : null;
+  const bundleKind: BundleKind | null =
+    tab === "badges" ? "badge" : tab === "awards" ? "award" : null;
 
   const onTab = (t: StoreTab) => {
     setTab(t);
@@ -61,7 +64,9 @@ export function CommunityStore({ initialTab = "discover" }: { initialTab?: Store
       setSelected(t);
       return;
     }
-    getTheme(themeId).then(setSelected).catch(() => {});
+    getTheme(themeId)
+      .then(setSelected)
+      .catch(() => {});
   };
 
   return (
@@ -79,7 +84,7 @@ export function CommunityStore({ initialTab = "discover" }: { initialTab?: Store
               <input
                 value={query}
                 onChange={(e) => onSearch(e.target.value)}
-                placeholder="Search themes"
+                placeholder={t("Search themes")}
                 className="w-44 bg-transparent text-[13px] text-ink placeholder:text-ink-subtle focus:outline-none"
               />
             </div>
@@ -88,7 +93,7 @@ export function CommunityStore({ initialTab = "discover" }: { initialTab?: Store
               onClick={() => setUploadOpen(true)}
               className="flex h-9 items-center gap-1.5 rounded-full bg-ink px-4 text-[12.5px] font-semibold text-canvas transition-[opacity,transform] hover:opacity-90 active:scale-[0.97] motion-reduce:active:scale-100"
             >
-              <Upload size={14} strokeWidth={2.2} /> Share a theme
+              <Upload size={14} strokeWidth={2.2} /> {t("Share a theme")}
             </button>
             <NotificationBell onOpenTheme={openThemeById} />
           </div>
@@ -100,7 +105,7 @@ export function CommunityStore({ initialTab = "discover" }: { initialTab?: Store
               onClick={() => setBundleUpload(bundleKind)}
               className="flex h-9 items-center gap-1.5 rounded-full bg-ink px-4 text-[12.5px] font-semibold text-canvas transition-[opacity,transform] hover:opacity-90 active:scale-[0.97] motion-reduce:active:scale-100"
             >
-              <Upload size={14} strokeWidth={2.2} /> Share a pack
+              <Upload size={14} strokeWidth={2.2} /> {t("Share a pack")}
             </button>
             <NotificationBell onOpenTheme={openThemeById} />
           </div>
@@ -136,14 +141,17 @@ export function CommunityStore({ initialTab = "discover" }: { initialTab?: Store
 
       {selected && <ThemeDetail theme={selected} onClose={() => setSelected(null)} />}
       {uploadOpen && <ThemeUploadFlow onClose={() => setUploadOpen(false)} />}
-      {bundleUpload && <BundleUploadFlow initialKind={bundleUpload} onClose={() => setBundleUpload(null)} />}
+      {bundleUpload && (
+        <BundleUploadFlow initialKind={bundleUpload} onClose={() => setBundleUpload(null)} />
+      )}
     </section>
   );
 }
 
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const t = useT();
   return (
- <div className="mx-auto flex max-w-sm flex-col items-center gap-4 rounded-md bg-surface px-6 py-14 text-center">
+    <div className="mx-auto flex max-w-sm flex-col items-center gap-4 rounded-md bg-surface px-6 py-14 text-center">
       <span className="grid h-12 w-12 place-items-center rounded-full bg-danger/15 text-danger">
         <AlertCircle size={22} />
       </span>
@@ -153,22 +161,25 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
         onClick={onRetry}
         className="flex h-10 items-center gap-2 rounded-full bg-ink px-5 text-[13px] font-semibold text-canvas transition-[opacity,transform] hover:opacity-90 active:scale-[0.97] motion-reduce:active:scale-100"
       >
-        <RefreshCw size={14} strokeWidth={2.2} /> Try again
+        <RefreshCw size={14} strokeWidth={2.2} /> {t("Try again")}
       </button>
     </div>
   );
 }
 
 function EmptyState({ onShare }: { onShare: () => void }) {
+  const t = useT();
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-md border border-dashed border-edge bg-surface px-6 py-16 text-center">
       <span className="grid h-14 w-14 place-items-center rounded-full bg-accent-soft text-accent">
         <Sparkles size={26} />
       </span>
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-[18px] font-semibold tracking-tight text-ink">No community themes yet</h3>
+        <h3 className="text-[18px] font-semibold tracking-tight text-ink">
+          {t("No community themes yet")}
+        </h3>
         <p className="text-[13.5px] leading-relaxed text-ink-muted">
-          Be the first to share a look. Publish a theme and it shows up here for everyone.
+          {t("Be the first to share a look. Publish a theme and it shows up here for everyone.")}
         </p>
       </div>
       <button
@@ -176,7 +187,7 @@ function EmptyState({ onShare }: { onShare: () => void }) {
         onClick={onShare}
         className="flex h-11 items-center gap-2 rounded-full bg-ink px-6 text-[13.5px] font-semibold text-canvas transition-[opacity,transform] hover:opacity-90 active:scale-[0.97] motion-reduce:active:scale-100"
       >
-        <Upload size={16} strokeWidth={2.2} /> Share a theme
+        <Upload size={16} strokeWidth={2.2} /> {t("Share a theme")}
       </button>
     </div>
   );

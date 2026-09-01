@@ -13,6 +13,7 @@ import type { BpCardBadge } from "../use-bp-card-badges";
 import type { BpDetailAction } from "../use-bp-detail-actions";
 import { BpHeroMarks, BpTmdbKeyNote } from "./bp-hero-notes";
 import { BpSynopsis, useBpSynopsis } from "./bp-synopsis";
+import type { MediaServerConnection } from "@/lib/media-server/types";
 
 export function BpDetailHero({
   meta,
@@ -21,6 +22,7 @@ export function BpDetailHero({
   badges,
   imdbId,
   inLibrary,
+  homeServers,
   mark,
   cwEntry,
   actions,
@@ -32,6 +34,7 @@ export function BpDetailHero({
   badges: readonly BpCardBadge[];
   imdbId: string | null;
   inLibrary: boolean;
+  homeServers: readonly MediaServerConnection[];
   mark: { ep?: PlayEpisode; resumed: boolean };
   cwEntry?: LibraryItem | null;
   actions: BpDetailAction[];
@@ -40,7 +43,7 @@ export function BpDetailHero({
   const t = useBpT();
   const { settings } = useSettings();
 
-  const logo = detail?.logo ?? meta.logo ?? heroLogo;
+  const logo = heroLogo ?? detail?.logo ?? meta.logo;
   const overview = detail?.overview || meta.description || "";
   const synopsis = useBpSynopsis(overview);
   const offset = cwEntry?.state?.timeOffset ?? 0;
@@ -71,12 +74,18 @@ export function BpDetailHero({
       )}
 
       {detail?.tagline && (
-        <p data-bp-detail-tagline className="mt-[12px] max-w-[min(36vw,410px)] text-[13.4px] font-medium italic leading-snug text-ink-muted">
+        <p
+          data-bp-detail-tagline
+          className="mt-[12px] max-w-[min(36vw,410px)] text-[13.4px] font-medium italic leading-snug text-ink-muted"
+        >
           {detail.tagline}
         </p>
       )}
 
-      <div data-bp-hero-meta className="mt-[13px] flex flex-wrap items-center gap-x-[16px] gap-y-[6px] text-[13.4px] font-semibold tracking-[0.015em] text-ink-subtle">
+      <div
+        data-bp-hero-meta
+        className="mt-[13px] flex flex-wrap items-center gap-x-[16px] gap-y-[6px] text-[13.4px] font-semibold tracking-[0.015em] text-ink-subtle"
+      >
         {/* showDetailRatings and every per-provider detail flag are resolved
             inside useBpCardBadges, so an empty set here means the user turned
             them off, not that the hero forgot to ask. */}
@@ -86,7 +95,7 @@ export function BpDetailHero({
             {f}
           </span>
         ))}
-        <BpHeroMarks meta={meta} inLibrary={inLibrary} />
+        <BpHeroMarks meta={meta} inLibrary={inLibrary} homeServers={homeServers} />
       </div>
 
       <div className="mt-[14px]">
@@ -112,7 +121,10 @@ export function BpDetailHero({
       <BpSynopsis text={overview} state={synopsis} />
       {!settings.tmdbKey && <BpTmdbKeyNote />}
 
-      <div data-bp-detail-awards className="pointer-events-none absolute inset-y-0 start-0 end-[calc(var(--bp-gutter)_-_40px)]">
+      <div
+        data-bp-detail-awards
+        className="pointer-events-none absolute inset-y-0 start-0 end-[calc(var(--bp-gutter)_-_40px)]"
+      >
         <MetaAwardsCorner meta={meta} imdbId={imdbId} />
       </div>
     </div>

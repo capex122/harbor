@@ -561,14 +561,18 @@ export async function revealDownload(id: string): Promise<void> {
   }
 }
 
-function subscribe(listener: () => void): () => void {
+export function subscribeDownloads(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
+export function downloadsSnapshot(): DownloadItem[] {
+  return snapshot;
+}
+
 export function useDownloads(): DownloadItem[] {
   return useSyncExternalStore(
-    subscribe,
+    subscribeDownloads,
     () => snapshot,
     () => snapshot,
   );

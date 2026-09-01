@@ -14,7 +14,10 @@ import {
 
 test("raw chapter cache returns content and freshness separately", async () => {
   const key = `chapter-${Date.now()}-${Math.random()}`;
-  await ebookChapterCachePut(key, { text: "cached source chapter", images: ["https://img.test/1"] });
+  await ebookChapterCachePut(key, {
+    text: "cached source chapter",
+    images: ["https://img.test/1"],
+  });
 
   const cached = await ebookChapterCacheGet(key);
   assert.deepEqual(cached?.content, {
@@ -49,17 +52,26 @@ test("Book Mode page blobs survive reader remounts", async () => {
 
 test("storage recovery never classifies AI translations as disposable", async () => {
   const source = await readFile(new URL("../src/lib/storage-recovery.ts", import.meta.url), "utf8");
-  const prunable = source.slice(source.indexOf("const PRUNABLE_PREFIXES"), source.indexOf("function isPrunable"));
+  const prunable = source.slice(
+    source.indexOf("const PRUNABLE_PREFIXES"),
+    source.indexOf("function isPrunable"),
+  );
   assert.doesNotMatch(prunable, /harbor\.ebook\.translation\.cache/);
 });
 
 test("opening a chapter never starts a fresh AI translation", async () => {
-  const providers = await readFile(new URL("../src/lib/ebook/providers.ts", import.meta.url), "utf8");
+  const providers = await readFile(
+    new URL("../src/lib/ebook/providers.ts", import.meta.url),
+    "utf8",
+  );
   const start = providers.indexOf("export async function sourceEBookContent");
   const end = providers.indexOf("export async function prefetchSourceEBookContent", start);
   const body = providers.slice(start, end);
   assert.match(body, /options: \{ waitForTranslation\?: boolean \} = \{\}/);
-  assert.match(body, /if \(options\.waitForTranslation && shouldAutomaticallyTranslateEBookChapter\(\)\)/);
+  assert.match(
+    body,
+    /if \(options\.waitForTranslation && shouldAutomaticallyTranslateEBookChapter\(\)\)/,
+  );
   assert.doesNotMatch(body, /translationPending/);
 
   const reader = await readFile(
@@ -101,7 +113,7 @@ test("narrator voices exist only in the reader controller, not Reading settings"
   assert.doesNotMatch(settings, /narrationVoices/);
   assert.doesNotMatch(settings, /Narrator voice/);
   assert.match(reader.slice(0, settingsStart), /<VoicePicker/);
-  assert.match(settings, /Setting label="Saved audio"/);
+  assert.match(settings, /Setting label=\{t\("Saved audio"\)\}/);
 });
 
 test("Book Mode keeps the current pages visible while settings regenerate replacements", async () => {
@@ -146,6 +158,9 @@ test("returning from Book Mode remounts and restores the Harbor line tracker", a
     "utf8",
   );
 
-  assert.match(reader, /if \(prefs\.mode !== "harbor"\) return;[\s\S]*traceY\.current = null;[\s\S]*updateTrace\(\)/);
+  assert.match(
+    reader,
+    /if \(prefs\.mode !== "harbor"\) return;[\s\S]*traceY\.current = null;[\s\S]*updateTrace\(\)/,
+  );
   assert.match(reader, /\[prefs\.mode, updateTrace\]/);
 });

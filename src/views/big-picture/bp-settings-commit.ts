@@ -64,6 +64,14 @@ export function useBpSettingsWriter(): BpSettingsWriter {
         update({ playerEngine: value as Settings["playerEngine"] });
         return;
       }
+      if (id === "playbackSource") {
+        update({ playbackSourcePreference: value as Settings["playbackSourcePreference"] });
+        return;
+      }
+      if (id === "preferredMediaServer") {
+        update({ preferredMediaServerId: value || null });
+        return;
+      }
       if (id === "hwdec") {
         update({ mpvHwdec: value as Settings["mpvHwdec"] });
         return;

@@ -9,10 +9,10 @@ const awards: Record<string, string> = {
   "All years": "كل السنوات",
   "Founded {year}": "تأسّست {year}",
   "{n} years": "{n} سنة",
-  "{n} year": "سنة واحدة",
+  "{n} year": "{n} سنة",
   "Winning films & shows": "الأفلام والمسلسلات الفائزة",
   "View all {n} winners": "عرض كل الفائزين الـ{n}",
-  "{n} title": "عنوان واحد",
+  "{n} title": "{n} عنوان",
   "{n} titles": "{n} عنوان",
   "Celebrated actors": "ممثلون مُحتفى بهم",
   "Acclaimed directors": "مخرجون مرموقون",
@@ -28,7 +28,7 @@ const awards: Record<string, string> = {
   categories: "فئات",
   "Search winners or categories…": "ابحث عن الفائزين أو الفئات…",
   Grand: "كبرى",
-  "{n} winner": "فائز واحد",
+  "{n} winner": "{n} فائز",
   "{n} winners": "{n} فائزين",
 };
 

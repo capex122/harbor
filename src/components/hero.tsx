@@ -360,7 +360,7 @@ export const Hero = memo(function Hero({
         <div className="max-w-2xl">
           {rank && (
             <div className="group/rank relative mb-5 inline-flex self-start">
-              <div className="inline-flex cursor-help items-center gap-1.5 rounded-md bg-canvas px-2.5 py-1 text-[12px] font-semibold text-ink ring-1 ring-inset ring-edge-soft">
+              <div className="inline-flex cursor-help items-center gap-1.5 rounded-md bg-canvas/85 px-2.5 py-1 text-[12px] font-semibold text-ink">
                 <TrendingUp size={12} className="text-accent" />
                 <span>
                   {t("#{position} in {label} Today", {

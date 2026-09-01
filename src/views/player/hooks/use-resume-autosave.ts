@@ -83,8 +83,21 @@ export function useResumeAutosave(params: {
     const finished =
       (sn.durationSec > 0 && pos / sn.durationSec >= WATCHED_RATIO) || isNaturalEnd(sn, pos);
     lastSavedRef.current = pos * 1000;
-    if (finished) clearResume(id, se, ep);
-    else saveResumeMs(id, pos * 1000, se, ep, cs);
+    const covered =
+      s.episodeSpan && cs === s.episodeSpan.season
+        ? Array.from(
+            { length: s.episodeSpan.episodeEnd - s.episodeSpan.episode + 1 },
+            (_, index) => s.episodeSpan!.episode + index,
+          )
+        : typeof ep === "number"
+          ? [ep]
+          : [];
+    if (finished) {
+      if (covered.length) for (const coveredEpisode of covered) clearResume(id, se, coveredEpisode);
+      else clearResume(id, se, ep);
+    } else if (covered.length) {
+      for (const coveredEpisode of covered) saveResumeMs(id, pos * 1000, se, coveredEpisode, cs);
+    } else saveResumeMs(id, pos * 1000, se, ep, cs);
     if (typeof cs === "number") setViewedSeason(id, cs);
     if (isExternalPlaylistId(id)) return;
     if (s.streamRef) {
@@ -105,7 +118,8 @@ export function useResumeAutosave(params: {
         poster: s.meta.poster,
         background: s.meta.background,
       });
-      setManualWatched(id, cs, ep, true);
+      for (const coveredEpisode of covered.length ? covered : [ep])
+        setManualWatched(id, cs, coveredEpisode, true);
       const { resolvedImdbId: rid, resolvedImdbVerified: rv } = latestRef.current;
       void syncSeriesWatchedToStremio(s.meta, rv ? rid : null);
     }

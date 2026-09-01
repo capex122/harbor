@@ -57,6 +57,7 @@ import { useStartedNearEnd } from "./player/hooks/use-started-near-end";
 import { useFrameGrab } from "./player/hooks/use-frame-grab";
 import { useClipRecorder } from "./player/hooks/use-clip-recorder";
 import { useGifRecorder } from "./player/hooks/use-gif-recorder";
+import { HomeServerQualityControl } from "./player/home-server-quality-control";
 import { useSleepTimer } from "./player/hooks/use-sleep-timer";
 import { useAutoEndExit } from "./player/hooks/use-auto-end-exit";
 import { useQueueAdvance } from "./player/hooks/use-queue-advance";
@@ -1011,6 +1012,15 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     snap,
     engine,
     src,
+    homeServerQualityControl: (
+      <HomeServerQualityControl
+        src={src}
+        positionMs={Math.max(0, snap.positionSec * 1000)}
+        playing={playing}
+        theme={resolveChromeTheme(settings.theme, settings.playerChromeTheme)}
+        replace={replacePlayerSrc}
+      />
+    ),
     adStreamRef: playStreamRef,
     adUrl: playUrl,
     subShowInPip: settings.subShowInPip,

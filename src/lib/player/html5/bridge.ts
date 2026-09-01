@@ -11,7 +11,7 @@ import {
 import { fetchAndParse, findActiveCue } from "@/lib/subtitles/parser";
 import type { SubTrack } from "./types";
 import { bufferedAhead, readAudioTracks, videoAudio } from "./audio-tracks";
-import { mapErrorCode, mapErrorMessage } from "./error-map";
+import { mapErrorCode } from "./error-map";
 import { noteSubtitleOrigin } from "@/lib/subtitles/subtitle-memory";
 import { mountCustomPip } from "./pip";
 import { finishPlaybackTrace, markPlaybackTrace } from "@/lib/perf/playback-trace";
@@ -98,7 +98,7 @@ export function createHtml5Bridge(): PlayerBridge {
     if (video.error) {
       snap.status = "error";
       snap.errorCode = mapErrorCode(video.error.code);
-      snap.errorMessage = mapErrorMessage(video.error.code);
+      snap.errorMessage = video.error.message || null;
     } else if (video.ended) {
       snap.status = "ended";
     } else if (!video.paused) {

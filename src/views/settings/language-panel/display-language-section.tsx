@@ -9,7 +9,9 @@ export function DisplayLanguageSection() {
   return (
     <Section
       title={t("Display language")}
-      subtitle={t("Sets the language of Harbor's own interface: menus, buttons, and labels. Arabic switches the layout to right to left. This is separate from subtitle and metadata languages below.")}
+      subtitle={t(
+        "Sets the language of Harbor's own interface: menus, buttons, and labels. Arabic switches the layout to right to left. This is separate from subtitle and metadata languages below.",
+      )}
     >
       <div className="grid gap-1.5 sm:grid-cols-2">
         {LANGUAGES.map((lang) => {
@@ -37,7 +39,7 @@ export function DisplayLanguageSection() {
                     selected ? "text-canvas/70" : "text-ink-subtle"
                   }`}
                 >
-                  {lang.rtl ? `${lang.label} · ${t("Right to left")}` : lang.label}
+                  {lang.rtl ? `${t(lang.label)} · ${t("Right to left")}` : t(lang.label)}
                 </span>
               </span>
               <span

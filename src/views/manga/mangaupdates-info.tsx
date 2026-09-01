@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import mangaUpdatesLogo from "@/assets/mangaupdates.png";
 import { ChevronDown, ExternalLink, Loader2, Star } from "lucide-react";
-import { useT } from "@/lib/i18n";
+import { t, useT } from "@/lib/i18n";
 import { searchManga, type MangaSummary } from "@/lib/manga/api";
 import {
   mangaUpdatesFor,
@@ -13,7 +13,8 @@ import { openUrl } from "@/lib/window";
 import { Tooltip } from "@/views/detail/tooltip";
 
 const MICRO = "text-[10.5px] font-semibold uppercase tracking-[0.18em] text-ink-subtle";
-const CHIP = "rounded-full bg-elevated/60 px-3 py-1 text-[13px] text-ink-muted ring-1 ring-edge-soft";
+const CHIP =
+  "rounded-full bg-elevated/60 px-3 py-1 text-[13px] text-ink-muted ring-1 ring-edge-soft";
 const MORE =
   "px-1 text-[13.5px] font-medium text-accent transition-colors hover:text-ink motion-reduce:transition-none";
 
@@ -23,28 +24,36 @@ const ALT_CAP = 3;
 const LIST_CAP = 8;
 const THIN_DESCRIPTION = 40;
 
-const STATUS_LABEL: Record<string, string> = {
-  ongoing: "Ongoing",
-  completed: "Completed",
-  hiatus: "Hiatus",
-  cancelled: "Cancelled",
-};
+function translatedKnownStatus(status: string): string | undefined {
+  switch (status.trim().toLowerCase()) {
+    case "ongoing":
+      return t("Ongoing");
+    case "completed":
+      return t("Completed");
+    case "hiatus":
+      return t("Hiatus");
+    case "cancelled":
+      return t("Cancelled");
+    default:
+      return undefined;
+  }
+}
 
 function humanizeStatus(status?: string): string | undefined {
   if (!status) return undefined;
-  return STATUS_LABEL[status] ?? status.charAt(0).toUpperCase() + status.slice(1);
+  return translatedKnownStatus(status) ?? status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 function shortStatus(info: MangaUpdatesInfo | null): string | undefined {
   if (!info) return undefined;
-  if (typeof info.completed === "boolean") return info.completed ? "Completed" : "Ongoing";
+  if (typeof info.completed === "boolean") return info.completed ? t("Completed") : t("Ongoing");
   const raw = /\(([^)]+)\)\s*$/.exec(info.status ?? "")?.[1]?.trim() || info.status?.trim();
   if (!raw) return undefined;
   const low = raw.toLowerCase();
-  if (low.startsWith("complete")) return "Completed";
-  if (low.includes("hiatus")) return "Hiatus";
-  if (low.includes("cancel")) return "Cancelled";
-  if (low.includes("ongoing")) return "Ongoing";
+  if (low.startsWith("complete")) return t("Completed");
+  if (low.includes("hiatus")) return t("Hiatus");
+  if (low.includes("cancel")) return t("Cancelled");
+  if (low.includes("ongoing")) return t("Ongoing");
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
@@ -212,14 +221,24 @@ export function MangaUpdatesSection({
     seen.add(key);
     return true;
   });
+  const status = info.status ? (translatedKnownStatus(info.status) ?? info.status) : null;
 
   const facts = [
-    info.type && { label: "Type", value: info.type },
-    info.year && { label: "Year", value: info.year },
-    info.status && { label: "Status", value: info.status },
-    info.latestChapter != null && { label: "Latest chapter", value: `Ch. ${info.latestChapter}` },
-    info.completed != null && { label: "Completed", value: info.completed ? "Yes" : "No" },
-    info.licensed != null && { label: "Licensed", value: info.licensed ? "Yes" : "No" },
+    info.type && { label: t("Type"), value: info.type },
+    info.year && { label: t("Year"), value: info.year },
+    status && { label: t("Status"), value: status },
+    info.latestChapter != null && {
+      label: t("Latest chapter"),
+      value: t("Ch. {n}", { n: info.latestChapter }),
+    },
+    info.completed != null && {
+      label: t("Completed"),
+      value: info.completed ? t("Yes") : t("No"),
+    },
+    info.licensed != null && {
+      label: t("Licensed"),
+      value: info.licensed ? t("Yes") : t("No"),
+    },
   ].filter((f): f is { label: string; value: string } => !!f);
 
   const lists = [
@@ -236,8 +255,7 @@ export function MangaUpdatesSection({
 
   const summaryBits = [
     info.type,
-    info.year,
-    info.status,
+    status,
     info.latestChapter != null ? t("Ch. {n}", { n: info.latestChapter }) : null,
   ].filter((b): b is string => !!b);
 
@@ -272,13 +290,19 @@ export function MangaUpdatesSection({
                   {rating != null && (
                     <span className="inline-flex items-baseline gap-1.5">
                       <Star size={15} className="translate-y-0.5 text-accent" fill="currentColor" />
-                      <span className="text-[18px] font-semibold text-ink">{rating.toFixed(2)}</span>
+                      <span className="text-[18px] font-semibold text-ink">
+                        {rating.toFixed(2)}
+                      </span>
                       <span className="text-[12px] text-ink-subtle">/ 10</span>
                     </span>
                   )}
-                  {rating != null && summaryBits.length > 0 && <span className="text-ink-subtle/40">·</span>}
+                  {rating != null && summaryBits.length > 0 && (
+                    <span className="text-ink-subtle/40">·</span>
+                  )}
                   {summaryBits.length > 0 && (
-                    <span className="text-[13.5px] text-ink-muted">{summaryBits.join("  ·  ")}</span>
+                    <span className="text-[13.5px] text-ink-muted">
+                      {summaryBits.join("  ·  ")}
+                    </span>
                   )}
                 </div>
               )}

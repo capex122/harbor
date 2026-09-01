@@ -8,6 +8,14 @@ import { useDebridClients } from "@/lib/debrid/registry";
 import type { DebridStore } from "@/lib/debrid/types";
 import type { LocalEntry } from "@/lib/local-library";
 import { findLocalEpisodeVersions, findLocalMovieVersions } from "@/lib/local-library/versions";
+import { mediaServerConnections } from "@/lib/media-server/connections";
+import { mediaServerItems } from "@/lib/media-server/index-store";
+import { matchingServerItems, serverPlayableCopies } from "@/lib/media-server/selectors";
+import type {
+  MediaServerConnection,
+  MediaServerItem,
+  PlayableCopy,
+} from "@/lib/media-server/types";
 import {
   readPlayback,
   streamMatchesEntry,
@@ -62,6 +70,10 @@ export type BpStreams = BpStreamFilters & {
   imdbIdVerified: boolean;
   isAnime: boolean;
   localFiles: LocalEntry[];
+  homeServerCopies: PlayableCopy[];
+  homeServerConnections: MediaServerConnection[];
+  homeServerItems: MediaServerItem[];
+  homeServersLoaded: boolean;
   noSources: boolean;
   rememberedStream: ScoredStream | null;
   strictMode: boolean;
@@ -141,7 +153,8 @@ export function useBpStreams(params: { meta: Meta; episode?: PlayEpisode }): BpS
   // The host's own pick has to win the ordering, otherwise a guest picking by
   // position desyncs the room.
   const hostMatch = useMemo(
-    () => (hostSourceForMedia && result ? buildMatchScores(result.picker.all, hostSourceForMedia) : null),
+    () =>
+      hostSourceForMedia && result ? buildMatchScores(result.picker.all, hostSourceForMedia) : null,
     [hostSourceForMedia, result],
   );
   const hostMatchFor = useCallback(
@@ -186,9 +199,7 @@ export function useBpStreams(params: { meta: Meta; episode?: PlayEpisode }): BpS
   // Neither was read back here, so both settings silently did nothing.
   const previousPlayback = useMemo(
     () =>
-      settings.rememberLastStream
-        ? readPlayback(meta.id, episode?.season, episode?.episode)
-        : null,
+      settings.rememberLastStream ? readPlayback(meta.id, episode?.season, episode?.episode) : null,
     [meta.id, episode?.season, episode?.episode, settings.rememberLastStream],
   );
 
@@ -246,6 +257,43 @@ export function useBpStreams(params: { meta: Meta; episode?: PlayEpisode }): BpS
       : findLocalMovieVersions(tmdbId, resolvedImdb.id);
   }, [meta.id, resolvedImdb.id, episode]);
 
+  const [homeServerState, setHomeServerState] = useState<{
+    copies: PlayableCopy[];
+    connections: MediaServerConnection[];
+    items: MediaServerItem[];
+  }>({ copies: [], connections: [], items: [] });
+  const [homeServersLoaded, setHomeServersLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setHomeServersLoaded(false);
+    const match = meta.id.match(/^tmdb:(?:movie|tv):(\d+)$/);
+    const identity = {
+      tmdbId: match ? Number(match[1]) : undefined,
+      imdbId: resolvedImdb.id ?? (meta.id.startsWith("tt") ? meta.id : undefined),
+    };
+    void mediaServerItems().then((indexed) => {
+      if (cancelled) return;
+      const connections = mediaServerConnections();
+      const items = matchingServerItems(
+        indexed,
+        identity,
+        episode ? "series" : "movie",
+        episode?.season,
+        episode?.episode,
+      );
+      setHomeServerState({
+        copies: serverPlayableCopies(items, connections),
+        connections,
+        items,
+      });
+      setHomeServersLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [meta.id, resolvedImdb.id, episode?.season, episode?.episode]);
+
   const pendingAddonCount = useMemo(() => {
     if (!addons || pipelineDone) return 0;
     const returned = new Set((result?.picker.all ?? []).map((s) => s.addonId));
@@ -288,6 +336,10 @@ export function useBpStreams(params: { meta: Meta; episode?: PlayEpisode }): BpS
     imdbIdVerified: resolvedImdb.verified,
     isAnime,
     localFiles,
+    homeServerCopies: homeServerState.copies,
+    homeServerConnections: homeServerState.connections,
+    homeServerItems: homeServerState.items,
+    homeServersLoaded,
     noSources: addons !== null && addons.length === 0 && debrids.length === 0,
     rememberedStream,
     strictMode,

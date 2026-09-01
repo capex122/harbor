@@ -94,8 +94,8 @@ export function VoyageBanner({ pool }: { pool: Meta[] }) {
         <span className="text-[10.5px] font-bold uppercase tracking-[0.22em]" style={{ color: accent }}>
           {t("Harbor Voyages")}
           {streak > 1 && (
-            <span className="ms-2 inline-flex items-center gap-1 rounded-full bg-elevated/70 px-2 py-0.5 align-middle text-ink">
-              <FlameStreak size={14} style={{ color: accent }} />
+            <span className="ms-2 inline-flex h-[19px] items-baseline gap-0.5 rounded-full bg-elevated/70 ps-1.5 pe-2.5 align-middle text-ink">
+              <FlameStreak size={13} style={{ color: accent }} />
               <span className="tabular-nums">{streak}</span>
             </span>
           )}

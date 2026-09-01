@@ -198,16 +198,17 @@ fn open_solver(app: &AppHandle, url: &str) -> Result<(), String> {
     let app_main = app.clone();
     let (tx, rx) = mpsc::channel::<Result<(), String>>();
     app.run_on_main_thread(move || {
-        let built = WebviewWindowBuilder::new(&app_main, SOLVER_LABEL, WebviewUrl::External(parsed))
-            .title("Harbor · checking source")
-            .inner_size(480.0, 640.0)
-            .center()
-            .resizable(true)
-            .decorations(true)
-            .shadow(true)
-            .focused(true)
-            .initialization_script(INIT_SCRIPT)
-            .build();
+        let built =
+            WebviewWindowBuilder::new(&app_main, SOLVER_LABEL, WebviewUrl::External(parsed))
+                .title("Harbor · checking source")
+                .inner_size(480.0, 640.0)
+                .center()
+                .resizable(true)
+                .decorations(true)
+                .shadow(true)
+                .focused(true)
+                .initialization_script(INIT_SCRIPT)
+                .build();
         match built {
             Ok(window) => {
                 let _ = window.show();

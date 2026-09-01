@@ -15,9 +15,9 @@
 // thumbnails, transcode, DVR, subtitle extract, autosync or trailers.
 
 use crate::{
-    crash_report, diagnostics, download, ebook_tts, fonts, gamepad, http_fetch, local_lib, power,
-    proc_mem, settings_store, stream_proxy, streams, stremio_auth, temp_prune, torrent_engine,
-    transcode, web_server,
+    crash_report, diagnostics, download, ebook_tts, fonts, gamepad, http_fetch, local_lib,
+    media_server, power, proc_mem, settings_store, stream_proxy, streams, stremio_auth,
+    temp_prune, torrent_engine, transcode, web_server,
 };
 
 // Desktop answers this from dlna.rs, but that module is #[cfg(desktop)] because
@@ -91,6 +91,7 @@ pub fn run() {
             settings_store::settings_write,
             settings_store::secrets_read,
             settings_store::secrets_write,
+            media_server::media_server_request,
             http_fetch::harbor_fetch,
             http_fetch::harbor_upload,
             stream_proxy::proxy_register,

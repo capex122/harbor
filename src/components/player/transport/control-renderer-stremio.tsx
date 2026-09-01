@@ -2,6 +2,7 @@ import {
   Camera,
   ChevronLeft,
   Info,
+  Gauge,
   Maximize,
   Minimize,
   Pause,
@@ -14,9 +15,16 @@ import {
 import { NavGlyph } from "@/components/icons/nav-glyph";
 import { hdrFormatLabel, realQualityLabel } from "@/lib/player/resolution-label";
 import type { PlayerCapabilities, PlayerSnapshot } from "@/lib/player/bridge";
+import type { ReactNode } from "react";
 import type { SubtitleAddHandler } from "@/lib/player/subtitle-load";
 import type { Meta } from "@/lib/cinemeta";
-import { getCustomIcon, type CustomIconMap, type PlayerControlId, type TimeFormat, type VolumeStyle } from "@/lib/player-chrome";
+import {
+  getCustomIcon,
+  type CustomIconMap,
+  type PlayerControlId,
+  type TimeFormat,
+  type VolumeStyle,
+} from "@/lib/player-chrome";
 import type { DownloadStatus } from "@/views/player/hooks/use-video-download";
 import { useT } from "@/lib/i18n";
 import { SubtitleMenu } from "../subtitle-menu";
@@ -45,8 +53,10 @@ import { FullscreenClock } from "@/components/player/fullscreen-clock";
 
 function qualityInfoOn(): boolean {
   try {
-    return (JSON.parse(localStorage.getItem("harbor.settings") ?? "{}") as { showQualityInfo?: boolean })
-      .showQualityInfo === true;
+    return (
+      (JSON.parse(localStorage.getItem("harbor.settings") ?? "{}") as { showQualityInfo?: boolean })
+        .showQualityInfo === true
+    );
   } catch {
     return false;
   }
@@ -128,6 +138,7 @@ export type StremioRenderCtx = {
   onDownloadReveal?: () => void;
   onDownloadReset?: () => void;
   onOpenDvr?: () => void;
+  homeServerQualityControl?: ReactNode;
 };
 
 function getStremioState(id: PlayerControlId, ctx: StremioRenderCtx): string | undefined {
@@ -192,15 +203,23 @@ export function RenderedStremioControl({
               <span className="flex min-w-0 items-center gap-2 truncate">
                 <h1 className="truncate text-[19px] font-medium leading-tight">{ctx.title}</h1>
                 {ctx.subtitle && (
-                  <span className="shrink-0 text-[13px] font-normal text-white/55">{ctx.subtitle}</span>
+                  <span className="shrink-0 text-[13px] font-normal text-white/55">
+                    {ctx.subtitle}
+                  </span>
                 )}
                 {!showQuality && <QualityInfo labels={[res, hdr]} show={ctx.active} />}
               </span>
               {showQuality && (
-                <span className="truncate text-[12px] font-normal tabular-nums text-white/55">{ctx.quality}</span>
+                <span className="truncate text-[12px] font-normal tabular-nums text-white/55">
+                  {ctx.quality}
+                </span>
               )}
             </span>
-            <Info size={13} strokeWidth={2.1} className="shrink-0 opacity-40 transition-opacity group-hover:opacity-90" />
+            <Info
+              size={13}
+              strokeWidth={2.1}
+              className="shrink-0 opacity-40 transition-opacity group-hover:opacity-90"
+            />
           </button>
         );
       }
@@ -257,7 +276,11 @@ export function RenderedStremioControl({
       if (!ctx.showEpisodeNav) return null;
       return (
         <Tooltip label={tr("Previous episode")}>
-          <StremioBtn onClick={ctx.onPrevEp} ariaLabel={tr("Previous episode")} disabled={!ctx.hasPrevEp}>
+          <StremioBtn
+            onClick={ctx.onPrevEp}
+            ariaLabel={tr("Previous episode")}
+            disabled={!ctx.hasPrevEp}
+          >
             <SkipBack size={26} strokeWidth={2} fill="currentColor" />
           </StremioBtn>
         </Tooltip>
@@ -266,7 +289,11 @@ export function RenderedStremioControl({
       if (!ctx.showEpisodeNav) return null;
       return (
         <Tooltip label={tr("Next episode")}>
-          <StremioBtn onClick={ctx.onNextEp} ariaLabel={tr("Next episode")} disabled={!ctx.hasNextEp}>
+          <StremioBtn
+            onClick={ctx.onNextEp}
+            ariaLabel={tr("Next episode")}
+            disabled={!ctx.hasNextEp}
+          >
             <SkipForward size={26} strokeWidth={2} fill="currentColor" />
           </StremioBtn>
         </Tooltip>
@@ -306,7 +333,11 @@ export function RenderedStremioControl({
             onClick={ctx.onPickAnother}
             ariaLabel={ctx.isLiveChannel ? tr("TV Guide") : tr("Switch stream")}
           >
-            {ctx.isLiveChannel ? <NavGlyph name="guide" className="h-[26px] w-[26px]" /> : <Replace size={26} strokeWidth={1.9} />}
+            {ctx.isLiveChannel ? (
+              <NavGlyph name="guide" className="h-[26px] w-[26px]" />
+            ) : (
+              <Replace size={26} strokeWidth={1.9} />
+            )}
           </StremioBtn>
         </Tooltip>
       );
@@ -315,7 +346,14 @@ export function RenderedStremioControl({
       return <DvrButton channelName={ctx.meta?.name ?? tr("Live")} onClick={ctx.onOpenDvr} />;
     case "download":
       if (ctx.isLiveChannel) return null;
-      if (!ctx.download || !ctx.onDownloadStart || !ctx.onDownloadCancel || !ctx.onDownloadReveal || !ctx.onDownloadReset) return null;
+      if (
+        !ctx.download ||
+        !ctx.onDownloadStart ||
+        !ctx.onDownloadCancel ||
+        !ctx.onDownloadReveal ||
+        !ctx.onDownloadReset
+      )
+        return null;
       return (
         <DownloadButton
           status={ctx.download}
@@ -409,6 +447,15 @@ export function RenderedStremioControl({
           useOverlayPopup={ctx.useOverlayPopups}
         />
       );
+    case "home-server-quality":
+      return (
+        ctx.homeServerQualityControl ??
+        (ctx.editing ? (
+          <StremioBtn ariaLabel={tr("Home server quality")}>
+            <Gauge size={22} strokeWidth={1.9} />
+          </StremioBtn>
+        ) : null)
+      );
     case "draw-toggle":
       if (!ctx.showDraw) return null;
       return (
@@ -444,7 +491,11 @@ export function RenderedStremioControl({
       return (
         <Tooltip label={ctx.fullscreen ? tr("Exit fullscreen") : tr("Fullscreen")} side="bottom">
           <StremioBtn onClick={ctx.onFullscreen} ariaLabel={tr("Fullscreen")}>
-            {ctx.fullscreen ? <Minimize size={28} strokeWidth={2} /> : <Maximize size={28} strokeWidth={2} />}
+            {ctx.fullscreen ? (
+              <Minimize size={28} strokeWidth={2} />
+            ) : (
+              <Maximize size={28} strokeWidth={2} />
+            )}
           </StremioBtn>
         </Tooltip>
       );

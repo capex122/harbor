@@ -147,8 +147,11 @@ export function OptionScale<T extends string | number>({
 export function SettingGroup({ label, children }: { label?: string; children: ReactNode }) {
   if (!label) return <div className="flex flex-col gap-1.5">{children}</div>;
   return (
-    <section id={settingsAnchor(label)} className="scroll-mt-28 flex flex-col gap-1.5">
-      <span className="px-1 pb-0.5 text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-subtle">
+    <section
+      id={settingsAnchor(label)}
+      className="scroll-mt-28 mt-4 flex flex-col gap-1.5 first:mt-0"
+    >
+      <span className="px-1 pb-1 text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-subtle">
         {label}
       </span>
       {children}

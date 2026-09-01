@@ -67,7 +67,10 @@ type StickyMedia = {
   canToggleSubtitles: boolean;
 };
 
-function subtitleFlags(b: RemotePlaybackBinding): { subtitlesOn: boolean; canToggleSubtitles: boolean } {
+function subtitleFlags(b: RemotePlaybackBinding): {
+  subtitlesOn: boolean;
+  canToggleSubtitles: boolean;
+} {
   const casting = !!b.castDevice;
   const tracks = b.snap.subtitleTracks ?? [];
   return {
@@ -272,10 +275,24 @@ function snapshotFromSticky(): RemoteSnapshot {
   };
 }
 
-let remoteHostConfig: { tmdbKey: string; rpdbKey: string; tvdbKey: string } = {
+type RemoteHostConfig = {
+  tmdbKey: string;
+  rpdbKey: string;
+  tvdbKey: string;
+  tmdbLanguage: string;
+  tmdbImageLangs: string[];
+  translateTitles: boolean;
+  translateDescriptions: boolean;
+};
+
+let remoteHostConfig: RemoteHostConfig = {
   tmdbKey: "",
   rpdbKey: "",
   tvdbKey: "",
+  tmdbLanguage: "",
+  tmdbImageLangs: [],
+  translateTitles: true,
+  translateDescriptions: true,
 };
 let remoteLibrary: RemoteLibrary | null = null;
 let remoteTrackers: RemoteTrackers = {
@@ -286,7 +303,7 @@ let remoteTrackers: RemoteTrackers = {
   mal: false,
 };
 
-export function setRemoteHostConfig(config: { tmdbKey: string; rpdbKey: string; tvdbKey: string }): void {
+export function setRemoteHostConfig(config: RemoteHostConfig): void {
   remoteHostConfig = config;
 }
 
@@ -304,6 +321,10 @@ export function buildRemoteSnapshot(positionSec?: number): RemoteSnapshot {
     tmdbKey: remoteHostConfig.tmdbKey,
     rpdbKey: remoteHostConfig.rpdbKey,
     tvdbKey: remoteHostConfig.tvdbKey,
+    tmdbLanguage: remoteHostConfig.tmdbLanguage,
+    tmdbImageLangs: remoteHostConfig.tmdbImageLangs,
+    translateTitles: remoteHostConfig.translateTitles,
+    translateDescriptions: remoteHostConfig.translateDescriptions,
     hostVersion: APP_VERSION,
     ...(remoteLibrary ? { library: remoteLibrary } : {}),
     trackers: remoteTrackers,
@@ -333,9 +354,7 @@ function buildRemoteSnapshotInner(positionSec?: number): RemoteSnapshot {
   const playing = casting
     ? b.castPlaying
     : status === "playing" || status === "loading" || status === "ready";
-  const pos = casting
-    ? b.castPositionSec || positionSec || 0
-    : (positionSec ?? b.snap.positionSec);
+  const pos = casting ? b.castPositionSec || positionSec || 0 : (positionSec ?? b.snap.positionSec);
   const target: RemoteTarget = casting
     ? {
         kind: "cast",
@@ -445,7 +464,11 @@ export async function dispatchRemoteCommand(command: RemoteCommand): Promise<voi
       return;
     }
     case "setSleep": {
-      setSleepMode(command.minutes > 0 ? { kind: "minutes", total: command.minutes, firesAt: 0 } : { kind: "off" });
+      setSleepMode(
+        command.minutes > 0
+          ? { kind: "minutes", total: command.minutes, firesAt: 0 }
+          : { kind: "off" },
+      );
       return;
     }
     case "setProfile": {
@@ -516,6 +539,20 @@ export async function dispatchRemoteCommand(command: RemoteCommand): Promise<voi
       if (!b) return;
       if (b.castDevice) await b.playCast();
       else await b.bridge?.play().catch(() => {});
+      notify();
+      return;
+    }
+    case "togglePlayback": {
+      if (!b) return;
+      const playing = b.castDevice ? b.castPlaying : b.snap.status === "playing";
+      if (b.castDevice) {
+        if (playing) await b.pauseCast();
+        else await b.playCast();
+      } else if (playing) {
+        b.bridge?.pause();
+      } else {
+        await b.bridge?.play().catch(() => {});
+      }
       notify();
       return;
     }

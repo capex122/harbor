@@ -11,6 +11,7 @@ import {
   setSecret,
 } from "@/lib/secret-store";
 import { setItemWithRecovery } from "@/lib/storage-recovery";
+import { localLibraryReady, readLocalLibrary, restoreLocalLibrary } from "@/lib/local-library";
 
 declare const __APP_VERSION__: string;
 
@@ -286,6 +287,10 @@ export async function buildBackup(selected?: BackupSectionKey[]): Promise<Backup
     if (sectionSet && !sectionSet.has(sectionOf(key))) continue;
     if (data[key] == null) data[key] = value;
   }
+  if (!sectionSet || sectionSet.has("watchlist")) {
+    await localLibraryReady();
+    data["harbor.library.local.v1"] = JSON.stringify(readLocalLibrary());
+  }
   // Xtream playlists embed credentials in their URLs; when the Xtream
   // credentials section is left out (but Live TV is exported), drop them so
   // they never leave the device.
@@ -336,7 +341,16 @@ export async function downloadBackup(selected?: BackupSectionKey[]): Promise<boo
   return downloadText(`harbor-backup-${stamp}.harbx`, text, ["harbx"], "Harbor backup");
 }
 
-export type ParsedBackup = { ok: true; backup: Backup } | { ok: false; error: string };
+export type BackupValidationError =
+  | "That file is not valid JSON."
+  | "Unrecognized file."
+  | "This is not a Harbor backup file."
+  | "This backup has no data in it."
+  | "This backup contained nothing restorable.";
+
+export type ParsedBackup =
+  | { ok: true; backup: Backup }
+  | { ok: false; error: BackupValidationError };
 
 export function parseBackup(text: string): ParsedBackup {
   let json: unknown;
@@ -454,6 +468,11 @@ function retargetProfileKeys(data: Record<string, string>): Record<string, strin
 
 export async function applyBackup(backup: Backup): Promise<void> {
   const data = retargetProfileKeys(backup.data);
+  const localLibrary = data["harbor.library.local.v1"];
+  if (localLibrary != null) {
+    restoreLocalLibrary(localLibrary);
+    delete data["harbor.library.local.v1"];
+  }
 
   // Whole-domain wiping is reserved for legacy full backups (no sections
   // field): there, "restore everything" must also clear items the source

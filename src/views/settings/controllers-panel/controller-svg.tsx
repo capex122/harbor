@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef } from "react";
 import type { GpButton } from "@/lib/gamepad/protocol";
 import { liveAxes, subscribeLive, useLiveButtons } from "@/lib/gamepad/live";
+import { useT } from "@/lib/i18n";
 import { DUALSENSE_ART, XBOX_ART, type PadArt, type PadPart } from "./pad-art";
 import { detectLayout, type Layout } from "./controller-shape";
 import { useLatchedButtons } from "./use-latched-buttons";
@@ -34,7 +35,10 @@ const ARM_HUB = 18;
 const ARM_TIP = 82;
 const ARM_HALF = 26;
 
-const DPAD_ARMS: Array<{ b: GpButton; box: (cx: number, cy: number) => [number, number, number, number] }> = [
+const DPAD_ARMS: Array<{
+  b: GpButton;
+  box: (cx: number, cy: number) => [number, number, number, number];
+}> = [
   { b: "dup", box: (cx, cy) => [cx - ARM_HALF, cy - ARM_TIP, ARM_HALF * 2, ARM_TIP - ARM_HUB] },
   { b: "ddown", box: (cx, cy) => [cx - ARM_HALF, cy + ARM_HUB, ARM_HALF * 2, ARM_TIP - ARM_HUB] },
   { b: "dleft", box: (cx, cy) => [cx - ARM_TIP, cy - ARM_HALF, ARM_TIP - ARM_HUB, ARM_HALF * 2] },
@@ -43,9 +47,7 @@ const DPAD_ARMS: Array<{ b: GpButton; box: (cx: number, cy: number) => [number, 
 
 function travelOf(art: PadArt, k: "stickL" | "stickR"): number {
   const well = art.stickWell[k] ?? Infinity;
-  const radii = art.parts
-    .filter((p) => p.k === k && p.r !== undefined)
-    .map((p) => p.r as number);
+  const radii = art.parts.filter((p) => p.k === k && p.r !== undefined).map((p) => p.r as number);
   const fixed = radii.filter((r) => r >= well);
   const caps = radii.filter((r) => r < well);
   if (!fixed.length || !caps.length) return 0;
@@ -132,6 +134,7 @@ function buildSequence(art: PadArt): Slot[] {
 }
 
 export function ControllerSvg({ layout, compact }: { layout: Layout; compact?: boolean }) {
+  const t = useT();
   const art = ART[layout];
   const live = useLiveButtons();
   const buttons = useLatchedButtons(live, LATCH_MS);
@@ -202,7 +205,10 @@ export function ControllerSvg({ layout, compact }: { layout: Layout; compact?: b
   const band = compact ? 0 : CHIP_GAP;
   const chipY = by - CHIP_GAP + (CHIP_GAP - CHIP_H) / 2;
   const trigger = (cx: number, label: string, on: boolean) => (
-    <g key={label} style={{ transform: on ? "translateY(3px)" : "none", transition: "transform 80ms ease" }}>
+    <g
+      key={label}
+      style={{ transform: on ? "translateY(3px)" : "none", transition: "transform 80ms ease" }}
+    >
       <rect
         x={cx - CHIP_W / 2}
         y={chipY}
@@ -234,7 +240,7 @@ export function ControllerSvg({ layout, compact }: { layout: Layout; compact?: b
       viewBox={`${bx} ${by - band} ${bw} ${bh + band}`}
       className="w-full text-ink"
       role="img"
-      aria-label="Controller preview"
+      aria-label={t("Controller preview")}
     >
       <defs>
         {layout === "ps" && (
@@ -286,9 +292,7 @@ export function ControllerSvg({ layout, compact }: { layout: Layout; compact?: b
             <g
               className={cls}
               style={
-                pushes && centre
-                  ? { transformOrigin: `${centre[0]}px ${centre[1]}px` }
-                  : undefined
+                pushes && centre ? { transformOrigin: `${centre[0]}px ${centre[1]}px` } : undefined
               }
             >
               <path

@@ -1,4 +1,5 @@
 import { ArrowDownToLine, Flame, Sparkles, Star, TrendingUp, type LucideIcon } from "lucide-react";
+import { t, useT } from "@/lib/i18n";
 import { SectionHeader } from "@/views/profile/section-header";
 import type { StoreTheme } from "@/lib/theme-store";
 import { fmtCount } from "./format";
@@ -6,14 +7,14 @@ import { fmtCount } from "./format";
 type ChartKind = "rating" | "downloads" | "fresh";
 
 function relTime(iso: string): string {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return "";
-  const d = Math.max(0, Date.now() - t);
+  const parsed = Date.parse(iso);
+  if (!Number.isFinite(parsed)) return "";
+  const d = Math.max(0, Date.now() - parsed);
   const day = 86_400_000;
-  if (d < day) return "today";
-  if (d < 7 * day) return `${Math.floor(d / day)}d`;
-  if (d < 30 * day) return `${Math.floor(d / (7 * day))}w`;
-  return `${Math.floor(d / (30 * day))}mo`;
+  if (d < day) return t("today");
+  if (d < 7 * day) return t("{count}d", { count: Math.floor(d / day) });
+  if (d < 30 * day) return t("{count}w", { count: Math.floor(d / (7 * day)) });
+  return t("{count}mo", { count: Math.floor(d / (30 * day)) });
 }
 
 export function StoreTopCharts({
@@ -27,11 +28,30 @@ export function StoreTopCharts({
   fresh: StoreTheme[];
   onOpen: (t: StoreTheme) => void;
 }) {
+  const tr = useT();
   return (
     <div className="grid gap-4 lg:grid-cols-3">
-      <ChartColumn title="Trending" Icon={TrendingUp} kind="rating" themes={trending} onOpen={onOpen} />
-      <ChartColumn title="Most popular" Icon={Flame} kind="downloads" themes={popular} onOpen={onOpen} />
-      <ChartColumn title="New & notable" Icon={Sparkles} kind="fresh" themes={fresh} onOpen={onOpen} />
+      <ChartColumn
+        title={tr("Trending")}
+        Icon={TrendingUp}
+        kind="rating"
+        themes={trending}
+        onOpen={onOpen}
+      />
+      <ChartColumn
+        title={tr("Most popular")}
+        Icon={Flame}
+        kind="downloads"
+        themes={popular}
+        onOpen={onOpen}
+      />
+      <ChartColumn
+        title={tr("New & notable")}
+        Icon={Sparkles}
+        kind="fresh"
+        themes={fresh}
+        onOpen={onOpen}
+      />
     </div>
   );
 }
@@ -49,15 +69,20 @@ function ChartColumn({
   themes: StoreTheme[];
   onOpen: (t: StoreTheme) => void;
 }) {
+  const tr = useT();
   const rows = themes.slice(0, 5);
   return (
-    <section aria-label={title} className="rounded-md bg-surface p-4 ring-1 ring-edge-soft">
-      <SectionHeader icon={<Icon size={16} className="text-ink-subtle" />} label={title} />
+    <section aria-label={tr(title)} className="rounded-md bg-surface p-4 ring-1 ring-edge-soft">
+      <SectionHeader icon={<Icon size={16} className="text-ink-subtle" />} label={tr(title)} />
       <div className="flex flex-col">
         {rows.length === 0 ? (
-          <p className="px-1 py-6 text-center text-[13px] text-ink-subtle">Nothing here yet</p>
+          <p className="px-1 py-6 text-center text-[13px] text-ink-subtle">
+            {tr("Nothing here yet")}
+          </p>
         ) : (
-          rows.map((t, i) => <ChartRow key={t.id} rank={i + 1} theme={t} kind={kind} onOpen={onOpen} />)
+          rows.map((t, i) => (
+            <ChartRow key={t.id} rank={i + 1} theme={t} kind={kind} onOpen={onOpen} />
+          ))
         )}
       </div>
     </section>
@@ -70,7 +95,14 @@ function RowThumb({ theme }: { theme: StoreTheme }) {
   return (
     <span className="relative h-10 w-14 shrink-0 overflow-hidden rounded-[7px] bg-elevated ring-1 ring-edge-soft">
       {img ? (
-        <img src={img} alt="" draggable={false} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        <img
+          src={img}
+          alt=""
+          draggable={false}
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+        />
       ) : (
         <span className="flex h-full w-full">
           {theme.swatch.map((c, i) => (
@@ -100,6 +132,7 @@ function ChartRow({
   kind: ChartKind;
   onOpen: (t: StoreTheme) => void;
 }) {
+  const tr = useT();
   const top = rank <= 3;
   return (
     <button
@@ -116,8 +149,12 @@ function ChartRow({
       </span>
       <RowThumb theme={theme} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-[13px] font-semibold leading-tight text-ink">{theme.name}</span>
-        <span className="truncate text-[11.5px] text-ink-subtle">{theme.author || "Anonymous"}</span>
+        <span className="truncate text-[13px] font-semibold leading-tight text-ink">
+          {theme.name}
+        </span>
+        <span className="truncate text-[11.5px] text-ink-subtle">
+          {theme.author || tr("Anonymous")}
+        </span>
       </span>
       <span className="shrink-0 ps-1">
         {kind === "rating" && theme.ratingCount > 0 ? (
@@ -131,7 +168,9 @@ function ChartRow({
             {fmtCount(theme.downloads)}
           </span>
         ) : (
-          <span className="text-[11.5px] font-semibold tabular-nums text-ink-subtle">{relTime(theme.createdAt)}</span>
+          <span className="text-[11.5px] font-semibold tabular-nums text-ink-subtle">
+            {relTime(theme.createdAt)}
+          </span>
         )}
       </span>
     </button>

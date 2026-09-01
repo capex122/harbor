@@ -30,7 +30,10 @@ export function BpVideosRow({
   onPlay: (ytId: string) => void;
 }) {
   const t = useBpT();
-  const kindLabel = (kind: string): string => t(KIND_KEY[kind] ?? kind);
+  const kindLabel = (kind: string): string => {
+    const key = KIND_KEY[kind];
+    return key ? t(key) : kind;
+  };
 
   const seen = new Set<string>();
   const clips: Clip[] = [];
@@ -42,7 +45,7 @@ export function BpVideosRow({
   for (const v of detail.extraVideos) {
     if (seen.has(v.ytId)) continue;
     seen.add(v.ytId);
-    clips.push({ ytId: v.ytId, name: v.name || t(KIND_KEY[v.type] ?? v.type), kind: v.type });
+    clips.push({ ytId: v.ytId, name: v.name || kindLabel(v.type), kind: v.type });
   }
   if (clips.length === 0) return null;
 

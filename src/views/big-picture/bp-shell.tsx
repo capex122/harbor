@@ -9,6 +9,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import type { Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import { isAnimeRow } from "@/views/anime";
 import type { HomeRow } from "@/views/home/home-types";
 import { SFX } from "@/lib/sfx";
@@ -63,12 +64,7 @@ import { bpBootSplashDismiss } from "./bp-boot-splash";
 import { bpIntroPoolSave } from "./bp-intro-pool";
 import { BpOnboarding, useBpOnboardingGate } from "./bp-onboarding";
 import { BP_ONBOARD_STEP_VIEWS } from "./onboarding";
-import {
-  bigPictureChromeState,
-  bpActiveTab,
-  bpTvShell,
-  cycleTab,
-} from "./bp-logic";
+import { bigPictureChromeState, bpActiveTab, bpTvShell, cycleTab } from "./bp-logic";
 import { BpWhoIsWatching } from "./bp-who-is-watching";
 import { useBpWhoLayer } from "./bp-who-is-watching-layer";
 import { useBpProfileReset } from "./use-bp-profile-reset";
@@ -121,9 +117,11 @@ type BpSourcesTarget = {
   episode?: PlayEpisode;
   resume: boolean;
   auto: boolean;
+  applyPreference: boolean;
 };
 
 export function BigPictureShell() {
+  const t = useT();
   const { active, stack } = useBigPicture();
   const { picker, player } = useView();
   const route = stack[stack.length - 1] ?? { kind: "home" as const };
@@ -144,10 +142,7 @@ export function BigPictureShell() {
   const tabGate = useBpTabGate();
   const tabOrder = useMemo(() => bpTabKinds(tabGate), [tabGate]);
   const { rows, loading } = useBpCatalog();
-  const mosaicPool = useMemo(
-    () => rows.flatMap((r) => r.metas).slice(0, 90),
-    [rows],
-  );
+  const mosaicPool = useMemo(() => rows.flatMap((r) => r.metas).slice(0, 90), [rows]);
   // Pass 2 for the addons row, done here because the shell already holds rows.
   // Every meta carries the addon that returned it, so the row's mosaics are free
   // off catalogs home fetched anyway. Mounting useBpCatalog inside the row
@@ -160,12 +155,9 @@ export function BigPictureShell() {
   // turn and keeps anime and user rows behind the broad catalogs.
   const introPool = useMemo(() => {
     const userRow = (r: HomeRow) =>
-      r.key.startsWith("list-") ||
-      r.key.startsWith("collection-") ||
-      r.key.startsWith("source-");
+      r.key.startsWith("list-") || r.key.startsWith("collection-") || r.key.startsWith("source-");
     const watchable = (m: Meta) =>
-      Boolean(m.poster) &&
-      (m.type === "movie" || m.type === "series" || m.type === "anime");
+      Boolean(m.poster) && (m.type === "movie" || m.type === "series" || m.type === "anime");
 
     const rank = (r: HomeRow) => (userRow(r) ? 2 : isAnimeRow(r) ? 1 : 0);
     const lanes = [...rows]
@@ -191,9 +183,7 @@ export function BigPictureShell() {
   const intro = useBpIntro(active, !loading && rows.length > 0);
   const introUp = intro !== "done";
   useEffect(() => {
-    bpIntroPoolSave(
-      introPool.map((m) => m.poster).filter((p): p is string => !!p),
-    );
+    bpIntroPoolSave(introPool.map((m) => m.poster).filter((p): p is string => !!p));
   }, [introPool]);
   // Belt and braces for the boot splash. BpIntro takes it down the moment it
   // mounts, but a session that never shows an intro at all would otherwise
@@ -355,8 +345,7 @@ export function BigPictureShell() {
     onBack,
     onOptions,
     // PageUp and PageDown would otherwise change the route behind the chooser.
-    onTab:
-      who.open || quickOpen || sources || onboarding.open ? undefined : onTab,
+    onTab: who.open || quickOpen || sources || onboarding.open ? undefined : onTab,
     enabled: chrome.navigationEnabled && !introUp,
     routeKey: `${routeKey(route)}${layer}`,
   });
@@ -372,8 +361,9 @@ export function BigPictureShell() {
       episode: PlayEpisode | undefined,
       resume: boolean,
       auto: boolean,
+      applyPreference: boolean,
     ) => {
-      setSources({ meta, episode, resume, auto });
+      setSources({ meta, episode, resume, auto, applyPreference });
     },
     [],
   );
@@ -390,8 +380,7 @@ export function BigPictureShell() {
 
   const rootStyle = useMemo<CSSProperties | undefined>(() => {
     const o = bpOverscan();
-    const vars =
-      o > 0 ? ({ "--bp-overscan": String(o) } as CSSProperties) : undefined;
+    const vars = o > 0 ? ({ "--bp-overscan": String(o) } as CSSProperties) : undefined;
     if (!playing) return vars;
     return { ...vars, visibility: "hidden", pointerEvents: "none" };
   }, [playing]);
@@ -414,7 +403,7 @@ export function BigPictureShell() {
              measured. */
           data-bp-tv={isAndroidTv() ? "" : undefined}
           role="application"
-          aria-label="Big Picture"
+          aria-label={t("Big Picture")}
           aria-hidden={playing || undefined}
           className="fixed inset-0 z-[900] overflow-hidden bg-[var(--bp-void)] text-ink [animation:bp-enter_var(--bp-dur-slow)_var(--bp-ease)_both] motion-reduce:[animation:none]"
           style={rootStyle}
@@ -450,24 +439,14 @@ export function BigPictureShell() {
               {route.kind === "shows" && <BpShows onSelect={openDetail} />}
               {route.kind === "movies" && <BpMovies onSelect={openDetail} />}
               {route.kind === "live" && <BpLive />}
-              {route.kind === "discover" && (
-                <BpDiscover onSelect={openDetail} />
-              )}
+              {route.kind === "discover" && <BpDiscover onSelect={openDetail} />}
               {route.kind === "search" && <BpSearch onSelect={openDetail} />}
               {route.kind === "library" && <BpLibrary onSelect={openDetail} />}
               {route.kind === "detail" && (
-                <BpDetail
-                  metaId={route.metaId}
-                  onSelect={openDetail}
-                  onSources={openSources}
-                />
+                <BpDetail metaId={route.metaId} onSelect={openDetail} onSources={openSources} />
               )}
               {route.kind === "person" && (
-                <BpPerson
-                  personId={route.personId}
-                  name={route.name}
-                  onSelect={openDetail}
-                />
+                <BpPerson personId={route.personId} name={route.name} onSelect={openDetail} />
               )}
               {route.kind === "collection" && (
                 <BpCollection
@@ -519,13 +498,12 @@ export function BigPictureShell() {
                 episode={sources.episode}
                 resume={sources.resume}
                 autoPlay={sources.auto}
+                applyPreference={sources.applyPreference}
                 onClose={() => setSources(null)}
               />
             </Suspense>
           )}
-          {introUp && (
-            <BpIntro pool={introPool} leaving={intro === "leaving"} />
-          )}
+          {introUp && <BpIntro pool={introPool} leaving={intro === "leaving"} />}
           {onboarding.open && (
             <BpOnboarding
               resumeIndex={onboarding.resumeIndex}

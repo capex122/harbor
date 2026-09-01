@@ -169,8 +169,7 @@ function HomePreview({ mode }: { mode: Settings["homeMode"] }) {
             <span
               className="w-full flex-1 rounded-[4px]"
               style={{
-                background:
-                  "var(--bp-on)",
+                background: "var(--bp-on)",
               }}
             />
             <Bars count={7} />
@@ -264,7 +263,22 @@ export function BpSettingsPane({
         <Lines
           rows={[
             [t("Player engine"), s.playerEngine === "auto" ? t("Auto") : s.playerEngine],
-            [t("Hardware acceleration"), t(s.mpvHwdec === "auto" ? "Auto" : s.mpvHwdec === "on" ? "On" : "Off")],
+            [
+              t("Play button behavior"),
+              t(
+                s.playbackSourcePreference === "ask"
+                  ? "Ask every time"
+                  : s.playbackSourcePreference === "local"
+                    ? "Local Library"
+                    : s.playbackSourcePreference === "online"
+                      ? "Online streams"
+                      : "Home server",
+              ),
+            ],
+            [
+              t("Hardware acceleration"),
+              t(s.mpvHwdec === "auto" ? "Auto" : s.mpvHwdec === "on" ? "On" : "Off"),
+            ],
             [t("Skip intros"), t(s.autoSkipIntro ? "On" : "Off")],
             [t("Auto-play next episode"), t(s.autoPlayNextEpisode ? "On" : "Off")],
             [t("Instant play"), t(s.instantPlay ? "On" : "Off")],

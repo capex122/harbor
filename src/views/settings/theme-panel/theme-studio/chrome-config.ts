@@ -1,5 +1,6 @@
 import type { ChromeConfig, ChromeNavId } from "@/lib/theme";
 import { iconInnerSvg } from "./chrome-icons";
+import { t } from "@/lib/i18n";
 
 export const NAV_LABELS: Record<ChromeNavId, string> = {
   home: "Home",
@@ -50,7 +51,7 @@ function resolveIconMarkup(value: string): string | undefined {
 function buttons(config: ChromeConfig): string {
   return config.items
     .map((id) => {
-      const label = config.labels?.[id]?.trim() || NAV_LABELS[id];
+      const label = config.labels?.[id]?.trim() || t(NAV_LABELS[id]);
       const iconVal = config.icons?.[id];
       const iconMarkup = iconVal ? resolveIconMarkup(iconVal) : undefined;
       const inner = iconMarkup ? `${iconMarkup}<span>${esc(label)}</span>` : esc(label);
@@ -214,12 +215,15 @@ const MONITOR_SVG = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none"
 const USER_SVG = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg>`;
 
 function quickCluster(): string {
+  const bigPicture = esc(t("Big Picture"));
+  const notifications = esc(t("Notifications"));
+  const account = esc(t("Account"));
   return [
     `  <div class="myc-spacer"></div>`,
     `  <div class="myc-quick">`,
-    `    <button class="myc-iconbtn" data-harbor-bigpicture aria-label="Big Picture">${MONITOR_SVG}</button>`,
-    `    <button class="myc-iconbtn" data-harbor-notifications aria-label="Notifications">${BELL_SVG}<span class="myc-badge" data-harbor-unread data-empty></span></button>`,
-    `    <button class="myc-iconbtn" data-harbor-account aria-label="Account">${USER_SVG}</button>`,
+    `    <button class="myc-iconbtn" data-harbor-bigpicture aria-label="${bigPicture}">${MONITOR_SVG}</button>`,
+    `    <button class="myc-iconbtn" data-harbor-notifications aria-label="${notifications}">${BELL_SVG}<span class="myc-badge" data-harbor-unread data-empty></span></button>`,
+    `    <button class="myc-iconbtn" data-harbor-account aria-label="${account}">${USER_SVG}</button>`,
     `  </div>`,
   ].join("\n");
 }

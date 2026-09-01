@@ -27,6 +27,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import type { EBookChapter, EBookChapterContent } from "@/lib/ebook/providers";
 import { createEBookFlipPages, type EBookFlipPages } from "@/lib/ebook/book-pages";
 import {
@@ -206,6 +207,7 @@ function VoicePicker({
   previewLoading: boolean;
   onPreview: (voice: ReaderNarrationVoice) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const root = useRef<HTMLDivElement>(null);
@@ -270,7 +272,7 @@ function VoicePicker({
         onClick={() => setOpen((current) => !current)}
         className="flex h-10 min-w-[168px] max-w-[220px] items-center gap-2 rounded-xl border px-2.5 text-start transition hover:border-accent/60 hover:bg-white/[.04] disabled:cursor-wait disabled:opacity-50"
         style={{ borderColor: `${colors.muted}45` }}
-        title="Choose an Edge TTS voice before generating audio"
+        title={t("Choose an Edge TTS voice before generating audio")}
       >
         <span className="grid h-7 w-8 shrink-0 place-items-center rounded-lg bg-white/[.04]">
           <Flag language={selectedLanguageName} size="sm" showLabel={false} />
@@ -279,35 +281,48 @@ function VoicePicker({
           <span className="block truncate text-xs font-semibold" style={{ color: colors.ink }}>
             {selected.label}
           </span>
-          <span className="block truncate text-[9px] uppercase tracking-[.12em]" style={{ color: colors.muted }}>
+          <span
+            className="block truncate text-[9px] uppercase tracking-[.12em]"
+            style={{ color: colors.muted }}
+          >
             {selected.locale} · {selected.gender}
           </span>
         </span>
-        <ChevronDown size={13} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown
+          size={13}
+          className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
       {open && (
         <div
           className="absolute bottom-[calc(100%+10px)] start-0 z-[140] w-[520px] overflow-hidden rounded-2xl border bg-[#111214]/[.98] p-2 shadow-2xl backdrop-blur-xl"
           style={{ borderColor: `${colors.muted}38` }}
         >
-          <div className="mb-2 flex items-center gap-2 rounded-xl border bg-black/20 px-3" style={{ borderColor: `${colors.muted}30` }}>
+          <div
+            className="mb-2 flex items-center gap-2 rounded-xl border bg-black/20 px-3"
+            style={{ borderColor: `${colors.muted}30` }}
+          >
             <Search size={14} style={{ color: colors.muted }} />
             <input
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={`Search ${languageGroups.find((group) => group.code === activeLanguage)?.name ?? "voices"}`}
+              placeholder={t("Search {language}", {
+                language:
+                  languageGroups.find((group) => group.code === activeLanguage)?.name ??
+                  t("voices"),
+              })}
               className="h-10 min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-white/35"
             />
             <span className="text-[10px] tabular-nums text-white/35">{filtered.length}</span>
           </div>
           <div className="grid min-h-[280px] grid-cols-[158px_minmax(0,1fr)] gap-2">
             <nav
-              aria-label="Voice languages"
+              aria-label={t("Voice languages")}
               className="max-h-[310px] space-y-1 overflow-y-auto overscroll-contain border-e border-white/[.07] pe-2"
             >
               <div className="mb-1 flex items-center gap-2 px-2 py-1 text-[9px] font-bold uppercase tracking-[.17em] text-white/30">
-                <Languages size={12} /> Language
+                <Languages size={12} /> {t("Language")}
               </div>
               {languageGroups.map((group) => {
                 const active = group.code === activeLanguage;
@@ -325,15 +340,22 @@ function VoicePicker({
                     <span className="grid h-7 w-8 shrink-0 place-items-center rounded-lg bg-white/[.05]">
                       <Flag language={group.name} size="sm" showLabel={false} />
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-[11px] font-semibold">{group.name}</span>
-                    <span className="text-[9px] tabular-nums opacity-45">{group.voices.length}</span>
+                    <span className="min-w-0 flex-1 truncate text-[11px] font-semibold">
+                      {group.name}
+                    </span>
+                    <span className="text-[9px] tabular-nums opacity-45">
+                      {group.voices.length}
+                    </span>
                   </button>
                 );
               })}
             </nav>
             <div
               role="listbox"
-              aria-label={`${languageGroups.find((group) => group.code === activeLanguage)?.name ?? "Edge TTS"} voices`}
+              aria-label={t("{language} voices", {
+                language:
+                  languageGroups.find((group) => group.code === activeLanguage)?.name ?? "Edge TTS",
+              })}
               className="max-h-[310px] space-y-1 overflow-y-auto overscroll-contain pe-1"
             >
               {filtered.map((voice) => {
@@ -369,8 +391,12 @@ function VoicePicker({
                     <button
                       type="button"
                       onClick={() => onPreview(voice)}
-                      aria-label={previewing ? `Stop ${voice.label} sample` : `Play ${voice.label} sample`}
-                      title={previewing ? "Stop sample" : "Test this voice"}
+                      aria-label={
+                        previewing
+                          ? t("Stop {voice} sample", { voice: voice.label })
+                          : t("Play {voice} sample", { voice: voice.label })
+                      }
+                      title={previewing ? t("Stop sample") : t("Test this voice")}
                       className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition ${previewing ? "bg-accent text-black" : "bg-white/[.05] text-white/55 hover:bg-white/[.1] hover:text-white"}`}
                     >
                       {previewing && previewLoading ? (
@@ -385,7 +411,9 @@ function VoicePicker({
                 );
               })}
               {!filtered.length && (
-                <p className="px-3 py-8 text-center text-xs text-white/40">No matching voices</p>
+                <p className="px-3 py-8 text-center text-xs text-white/40">
+                  {t("No matching voices")}
+                </p>
               )}
             </div>
           </div>
@@ -413,9 +441,11 @@ const textDirection = (text: string, fallback: "ltr" | "rtl") => {
   const ltr = text.match(/[A-Za-z]/g)?.length ?? 0;
   return rtl || ltr ? (rtl > ltr ? "rtl" : "ltr") : fallback;
 };
-const formatEta = (milliseconds: number) => {
+const etaParts = (milliseconds: number) => {
   const seconds = Math.max(1, Math.ceil(milliseconds / 1000));
-  return seconds < 60 ? `${seconds}s` : `${Math.ceil(seconds / 60)}m`;
+  return seconds < 60
+    ? { count: seconds, unit: "seconds" as const }
+    : { count: Math.ceil(seconds / 60), unit: "minutes" as const };
 };
 const pageForParagraph = (starts: number[], target: number) => {
   for (let index = starts.length - 1; index >= 0; index -= 1) {
@@ -487,6 +517,13 @@ export function HarborReader({
   onSelectChapter,
   onClose,
 }: Props) {
+  const t = useT();
+  const formatEtaLabel = (milliseconds: number) => {
+    const eta = etaParts(milliseconds);
+    return eta.unit === "seconds"
+      ? t("≈{count}s left", { count: eta.count })
+      : t("≈{count}m left", { count: eta.count });
+  };
   const [prefs, setPrefs] = useState<EBookReaderPrefs>(loadEBookReaderPrefs);
   const [availableNarrationVoices, setAvailableNarrationVoices] =
     useState<ReaderNarrationVoice[]>(fallbackNarrationVoices);
@@ -507,7 +544,10 @@ export function HarborReader({
               label: voice.name.replace(/^Microsoft\s+/i, "").replace(/\s+Online.*$/i, ""),
               tone: `${voice.locale} · ${voice.gender}`,
             }))
-            .sort((left, right) => left.locale.localeCompare(right.locale) || left.label.localeCompare(right.label)),
+            .sort(
+              (left, right) =>
+                left.locale.localeCompare(right.locale) || left.label.localeCompare(right.label),
+            ),
         );
       })
       .catch(() => undefined);
@@ -546,6 +586,13 @@ export function HarborReader({
   const narrationRun = useRef(0);
   const narrationRequestId = useRef("");
   const narrationLine = useRef(-1);
+  const narrationStep = useRef(0);
+  const narrationAhead = useRef<{
+    start: number;
+    end: number;
+    voice: string;
+    promise: ReturnType<typeof synthesizeNarration>;
+  } | null>(null);
   const [readerText, setReaderText] = useState(content.text ?? "");
   const originalTitle = chapter.title || bookTitle;
   const originalText = content.originalText ?? content.text ?? "";
@@ -606,6 +653,9 @@ export function HarborReader({
         .filter(Boolean),
     [readerText],
   );
+  const resumeVolumeLabel =
+    chapter.volumeTitle ||
+    (chapter.volume ? t("Volume {volume}", { volume: chapter.volume }) : undefined);
   const persistReadingPosition = useCallback(
     (line: number) => {
       if (!paragraphs.length || chapterIndex < 0 || !bookChapters.length) return;
@@ -620,14 +670,23 @@ export function HarborReader({
         chapterId: chapter.id,
         chapterTitle: chapter.title,
         chapterLabel: chapter.chapter,
-        volumeLabel: chapter.volumeTitle || (chapter.volume ? `Volume ${chapter.volume}` : undefined),
+        volumeLabel: resumeVolumeLabel,
         chapterProgress,
         bookProgress,
         chapterIndex,
         totalChapters: bookChapters.length,
       });
     },
-    [bookChapters.length, bookId, chapter, chapterIndex, paragraphs.length, profile, progressId],
+    [
+      bookChapters.length,
+      bookId,
+      chapter,
+      chapterIndex,
+      paragraphs.length,
+      profile,
+      progressId,
+      resumeVolumeLabel,
+    ],
   );
   const colors = paper[prefs.background];
   const effectiveDirection =
@@ -656,7 +715,9 @@ export function HarborReader({
       flipLayersRef.current = staged;
       setFlipLayers(staged);
       if (discarded.length) {
-        window.requestAnimationFrame(() => discarded.forEach((item) => releaseFlipPages(item.pages)));
+        window.requestAnimationFrame(() =>
+          discarded.forEach((item) => releaseFlipPages(item.pages)),
+        );
       }
     },
     [],
@@ -711,9 +772,7 @@ export function HarborReader({
     const generation = ++flipGeneration.current;
     const active = flipPagesRef.current;
     const saved = loadEBookProgress(profile, bookId, progressId);
-    const targetParagraph = active.urls.length
-      ? Math.max(0, tracedLine.current)
-      : saved;
+    const targetParagraph = active.urls.length ? Math.max(0, tracedLine.current) : saved;
     const timer = window.setTimeout(
       () => {
         void createEBookFlipPages({
@@ -732,9 +791,7 @@ export function HarborReader({
         })
           .then((next) => {
             if (controller.signal.aborted || generation !== flipGeneration.current) {
-              next.urls.forEach(
-                (url) => url.startsWith("blob:") && URL.revokeObjectURL(url),
-              );
+              next.urls.forEach((url) => url.startsWith("blob:") && URL.revokeObjectURL(url));
               return;
             }
             replaceFlipPages(next, targetParagraph, {
@@ -1147,7 +1204,11 @@ export function HarborReader({
     const sample =
       VOICE_SAMPLE_BY_LOCALE[voice.locale] ??
       VOICE_SAMPLE_TEXT[language] ??
-      paragraphs.slice(current, current + 2).join(" ").trim().slice(0, 320);
+      paragraphs
+        .slice(current, current + 2)
+        .join(" ")
+        .trim()
+        .slice(0, 320);
     if (!sample) return;
     const run = ++voicePreviewRun.current;
     const requestId = `voice-preview-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -1206,7 +1267,7 @@ export function HarborReader({
       setShowOriginal(false);
       setTranslated(true);
     } catch (error) {
-      setTranslationError(error instanceof Error ? error.message : "Translation failed");
+      setTranslationError(error instanceof Error ? error.message : t("Translation failed"));
     } finally {
       setTranslating(false);
     }
@@ -1226,6 +1287,22 @@ export function HarborReader({
     setSelection(null);
     setEditing(null);
     onSelectChapter(target);
+  };
+
+  const NARRATION_BUDGETS = [700, 1500, 3000, 4000];
+  const narrationBudget = (step: number) =>
+    NARRATION_BUDGETS[Math.min(step, NARRATION_BUDGETS.length - 1)];
+
+  const narrationWindowEnd = (start: number, budget: number) => {
+    let end = start;
+    let chars = 0;
+    while (end < paragraphs.length) {
+      const size = paragraphs[end].length + 2;
+      if (chars && chars + size > budget) break;
+      chars += size;
+      end += 1;
+    }
+    return end;
   };
 
   const speakWithDevice = (index = current) => {
@@ -1251,18 +1328,27 @@ export function HarborReader({
     next();
   };
 
-  const speakFrom = async (index = current) => {
+  const speakFrom = async (index = current): Promise<void> => {
     stopSpeech();
     const run = ++narrationRun.current;
-    const requestId = globalThis.crypto?.randomUUID?.() ?? `reader-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const requestId =
+      globalThis.crypto?.randomUUID?.() ??
+      `reader-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     narrationRequestId.current = requestId;
-    const chapterText = paragraphs.slice(index).join("\n\n").trim();
-    if (!chapterText) return;
+    const ready = narrationAhead.current;
+    const usePrefetched = !!ready && ready.start === index;
+    if (!usePrefetched) narrationStep.current = 0;
+    const windowEnd = usePrefetched ? ready!.end : narrationWindowEnd(index, narrationBudget(0));
+    const chapterText = paragraphs.slice(index, windowEnd).join("\n\n").trim();
+    if (!chapterText) {
+      setNarrationNotice("There is nothing to read aloud on this page.");
+      return;
+    }
     const selectedVoice =
       availableNarrationVoices.find((voice) => voice.id === prefs.narrationVoice) ??
       fallbackNarrationVoices.find((voice) => voice.id === prefs.narrationVoice) ??
       fallbackNarrationVoices[0];
-    const spokenParagraphs = paragraphs.slice(index);
+    const spokenParagraphs = paragraphs.slice(index, windowEnd);
     const spokenWeights = spokenParagraphs.map((text) => Math.max(1, text.trim().length));
     const totalWeight = spokenWeights.reduce((total, weight) => total + weight, 0);
     const spokenWordEnds: number[] = [];
@@ -1297,7 +1383,7 @@ export function HarborReader({
         accumulated += spokenWeights[offset];
         if (target <= accumulated) return index + offset;
       }
-      return paragraphs.length - 1;
+      return windowEnd - 1;
     };
     setSpeaking(true);
     setNarrationPaused(false);
@@ -1305,13 +1391,19 @@ export function HarborReader({
     setGenerationPercent(1);
     setNarrationNotice("");
     try {
-      const { blob, boundaries } = await synthesizeNarration(
-        requestId,
-        chapterText,
-        selectedVoice.id,
-        selectedVoice.locale,
-        (progress) => setGenerationPercent(progress.percent),
-      );
+      const ahead = narrationAhead.current;
+      narrationAhead.current = null;
+      const pending =
+        ahead && ahead.start === index && ahead.voice === selectedVoice.id
+          ? ahead.promise
+          : synthesizeNarration(
+              requestId,
+              chapterText,
+              selectedVoice.id,
+              selectedVoice.locale,
+              (progress) => setGenerationPercent(progress.percent),
+            );
+      const { blob, boundaries } = await pending;
       if (run !== narrationRun.current) return;
       if (narrationRequestId.current === requestId) narrationRequestId.current = "";
       setGenerationPercent(100);
@@ -1333,13 +1425,39 @@ export function HarborReader({
       };
       goTo(index);
       setNarrationLoading(false);
+      if (windowEnd < paragraphs.length) {
+        const aheadEnd = narrationWindowEnd(windowEnd, narrationBudget(narrationStep.current + 1));
+        const aheadText = paragraphs.slice(windowEnd, aheadEnd).join("\n\n").trim();
+        if (aheadText) {
+          const promise = synthesizeNarration(
+            `${requestId}-ahead`,
+            aheadText,
+            selectedVoice.id,
+            selectedVoice.locale,
+            () => {},
+          );
+          promise.catch(() => {
+            if (narrationAhead.current?.promise === promise) narrationAhead.current = null;
+          });
+          narrationAhead.current = {
+            start: windowEnd,
+            end: aheadEnd,
+            voice: selectedVoice.id,
+            promise,
+          };
+        }
+      }
       await new Promise<void>((resolve, reject) => {
         player.onended = () => resolve();
-        player.onerror = () => reject(new Error("The generated audio could not be played"));
-        void player.play().catch(reject);
+        player.onerror = () => reject(new Error(t("The generated audio could not be played")));
       });
       URL.revokeObjectURL(url);
       audioUrl.current = "";
+      if (run === narrationRun.current && windowEnd < paragraphs.length) {
+        narrationStep.current += 1;
+        void speakFrom(windowEnd).catch(() => setSpeaking(false));
+        return;
+      }
       if (run === narrationRun.current) {
         setSpeaking(false);
         setGenerationPercent(0);
@@ -1351,10 +1469,21 @@ export function HarborReader({
       setSpeaking(false);
       setNarrationLoading(false);
       setGenerationPercent(0);
+      narrationAhead.current = null;
+      const message = error instanceof Error ? error.message : t("Edge TTS failed");
+      if (/desktop app/i.test(message)) {
+        setNarrationNotice(
+          t("Edge voices need the Harbor desktop app. Reading with the device voice."),
+        );
+        speakWithDevice(index);
+        return;
+      }
       setNarrationNotice(
-        `${error instanceof Error ? error.message : "Edge TTS failed"}. Using the device voice.`,
+        t("{voice} could not be generated. {message}", {
+          voice: selectedVoice?.label ?? t("That voice"),
+          message,
+        }),
       );
-      speakWithDevice(current);
     }
   };
 
@@ -1363,9 +1492,12 @@ export function HarborReader({
       addEBookBookmark(profile, {
         bookId,
         chapterId: chapter.id,
-        chapterTitle: chapter.title || `Chapter ${chapter.chapter ?? ""}`.trim(),
-        chapterLabel: chapter.chapter ? `Chapter ${chapter.chapter}` : chapter.title || "Chapter",
-        volumeLabel: currentVolume?.label ?? "Chapters",
+        chapterTitle:
+          chapter.title || t("Chapter {chapter}", { chapter: chapter.chapter ?? "" }).trim(),
+        chapterLabel: chapter.chapter
+          ? t("Chapter {chapter}", { chapter: chapter.chapter })
+          : chapter.title || t("Chapter"),
+        volumeLabel: currentVolume?.label ?? t("Chapters"),
         line: index,
         preview: paragraphs[index]?.slice(0, 140) ?? "",
       }),
@@ -1458,10 +1590,12 @@ export function HarborReader({
     selection && {
       id: `an${Date.now().toString(36)}`,
       chapterId: chapter.id,
-      chapterLabel: chapter.chapter ? `Chapter ${chapter.chapter}` : chapter.title || "Chapter",
-      volumeLabel: currentVolume?.label ?? "Chapters",
-      ranges: selection.ranges,
+      chapterLabel: chapter.chapter
+        ? t("Chapter {chapter}", { chapter: chapter.chapter })
+        : chapter.title || t("Chapter"),
+      volumeLabel: currentVolume?.label ?? t("Chapters"),
       text: selection.text,
+      ranges: selection.ranges,
       color,
       density: 58,
       title: "",
@@ -1592,7 +1726,7 @@ export function HarborReader({
               stopSpeech();
               onClose();
             }}
-            aria-label="Close reader"
+            aria-label={t("Close reader")}
           >
             <X size={20} />
           </button>
@@ -1603,7 +1737,7 @@ export function HarborReader({
               setVolumeMenuOpen(false);
               setPanel(null);
             }}
-            aria-label="Chapters"
+            aria-label={t("Chapters")}
           >
             <BookOpen size={19} />
           </button>
@@ -1613,7 +1747,8 @@ export function HarborReader({
           <div className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>
             {prefs.mode === "book"
               ? `${flipPage + 1} / ${Math.max(1, flipPages.urls.length)}`
-              : `${current + 1} / ${Math.max(1, paragraphs.length)}`} · {bookTitle}
+              : `${current + 1} / ${Math.max(1, paragraphs.length)}`}{" "}
+            · {bookTitle}
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -1623,7 +1758,7 @@ export function HarborReader({
               setPanel("search");
               setChaptersOpen(false);
             }}
-            aria-label="Search chapter"
+            aria-label={t("Search chapter")}
           >
             <Search size={18} />
           </button>
@@ -1633,7 +1768,7 @@ export function HarborReader({
               setPanel("annotations");
               setChaptersOpen(false);
             }}
-            aria-label="Notes and highlights"
+            aria-label={t("Notes and highlights")}
           >
             <Highlighter size={18} />
           </button>
@@ -1643,7 +1778,7 @@ export function HarborReader({
               setPanel("bookmarks");
               setChaptersOpen(false);
             }}
-            aria-label="Bookmarks"
+            aria-label={t("Bookmarks")}
           >
             <Bookmark size={18} />
           </button>
@@ -1653,7 +1788,7 @@ export function HarborReader({
               setPanel("settings");
               setChaptersOpen(false);
             }}
-            aria-label="Reader settings"
+            aria-label={t("Reader settings")}
           >
             <Settings2 size={19} />
           </button>
@@ -1664,8 +1799,7 @@ export function HarborReader({
         <div className="absolute inset-x-0 bottom-16 top-16 overflow-hidden">
           {flipLayers.map((layer) => {
             const isActive = layer.id === activeFlipLayerId;
-            const isWaiting =
-              !isActive && layer.id === flipLayers.at(-1)?.id;
+            const isWaiting = !isActive && layer.id === flipLayers.at(-1)?.id;
             const isReplacement = isActive && flipLayers.length > 1;
             return (
               <div
@@ -1702,98 +1836,95 @@ export function HarborReader({
           })}
           {activeFlipLayerId == null && (
             <div className="grid h-full place-items-center text-sm" style={{ color: colors.muted }}>
-              Preparing book…
+              {t("Preparing book…")}
             </div>
           )}
         </div>
       ) : (
-      <div ref={scroller} className="absolute inset-0 overflow-y-auto px-4 pb-32 pt-24 sm:px-8">
-        <article
-          ref={article}
-          dir={effectiveDirection}
-          className="relative mx-auto min-h-[calc(100vh-8rem)] select-text rounded-[2px] px-7 py-14 shadow-[0_28px_90px_rgba(0,0,0,.42)] transition-[width,background-color] duration-300 sm:px-14"
-          style={{
-            width: `min(100%, ${prefs.width}px)`,
-            background: colors.page,
-            color: colors.ink,
-            "--reader-read-color": `color-mix(in srgb, ${prefs.lineTrackColor} 62%, ${colors.ink})`,
-            WebkitUserSelect: "text",
-            fontFamily: readerFontFamily(prefs),
-            fontSize: `${prefs.fontSize}px`,
-            lineHeight: prefs.lineHeight,
-          } as CSSProperties}
-          onMouseUp={captureSelection}
-          onMouseMove={(event) => prefs.mouseLineTrack && updateTrace(event.clientY)}
-        >
-          <div className="pointer-events-none absolute inset-y-0 start-0 w-px bg-gradient-to-b from-transparent via-black/10 to-transparent" />
-          {chapterIndex === 0 && (internalCover || bookCover) && (
-            <section
-              aria-label={`${bookTitle} cover`}
-              className="mb-14 flex min-h-[70vh] flex-col items-center justify-center border-b pb-14 text-center"
-              style={{ borderColor: `${colors.muted}35` }}
-            >
+        <div ref={scroller} className="absolute inset-0 overflow-y-auto px-4 pb-32 pt-24 sm:px-8">
+          <article
+            ref={article}
+            dir={effectiveDirection}
+            className="relative mx-auto min-h-[calc(100vh-8rem)] select-text rounded-[2px] px-7 py-14 shadow-[0_28px_90px_rgba(0,0,0,.42)] transition-[width,background-color] duration-300 sm:px-14"
+            style={
+              {
+                width: `min(100%, ${prefs.width}px)`,
+                background: colors.page,
+                color: colors.ink,
+                "--reader-read-color": `color-mix(in srgb, ${prefs.lineTrackColor} 62%, ${colors.ink})`,
+                WebkitUserSelect: "text",
+                fontFamily: readerFontFamily(prefs),
+                fontSize: `${prefs.fontSize}px`,
+                lineHeight: prefs.lineHeight,
+              } as CSSProperties
+            }
+            onMouseUp={captureSelection}
+            onMouseMove={(event) => prefs.mouseLineTrack && updateTrace(event.clientY)}
+          >
+            <div className="pointer-events-none absolute inset-y-0 start-0 w-px bg-gradient-to-b from-transparent via-black/10 to-transparent" />
+            {chapterIndex === 0 && (internalCover || bookCover) && (
+              <section
+                aria-label={t("{title} cover", { title: bookTitle })}
+                className="mb-14 flex min-h-[70vh] flex-col items-center justify-center border-b pb-14 text-center"
+                style={{ borderColor: `${colors.muted}35` }}
+              >
+                <img
+                  src={internalCover || bookCover}
+                  alt={t("{title} internal cover", { title: bookTitle })}
+                  className="h-full max-h-[72vh] w-full object-contain shadow-[0_22px_65px_rgba(0,0,0,.38)]"
+                />
+              </section>
+            )}
+            <header className="mb-12 border-b pb-7" style={{ borderColor: `${colors.muted}35` }}>
+              <div
+                className="mb-2 text-xs font-semibold uppercase tracking-[.24em]"
+                style={{ color: colors.muted }}
+              >
+                {t("Harbor Reader")}
+              </div>
+              <h1 className="text-balance text-[1.85em] font-semibold leading-tight">
+                {readerTitle}
+              </h1>
+            </header>
+            {paragraphs.map((text, index) => (
+              <p
+                key={index}
+                data-reader-line={index}
+                ref={(node) => {
+                  blocks.current[index] = node;
+                }}
+                className={`relative mb-[1.1em] scroll-mt-24 text-pretty transition-colors ${index === current ? "reader-current" : index < current ? "reader-read" : ""}`}
+                style={{ textAlign: "start" }}
+                onMouseEnter={() => prefs.mouseLineTrack && setCurrent(index)}
+                onDoubleClick={() => {
+                  setCurrent(index);
+                  addBookmark(index);
+                }}
+              >
+                {renderText(text, index)}
+              </p>
+            ))}
+            {(content.images ?? []).map((src, index) => (
               <img
-                src={internalCover || bookCover}
-                alt={`${bookTitle} internal cover`}
-                className="h-full max-h-[72vh] w-full object-contain shadow-[0_22px_65px_rgba(0,0,0,.38)]"
+                key={src + index}
+                src={src}
+                className="mx-auto my-10 max-h-[80vh] max-w-full rounded"
+                alt=""
               />
-            </section>
-          )}
-          <header className="mb-12 border-b pb-7" style={{ borderColor: `${colors.muted}35` }}>
-            <div
-              className="mb-2 text-xs font-semibold uppercase tracking-[.24em]"
-              style={{ color: colors.muted }}
-            >
-              Harbor Reader
-            </div>
-            <h1 className="text-balance text-[1.85em] font-semibold leading-tight">
-              {readerTitle}
-            </h1>
-          </header>
-          {paragraphs.map((text, index) => (
-            <p
-              key={index}
-              data-reader-line={index}
-              ref={(node) => {
-                blocks.current[index] = node;
-              }}
-              className={`relative mb-[1.1em] scroll-mt-24 text-pretty transition-colors ${index === current ? "reader-current" : index < current ? "reader-read" : ""}`}
-              style={{ textAlign: "start" }}
-              onMouseEnter={() => prefs.mouseLineTrack && setCurrent(index)}
-              onDoubleClick={() => {
-                setCurrent(index);
-                addBookmark(index);
-              }}
-            >
-              {renderText(text, index)}
-            </p>
-          ))}
-          {(content.images ?? []).map((src, index) => (
-            <img
-              key={src + index}
-              src={src}
-              className="mx-auto my-10 max-h-[80vh] max-w-full rounded"
-              alt=""
-            />
-          ))}
-        </article>
-      </div>
+            ))}
+          </article>
+        </div>
       )}
 
       {prefs.mode === "harbor" && trace && (
         <div
           dir={effectiveDirection}
-          className="pointer-events-none fixed z-20 rounded-sm border-s-2 transition-[top,height] duration-100"
+          className="pointer-events-none fixed z-20 rounded-md transition-[top,height] duration-100"
           style={{
             ...trace,
-            color: prefs.lineTrackColor,
-            borderInlineStartColor: `${prefs.lineTrackColor}99`,
-            background: `color-mix(in srgb, ${prefs.lineTrackColor} 10%, transparent)`,
-            boxShadow: `0 0 22px color-mix(in srgb, ${prefs.lineTrackColor} 8%, transparent)`,
+            background: `color-mix(in srgb, ${prefs.lineTrackColor} 15%, transparent)`,
           }}
-        >
-          <span className="absolute -start-8 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-current shadow-[0_0_12px_currentColor]" />
-        </div>
+        />
       )}
 
       {selection && !editing && (
@@ -1831,15 +1962,15 @@ export function HarborReader({
           className="reader-icon"
           disabled={!previousChapter}
           onClick={() => selectChapter(previousChapter)}
-          aria-label="Previous chapter"
-          title="Previous chapter"
+          aria-label={t("Previous chapter")}
+          title={t("Previous chapter")}
         >
           <SkipBack size={21} strokeWidth={2} fill="currentColor" />
         </button>
         <button
           className="reader-icon"
           onClick={() => addBookmark()}
-          aria-label="Bookmark current passage"
+          aria-label={t("Bookmark current passage")}
         >
           <Bookmark size={18} />
         </button>
@@ -1849,17 +1980,25 @@ export function HarborReader({
               className="reader-icon"
               disabled={flipPage <= 0}
               onClick={() => bookApi.current?.prev()}
-              aria-label="Previous page"
+              aria-label={t("Previous page")}
             >
-              {effectiveDirection === "rtl" ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+              {effectiveDirection === "rtl" ? (
+                <ChevronRight size={20} />
+              ) : (
+                <ChevronLeft size={20} />
+              )}
             </button>
             <button
               className="reader-icon"
               disabled={flipPage >= flipPages.urls.length - 1}
               onClick={() => bookApi.current?.next()}
-              aria-label="Next page"
+              aria-label={t("Next page")}
             >
-              {effectiveDirection === "rtl" ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+              {effectiveDirection === "rtl" ? (
+                <ChevronLeft size={20} />
+              ) : (
+                <ChevronRight size={20} />
+              )}
             </button>
           </>
         )}
@@ -1870,17 +2009,17 @@ export function HarborReader({
           aria-label={
             translation
               ? showOriginal
-                ? "Show translation"
-                : "Show original language"
-              : "Translate chapter"
+                ? t("Show translation")
+                : t("Show original language")
+              : t("Translate chapter")
           }
           title={
             translationError ||
             (translation
               ? showOriginal
-                ? "Show translation"
-                : "Show original language"
-              : "Translate chapter")
+                ? t("Show translation")
+                : t("Show original language")
+              : t("Translate chapter"))
           }
         >
           {translating ? (
@@ -1888,7 +2027,7 @@ export function HarborReader({
           ) : (
             <>
               <Languages size={18} />
-              {translation && <span>{showOriginal ? "Translation" : "Original"}</span>}
+              {translation && <span>{showOriginal ? t("Translation") : t("Original")}</span>}
             </>
           )}
         </button>
@@ -1901,8 +2040,8 @@ export function HarborReader({
             <span>·</span>
             <span>
               {translationProgress.etaMs == null
-                ? "Estimating…"
-                : `≈${formatEta(translationProgress.etaMs)} left`}
+                ? t("Estimating…")
+                : formatEtaLabel(translationProgress.etaMs)}
             </span>
           </div>
         )}
@@ -1922,25 +2061,21 @@ export function HarborReader({
         <button
           className={`reader-icon ${narrationLoading ? "reader-icon-cancel" : "reader-icon-accent"}`}
           onClick={
-            narrationLoading
-              ? stopSpeech
-              : speaking
-                ? toggleNarrationPause
-                : () => void speakFrom()
+            narrationLoading ? stopSpeech : speaking ? toggleNarrationPause : () => void speakFrom()
           }
           aria-label={
             narrationLoading
-              ? "Cancel Edge TTS generation"
+              ? t("Cancel Edge TTS generation")
               : speaking
-              ? narrationPaused
-                ? "Resume narration"
-                : "Pause narration"
-              : "Read chapter with Edge TTS"
+                ? narrationPaused
+                  ? t("Resume narration")
+                  : t("Pause narration")
+                : t("Read chapter with Edge TTS")
           }
           title={
             narrationLoading
-              ? "Cancel audio generation"
-              : narrationNotice || "Read the complete chapter with Edge TTS"
+              ? t("Cancel audio generation")
+              : narrationNotice || t("Read the complete chapter with Edge TTS")
           }
         >
           {narrationLoading ? (
@@ -1953,11 +2088,12 @@ export function HarborReader({
         </button>
         {narrationLoading && (
           <div
-            className="flex min-w-[62px] items-center gap-1 pe-2 text-[11px] font-semibold tabular-nums"
+            className="flex items-center gap-1.5 pe-2 text-[11px] font-semibold tabular-nums"
             style={{ color: colors.muted }}
-            title="Complete-chapter generation progress"
+            title={t("Preparing narration audio")}
           >
-            <span>≈{generationPercent}%</span>
+            <Loader2 size={13} className="animate-spin motion-reduce:animate-none" />
+            <span>{generationPercent > 1 ? `${generationPercent}%` : "Preparing"}</span>
           </div>
         )}
         {(speaking || audioDuration > 0) && (
@@ -1978,7 +2114,7 @@ export function HarborReader({
                 audio.current.currentTime = next;
                 setAudioPosition(next);
               }}
-              aria-label="Audio position"
+              aria-label={t("Audio position")}
               className="ebook-audio-seeker h-5 min-w-0 flex-1 cursor-pointer disabled:cursor-wait disabled:opacity-35"
               style={
                 {
@@ -1996,14 +2132,15 @@ export function HarborReader({
             prefs.mode === "book"
               ? ((flipPage + 1) / Math.max(1, flipPages.urls.length)) * 100
               : ((current + 1) / Math.max(1, paragraphs.length)) * 100,
-          )}%
+          )}
+          %
         </div>
         <button
           className="reader-icon"
           disabled={!nextChapter}
           onClick={() => selectChapter(nextChapter)}
-          aria-label="Next chapter"
-          title="Next chapter"
+          aria-label={t("Next chapter")}
+          title={t("Next chapter")}
         >
           <SkipForward size={21} strokeWidth={2} fill="currentColor" />
         </button>
@@ -2020,9 +2157,9 @@ export function HarborReader({
                 className="text-[10px] font-semibold uppercase tracking-[.2em]"
                 style={{ color: colors.muted }}
               >
-                Chapters
+                {t("Chapters")}
               </div>
-              <h2 className="mt-1 text-lg font-semibold">{shownVolume?.label ?? "Chapters"}</h2>
+              <h2 className="mt-1 text-lg font-semibold">{shownVolume?.label ?? t("Chapters")}</h2>
             </div>
             <button
               className="reader-icon"
@@ -2030,7 +2167,7 @@ export function HarborReader({
                 setChaptersOpen(false);
                 setVolumeMenuOpen(false);
               }}
-              aria-label="Close chapters"
+              aria-label={t("Close chapters")}
             >
               <X size={18} />
             </button>
@@ -2041,7 +2178,7 @@ export function HarborReader({
                 className="text-[10px] font-semibold uppercase tracking-[.18em]"
                 style={{ color: colors.muted }}
               >
-                Volume
+                {t("Volume")}
               </div>
               <button
                 type="button"
@@ -2062,7 +2199,9 @@ export function HarborReader({
                     {shownVolume?.label}
                   </strong>
                   <span className="block text-[11px] leading-tight" style={{ color: colors.muted }}>
-                    {shownChapters.length} chapters
+                    {shownChapters.length === 1
+                      ? t("{count} chapter", { count: shownChapters.length })
+                      : t("{count} chapters", { count: shownChapters.length })}
                   </span>
                 </span>
                 <ChevronDown
@@ -2073,7 +2212,7 @@ export function HarborReader({
               {volumeMenuOpen && (
                 <div
                   role="listbox"
-                  aria-label="Volume"
+                  aria-label={t("Volume")}
                   className="absolute inset-x-0 top-full z-50 mt-2 max-h-64 space-y-1 overflow-y-auto rounded-2xl border p-1.5 shadow-[0_18px_55px_rgba(0,0,0,.48)] backdrop-blur-2xl"
                   style={{ background: `${colors.page}fa`, borderColor: `${colors.muted}45` }}
                 >
@@ -2115,11 +2254,15 @@ export function HarborReader({
             className="mt-4 flex items-center justify-between border-y py-3 text-xs"
             style={{ borderColor: `${colors.muted}25`, color: colors.muted }}
           >
-            <span>{shownChapters.length} chapters</span>
+            <span>
+              {shownChapters.length === 1
+                ? t("{count} chapter", { count: shownChapters.length })
+                : t("{count} chapters", { count: shownChapters.length })}
+            </span>
             <span>
               {shownChapters.some((item) => item.id === chapter.id)
                 ? `${shownChapters.findIndex((item) => item.id === chapter.id) + 1} / ${shownChapters.length}`
-                : "Select a chapter"}
+                : t("Select a chapter")}
             </span>
           </div>
           <div className="mt-3 min-h-0 flex-1 space-y-1 overflow-y-auto pe-1 pb-10">
@@ -2139,10 +2282,12 @@ export function HarborReader({
                   </span>
                   <span className="min-w-0">
                     <strong className={`line-clamp-2 block text-sm ${active ? "text-accent" : ""}`}>
-                      {item.title || `Chapter ${item.chapter ?? index + 1}`}
+                      {item.title || t("Chapter {chapter}", { chapter: item.chapter ?? index + 1 })}
                     </strong>
                     <span className="mt-1 block text-[11px]" style={{ color: colors.muted }}>
-                      {item.chapter ? `Chapter ${item.chapter}` : `Position ${index + 1}`}
+                      {item.chapter
+                        ? t("Chapter {chapter}", { chapter: item.chapter })
+                        : t("Position {position}", { position: index + 1 })}
                     </span>
                   </span>
                 </button>
@@ -2160,25 +2305,23 @@ export function HarborReader({
           <div className="mb-6 flex shrink-0 items-center justify-between">
             <h2 className="text-lg font-semibold">
               {panel === "settings"
-                ? "Reading settings"
+                ? t("Reading settings")
                 : panel === "search"
-                  ? "Search chapter"
+                  ? t("Search chapter")
                   : panel === "annotations"
-                    ? "Notes & highlights"
-                    : "Bookmarks"}
+                    ? t("Notes & highlights")
+                    : t("Bookmarks")}
             </h2>
-            <button className="reader-icon" onClick={() => setPanel(null)} aria-label="Close panel">
+            <button
+              className="reader-icon"
+              onClick={() => setPanel(null)}
+              aria-label={t("Close panel")}
+            >
               <X size={18} />
             </button>
           </div>
           <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {panel === "settings" && (
-              <Settings
-                prefs={prefs}
-                patch={patchPrefs}
-                colors={colors}
-              />
-            )}
+            {panel === "settings" && <Settings prefs={prefs} patch={patchPrefs} colors={colors} />}
             {panel === "search" && (
               <div>
                 <div
@@ -2191,14 +2334,14 @@ export function HarborReader({
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     className="h-11 min-w-0 flex-1 bg-transparent outline-none"
-                    placeholder="Find a word or passage"
+                    placeholder={t("Find a word or passage")}
                   />
                 </div>
                 <div
                   className="mt-3 rounded-xl border px-3 py-2 text-xs"
                   style={{ borderColor: `${colors.muted}25`, color: colors.muted }}
                 >
-                  Diacritic-insensitive · results ahead stay sealed
+                  {t("Diacritic-insensitive · results ahead stay sealed")}
                 </div>
                 <div className="mt-4 space-y-2 overflow-y-auto pb-10">
                   {shownResults.map((result) => (
@@ -2212,7 +2355,7 @@ export function HarborReader({
                       style={{ borderColor: `${colors.muted}25` }}
                     >
                       <span className="mb-1 block text-[10px] uppercase tracking-widest opacity-50">
-                        Passage {result.index + 1}
+                        {t("Passage {passage}", { passage: result.index + 1 })}
                       </span>
                       {result.text.slice(0, 220)}
                     </button>
@@ -2223,9 +2366,11 @@ export function HarborReader({
                       className="w-full rounded-xl border border-dashed border-accent/50 p-5 text-sm text-accent"
                     >
                       <strong className="block text-base">
-                        {hiddenResults} {hiddenResults === 1 ? "match" : "matches"} ahead
+                        {hiddenResults === 1
+                          ? t("{count} match ahead", { count: hiddenResults })
+                          : t("{count} matches ahead", { count: hiddenResults })}
                       </strong>
-                      <span className="mt-1 block text-xs opacity-70">Show them anyway</span>
+                      <span className="mt-1 block text-xs opacity-70">{t("Show them anyway")}</span>
                     </button>
                   )}
                 </div>
@@ -2235,7 +2380,7 @@ export function HarborReader({
               <div className="space-y-2 overflow-y-auto pb-10">
                 {!annotations.length && (
                   <p style={{ color: colors.muted }}>
-                    Select a passage to add a highlight, note, or reference.
+                    {t("Select a passage to add a highlight, note, or reference.")}
                   </p>
                 )}
                 {annotations.map((annotation) => {
@@ -2248,8 +2393,8 @@ export function HarborReader({
                   const chapterLabel =
                     annotation.chapterLabel ??
                     (savedChapter?.chapter
-                      ? `Chapter ${savedChapter.chapter}`
-                      : savedChapter?.title || "Chapter");
+                      ? t("Chapter {chapter}", { chapter: savedChapter.chapter })
+                      : savedChapter?.title || t("Chapter"));
                   const line = (annotation.ranges[0]?.line ?? 0) + 1;
                   return (
                     <button
@@ -2264,22 +2409,22 @@ export function HarborReader({
                       />
                       <div className="mb-2 flex flex-wrap gap-1.5 text-[10px] font-semibold uppercase tracking-wide">
                         <span className="rounded-full bg-white/[.06] px-2 py-1">
-                          {annotation.volumeLabel ?? savedVolume?.label ?? "Chapters"}
+                          {annotation.volumeLabel ?? savedVolume?.label ?? t("Chapters")}
                         </span>
                         <span className="rounded-full bg-white/[.06] px-2 py-1">
                           {chapterLabel}
                         </span>
                         <span className="rounded-full bg-accent/15 px-2 py-1 text-accent">
-                          Line {line}
+                          {t("Line {line}", { line })}
                         </span>
                       </div>
                       <strong className="block text-sm">
                         {annotation.title ||
                           (annotation.reference
-                            ? "Reference"
+                            ? t("Reference")
                             : annotation.body
-                              ? "Note"
-                              : "Highlight")}
+                              ? t("Note")
+                              : t("Highlight"))}
                       </strong>
                       <span
                         className="mt-1 line-clamp-3 block text-xs"
@@ -2299,7 +2444,9 @@ export function HarborReader({
             )}
             {panel === "bookmarks" && (
               <div className="space-y-2">
-                {!bookmarks.length && <p style={{ color: colors.muted }}>No saved passages yet.</p>}
+                {!bookmarks.length && (
+                  <p style={{ color: colors.muted }}>{t("No saved passages yet.")}</p>
+                )}
                 {bookmarks.map((bookmark) => {
                   const savedVolume = volumes.find((volume) =>
                     volume.chapters.some((item) => item.id === bookmark.chapterId),
@@ -2310,7 +2457,7 @@ export function HarborReader({
                   const chapterLabel =
                     bookmark.chapterLabel ??
                     (savedChapter?.chapter
-                      ? `Chapter ${savedChapter.chapter}`
+                      ? t("Chapter {chapter}", { chapter: savedChapter.chapter })
                       : bookmark.chapterTitle);
                   return (
                     <div
@@ -2336,13 +2483,13 @@ export function HarborReader({
                       >
                         <div className="mb-2 flex flex-wrap gap-1.5 text-[10px] font-semibold uppercase tracking-wide">
                           <span className="rounded-full bg-white/[.06] px-2 py-1">
-                            {bookmark.volumeLabel ?? savedVolume?.label ?? "Chapters"}
+                            {bookmark.volumeLabel ?? savedVolume?.label ?? t("Chapters")}
                           </span>
                           <span className="rounded-full bg-white/[.06] px-2 py-1">
                             {chapterLabel}
                           </span>
                           <span className="rounded-full bg-accent/15 px-2 py-1 text-accent">
-                            Line {bookmark.line + 1}
+                            {t("Line {line}", { line: bookmark.line + 1 })}
                           </span>
                         </div>
                         <div className="line-clamp-3 text-xs" style={{ color: colors.muted }}>
@@ -2354,7 +2501,7 @@ export function HarborReader({
                           setBookmarks(removeEBookBookmark(profile, bookId, bookmark.id))
                         }
                         className="self-start p-2"
-                        aria-label="Delete bookmark"
+                        aria-label={t("Delete bookmark")}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -2406,6 +2553,7 @@ function SelectionToolbar({
   onHoverStart: () => void;
   onHoverEnd: () => void;
 }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const copiedTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
@@ -2438,37 +2586,25 @@ function SelectionToolbar({
             onClick={() => onColor(color)}
             className="h-6 w-6 rounded-full border border-white/20 shadow-inner transition hover:scale-110"
             style={{ background: color }}
-            aria-label={`Highlight ${color}`}
+            aria-label={t("Highlight {color}", { color })}
           />
         ))}
       </div>
       <div className="flex items-center overflow-x-auto p-1.5 text-xs">
-        <SelectionAction
-          icon={<Headphones size={15} />}
-          label={direction === "rtl" ? "استماع" : "Listen"}
-          onClick={onListen}
-        />
+        <SelectionAction icon={<Headphones size={15} />} label={t("Listen")} onClick={onListen} />
         <SelectionAction
           icon={<MessageSquareText size={15} />}
-          label={direction === "rtl" ? "ملاحظة" : "Note"}
+          label={t("Note")}
           onClick={onNote}
         />
         <SelectionAction
           icon={<Link2 size={15} />}
-          label={direction === "rtl" ? "إضافة مرجع" : "Add reference"}
+          label={t("Add reference")}
           onClick={onReference}
         />
         <SelectionAction
           icon={copied ? <Check size={15} /> : <Copy size={15} />}
-          label={
-            copied
-              ? direction === "rtl"
-                ? "تم النسخ!"
-                : "Copied!"
-              : direction === "rtl"
-                ? "نسخ"
-                : "Copy"
-          }
+          label={copied ? t("Copied!") : t("Copy")}
           onClick={() => void copy()}
           active={copied}
         />
@@ -2516,6 +2652,7 @@ function AnnotationEditor({
   onDelete: () => void;
   onClose: () => void;
 }) {
+  const t = useT();
   return (
     <div
       className="absolute inset-0 z-[80] grid place-items-center bg-black/65 p-4 backdrop-blur-md"
@@ -2527,7 +2664,7 @@ function AnnotationEditor({
       >
         <main className="flex min-h-[500px] flex-col p-8 md:p-10">
           <div className="text-xs uppercase tracking-[.2em] text-accent">
-            {annotation.reference ? "Reference passage" : "Highlighted passage"}
+            {annotation.reference ? t("Reference passage") : t("Highlighted passage")}
           </div>
           <blockquote
             className="mt-4 border-s-2 ps-4 text-lg leading-relaxed"
@@ -2546,31 +2683,34 @@ function AnnotationEditor({
             value={annotation.title}
             onChange={(event) => onChange({ ...annotation, title: event.target.value })}
             className="mt-8 border-b border-white/10 bg-transparent py-3 text-2xl outline-none placeholder:text-white/25"
-            placeholder="Title (optional)"
+            placeholder={t("Title (optional)")}
           />
           <textarea
             autoFocus
             value={annotation.body}
             onChange={(event) => onChange({ ...annotation, body: event.target.value })}
             className="mt-4 min-h-48 flex-1 resize-none bg-transparent text-lg leading-relaxed outline-none placeholder:text-white/25"
-            placeholder="Write here… nothing will interrupt you."
+            placeholder={t("Write here… nothing will interrupt you.")}
           />
           <div className="border-t border-white/10 pt-3 text-xs text-white/35">
-            {annotation.body.length} characters
+            {annotation.body.length === 1
+              ? t("{count} character", { count: annotation.body.length })
+              : t("{count} characters", { count: annotation.body.length })}
           </div>
         </main>
         <aside className="flex flex-col border-t border-white/10 bg-white/[.025] p-5 md:border-s md:border-t-0">
           <div className="flex items-center justify-between">
-            <strong>{annotation.reference ? "Reference" : "Annotation"}</strong>
-            <button className="reader-icon" onClick={onClose}>
+            <strong>{annotation.reference ? t("Reference") : t("Annotation")}</strong>
+            <button className="reader-icon" onClick={onClose} aria-label={t("Close")}>
               <X size={17} />
             </button>
           </div>
-          <Setting label="Ink colour">
+          <Setting label={t("Ink colour")}>
             <div className="flex flex-wrap gap-2">
               {inks.map((color) => (
                 <button
                   key={color}
+                  aria-label={t("Use {color} ink", { color })}
                   onClick={() => onChange({ ...annotation, color })}
                   className={`h-8 w-8 rounded-full border-2 ${annotation.color === color ? "border-white" : "border-transparent"}`}
                   style={{ background: color }}
@@ -2580,14 +2720,14 @@ function AnnotationEditor({
           </Setting>
           <Range
             icon={<Highlighter size={16} />}
-            label="Ink density"
+            label={t("Ink density")}
             value={annotation.density}
             min={20}
             max={90}
             step={5}
             onChange={(density) => onChange({ ...annotation, density })}
           />
-          <Setting label="Tags">
+          <Setting label={t("Tags")}>
             <input
               value={annotation.tags.join(", ")}
               onChange={(event) =>
@@ -2600,15 +2740,15 @@ function AnnotationEditor({
                 })
               }
               className="h-10 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm outline-none focus:border-accent/60"
-              placeholder="study, character, quote"
+              placeholder={t("study, character, quote")}
             />
           </Setting>
           <div className="mt-auto border-t border-white/10 pt-4 text-xs text-white/40">
             <div>{bookTitle}</div>
             <div className="mt-1">
               {annotation.reference
-                ? "Marks every recurrence of this phrase"
-                : "Saved to this passage"}
+                ? t("Marks every recurrence of this phrase")
+                : t("Saved to this passage")}
             </div>
           </div>
           <div className="mt-4 flex gap-2">
@@ -2616,9 +2756,13 @@ function AnnotationEditor({
               onClick={onSave}
               className="h-11 flex-1 rounded-xl bg-accent font-semibold text-black"
             >
-              Save
+              {t("Save")}
             </button>
-            <button onClick={onDelete} className="reader-icon text-red-400" aria-label="Delete">
+            <button
+              onClick={onDelete}
+              className="reader-icon text-red-400"
+              aria-label={t("Delete")}
+            >
               <Trash2 size={17} />
             </button>
           </div>
@@ -2637,9 +2781,18 @@ function Settings({
   patch: (value: Partial<EBookReaderPrefs>) => void;
   colors: (typeof paper)[keyof typeof paper];
 }) {
+  const t = useT();
   const [adjustmentsOpen, setAdjustmentsOpen] = useState(true);
   const [audioCacheStatus, setAudioCacheStatus] = useState("");
   const { fonts, busy: fontBusy, error: fontError, addFont, removeFont } = useCustomFonts();
+  const localizedFontError =
+    fontError === "Use a TTF, OTF, WOFF or WOFF2 file."
+      ? t("Use a TTF, OTF, WOFF or WOFF2 file.")
+      : fontError === "That font is over 32 MB. Try a lighter file."
+        ? t("That font is over 32 MB. Try a lighter file.")
+        : fontError === "That file is not a valid font."
+          ? t("That file is not a valid font.")
+          : fontError;
   const fontInput = useRef<HTMLInputElement>(null);
   const importFont = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -2650,12 +2803,14 @@ function Settings({
   };
   return (
     <div className="space-y-6">
-      <Setting label="Reading mode">
+      <Setting label={t("Reading mode")}>
         <div className="grid grid-cols-2 gap-2">
-          {([
-            { mode: "harbor", label: "Harbor", icon: <Type size={18} /> },
-            { mode: "book", label: "Book", icon: <BookOpen size={18} /> },
-          ] as const).map((item) => (
+          {(
+            [
+              { mode: "harbor", label: t("Harbor"), icon: <Type size={18} /> },
+              { mode: "book", label: t("Book"), icon: <BookOpen size={18} /> },
+            ] as const
+          ).map((item) => (
             <button
               key={item.mode}
               type="button"
@@ -2670,25 +2825,34 @@ function Settings({
           ))}
         </div>
       </Setting>
-      <Setting label="Saved audio">
+      <Setting label={t("Saved audio")}>
         <button
           type="button"
           onClick={async () => {
             await clearNarrationCache();
-            setAudioCacheStatus("Saved audio deleted");
+            setAudioCacheStatus(t("Saved audio deleted"));
           }}
           className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl border text-xs font-semibold transition hover:border-red-400/60 hover:text-red-400"
           style={{ borderColor: `${colors.muted}35` }}
         >
-          <Trash2 size={14} /> Delete saved audio
+          <Trash2 size={14} /> {t("Delete saved audio")}
         </button>
-        {audioCacheStatus && <p className="mt-2 text-center text-[11px] text-emerald-400">{audioCacheStatus}</p>}
+        {audioCacheStatus && (
+          <p className="mt-2 text-center text-[11px] text-emerald-400">{audioCacheStatus}</p>
+        )}
       </Setting>
-      <Setting label="Paper">
+      <Setting label={t("Paper")}>
         <div className="grid grid-cols-3 gap-2">
-          {(["dark", "dim", "light"] as const).map((background) => (
+          {(
+            [
+              { background: "dark", label: t("Dark") },
+              { background: "dim", label: t("Dim") },
+              { background: "light", label: t("Light") },
+            ] as const
+          ).map(({ background, label }) => (
             <button
               key={background}
+              aria-label={label}
               onClick={() => patch({ background })}
               className={`grid h-12 place-items-center rounded-xl border capitalize ${prefs.background === background ? "border-accent text-accent" : ""}`}
               style={{
@@ -2700,9 +2864,15 @@ function Settings({
           ))}
         </div>
       </Setting>
-      <Setting label="Type">
+      <Setting label={t("Type")}>
         <div className="grid grid-cols-3 gap-2">
-          {(["literary", "arabic", "classic"] as const).map((font) => (
+          {(
+            [
+              { font: "literary", label: t("Literary") },
+              { font: "arabic", label: t("Arabic") },
+              { font: "classic", label: t("Classic") },
+            ] as const
+          ).map(({ font, label }) => (
             <button
               key={font}
               onClick={() => patch({ font, customFontId: undefined })}
@@ -2713,7 +2883,7 @@ function Settings({
                 fontFamily: fontFamily[font],
               }}
             >
-              {font}
+              {label}
             </button>
           ))}
         </div>
@@ -2738,7 +2908,7 @@ function Settings({
                   </button>
                   <button
                     type="button"
-                    aria-label={`Remove ${font.name}`}
+                    aria-label={t("Remove {font}", { font: font.name })}
                     onClick={() => {
                       removeFont(font.id);
                       if (active) patch({ customFontId: undefined });
@@ -2760,7 +2930,7 @@ function Settings({
           style={{ borderColor: `${colors.muted}45` }}
         >
           {fontBusy ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-          {fontBusy ? "Importing font…" : "Import font"}
+          {fontBusy ? t("Importing font…") : t("Import font")}
         </button>
         <input
           ref={fontInput}
@@ -2769,7 +2939,7 @@ function Settings({
           onChange={importFont}
           className="sr-only"
         />
-        {fontError && <p className="mt-2 text-xs text-red-400">{fontError}</p>}
+        {localizedFontError && <p className="mt-2 text-xs text-red-400">{localizedFontError}</p>}
       </Setting>
       <section>
         <button
@@ -2778,7 +2948,7 @@ function Settings({
           onClick={() => setAdjustmentsOpen((open) => !open)}
           className="flex w-full items-center justify-between rounded-xl px-1 py-1 text-xs font-semibold uppercase tracking-[.18em] opacity-60 transition hover:opacity-100"
         >
-          <span>Reading adjustments</span>
+          <span>{t("Reading adjustments")}</span>
           <ChevronDown
             size={16}
             className={`transition-transform duration-300 ease-out ${adjustmentsOpen ? "rotate-180 text-accent" : ""}`}
@@ -2794,7 +2964,7 @@ function Settings({
             >
               <Range
                 icon={<Type size={16} />}
-                label="Text size"
+                label={t("Text size")}
                 value={prefs.fontSize}
                 min={15}
                 max={34}
@@ -2802,7 +2972,7 @@ function Settings({
               />
               <Range
                 icon={<Gauge size={16} />}
-                label="Line height"
+                label={t("Line height")}
                 value={prefs.lineHeight}
                 min={1.25}
                 max={2.4}
@@ -2811,7 +2981,7 @@ function Settings({
               />
               <Range
                 icon={<BookOpen size={16} />}
-                label="Page width"
+                label={t("Page width")}
                 value={prefs.width}
                 min={520}
                 max={1080}
@@ -2820,7 +2990,7 @@ function Settings({
               />
               <Range
                 icon={<Sun size={16} />}
-                label="Brightness"
+                label={t("Brightness")}
                 value={prefs.brightness}
                 min={55}
                 max={120}
@@ -2830,9 +3000,15 @@ function Settings({
           </div>
         </div>
       </section>
-      <Setting label="Direction">
+      <Setting label={t("Direction")}>
         <div className="grid grid-cols-3 gap-2">
-          {(["auto", "ltr", "rtl"] as const).map((direction) => (
+          {(
+            [
+              { direction: "auto", label: t("Auto") },
+              { direction: "ltr", label: t("LTR") },
+              { direction: "rtl", label: t("RTL") },
+            ] as const
+          ).map(({ direction, label }) => (
             <button
               key={direction}
               onClick={() => patch({ direction })}
@@ -2841,13 +3017,13 @@ function Settings({
                 borderColor: prefs.direction === direction ? undefined : `${colors.muted}35`,
               }}
             >
-              {direction}
+              {label}
             </button>
           ))}
         </div>
       </Setting>
       <label className="flex items-center justify-between gap-4">
-        <span>Focus mode</span>
+        <span>{t("Focus mode")}</span>
         <input
           type="checkbox"
           checked={prefs.focusMode}
@@ -2855,13 +3031,13 @@ function Settings({
           className="h-5 w-5 accent-[var(--color-accent)]"
         />
       </label>
-      <Setting label="Line tracker">
+      <Setting label={t("Line tracker")}>
         <div
           className="rounded-2xl border p-4"
           style={{ background: `${colors.desk}55`, borderColor: `${colors.muted}30` }}
         >
           <label className="flex items-center justify-between gap-4">
-            <span className="text-sm font-medium">Mouse tracker</span>
+            <span className="text-sm font-medium">{t("Mouse tracker")}</span>
             <input
               type="checkbox"
               checked={prefs.mouseLineTrack}
@@ -2871,7 +3047,7 @@ function Settings({
           </label>
           <div className="mt-4 border-t pt-4" style={{ borderColor: `${colors.muted}25` }}>
             <div className="mb-3 flex items-center justify-between text-xs">
-              <span style={{ color: colors.muted }}>Tracker color</span>
+              <span style={{ color: colors.muted }}>{t("Tracker color")}</span>
               <span className="font-mono uppercase" style={{ color: prefs.lineTrackColor }}>
                 {prefs.lineTrackColor}
               </span>
@@ -2881,7 +3057,7 @@ function Settings({
                 <button
                   key={color}
                   type="button"
-                  aria-label={`Use ${color} for the line tracker`}
+                  aria-label={t("Use {color} for the line tracker", { color })}
                   aria-pressed={prefs.lineTrackColor === color}
                   onClick={() => patch({ lineTrackColor: color })}
                   className={`grid h-8 w-8 place-items-center rounded-full border-2 transition hover:scale-110 ${prefs.lineTrackColor === color ? "border-white shadow-[0_0_0_3px_rgba(255,255,255,.10)]" : "border-transparent"}`}
@@ -2893,7 +3069,7 @@ function Settings({
                 </button>
               ))}
               <label
-                aria-label="Choose a custom tracker color"
+                aria-label={t("Choose a custom tracker color")}
                 className="relative grid h-8 w-8 cursor-pointer place-items-center rounded-full border-2 border-transparent transition hover:scale-110"
                 style={{
                   background: "conic-gradient(#f87171,#facc15,#4ade80,#60a5fa,#c084fc,#f87171)",

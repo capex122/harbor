@@ -1,6 +1,7 @@
 import { Check, Loader2, Trash2, Upload } from "lucide-react";
 import { useRef, type ChangeEvent } from "react";
 import { useCustomFonts } from "@/lib/custom-fonts";
+import { useT } from "@/lib/i18n";
 
 export function CustomFontTiles({
   activeId,
@@ -13,7 +14,16 @@ export function CustomFontTiles({
   onClear: () => void;
   compact?: boolean;
 }) {
+  const t = useT();
   const { fonts, busy, error, addFont, removeFont } = useCustomFonts();
+  const localizedError =
+    error === "Use a TTF, OTF, WOFF or WOFF2 file."
+      ? t("Use a TTF, OTF, WOFF or WOFF2 file.")
+      : error === "That font is over 32 MB. Try a lighter file."
+        ? t("That font is over 32 MB. Try a lighter file.")
+        : error === "That file is not a valid font."
+          ? t("That file is not a valid font.")
+          : error;
   const inputRef = useRef<HTMLInputElement>(null);
 
   const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -61,7 +71,7 @@ export function CustomFontTiles({
               </span>
               {!compact && (
                 <span className="text-[13px] text-ink-muted" style={{ fontFamily: family }}>
-                  The quick brown fox jumps over the lazy dog
+                  {t("The quick brown fox jumps over the lazy dog")}
                 </span>
               )}
               <span
@@ -85,7 +95,7 @@ export function CustomFontTiles({
               <button
                 type="button"
                 onClick={() => remove(f.id)}
-                aria-label={`Remove ${f.name}`}
+                aria-label={t("Remove {name}", { name: f.name })}
                 className="hidden h-7 w-7 items-center justify-center rounded-full bg-canvas text-ink-subtle transition-colors hover:bg-danger/25 hover:text-danger group-hover/font:flex"
               >
                 <Trash2 size={14} strokeWidth={2.2} />
@@ -115,12 +125,16 @@ export function CustomFontTiles({
           )}
         </span>
         <span className="text-[13px] font-semibold text-ink">
-          {busy ? "Adding font..." : "Upload a font"}
+          {busy ? t("Adding font…") : t("Upload a font")}
         </span>
-        {!busy && <span className="text-[11.5px] text-ink-subtle">TTF, OTF, WOFF or WOFF2</span>}
+        {!busy && (
+          <span className="text-[11.5px] text-ink-subtle">{t("TTF, OTF, WOFF or WOFF2")}</span>
+        )}
       </button>
 
-      {error && <p className="col-span-full text-[12.5px] font-medium text-danger">{error}</p>}
+      {localizedError && (
+        <p className="col-span-full text-[12.5px] font-medium text-danger">{localizedError}</p>
+      )}
 
       <input
         ref={inputRef}

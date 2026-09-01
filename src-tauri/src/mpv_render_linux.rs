@@ -92,7 +92,12 @@ fn proc_loader() -> Option<unsafe extern "C" fn(*const c_char) -> *mut c_void> {
     if !sym.is_null() {
         return Some(unsafe { std::mem::transmute(sym) });
     }
-    let egl = unsafe { dlsym(RTLD_DEFAULT, b"eglGetProcAddress\0".as_ptr() as *const c_char) };
+    let egl = unsafe {
+        dlsym(
+            RTLD_DEFAULT,
+            b"eglGetProcAddress\0".as_ptr() as *const c_char,
+        )
+    };
     if egl.is_null() {
         return None;
     }
@@ -235,7 +240,9 @@ pub fn configure_linux_graphics() {
             .map(|v| !v.is_empty())
             .unwrap_or(false);
     if wayland && std::env::var("__NV_DISABLE_EXPLICIT_SYNC").is_err() {
-        eprintln!("[harbor::mpv_linux] NVIDIA + Wayland detected; setting __NV_DISABLE_EXPLICIT_SYNC=1");
+        eprintln!(
+            "[harbor::mpv_linux] NVIDIA + Wayland detected; setting __NV_DISABLE_EXPLICIT_SYNC=1"
+        );
         std::env::set_var("__NV_DISABLE_EXPLICIT_SYNC", "1");
     }
 }
@@ -346,7 +353,10 @@ pub fn install(gtk_window: &gtk::ApplicationWindow, vbox: &gtk::Box) -> Result<(
     });
 
     area.queue_render();
-    eprintln!("[harbor::mpv_linux] installed backend={}", backend_label(backend));
+    eprintln!(
+        "[harbor::mpv_linux] installed backend={}",
+        backend_label(backend)
+    );
     Ok(())
 }
 
@@ -397,10 +407,7 @@ fn do_render(rc: &RenderContext, area: &gtk::GLArea) {
 
     let packed = ((w as u64) << 32) | (h as u32 as u64);
     if LAST_SURFACE.swap(packed, Ordering::Relaxed) != packed {
-        eprintln!(
-            "[harbor::mpv_linux] render surface {}x{} px",
-            w, h,
-        );
+        eprintln!("[harbor::mpv_linux] render surface {}x{} px", w, h,);
     }
     if fbo == 0 && !FBO_ZERO_WARNED.swap(true, Ordering::Relaxed) {
         eprintln!("[harbor::mpv_linux] WARNING: GtkGLArea FBO query returned 0; mpv will render to the default framebuffer and the video region will stay BLACK. glGetIntegerv or the GL proc loader likely failed to resolve.");
@@ -417,10 +424,12 @@ fn do_render(rc: &RenderContext, area: &gtk::GLArea) {
 // widget drawn after the video. Driver agnostic: this is a contract, not a
 // vendor quirk.
 fn restore_gdk_gl_state(w: i32, h: i32) {
-    if let Some(f) = resolve_gl::<unsafe extern "C" fn(c_int, c_int, c_int, c_int)>(b"glViewport\0") {
+    if let Some(f) = resolve_gl::<unsafe extern "C" fn(c_int, c_int, c_int, c_int)>(b"glViewport\0")
+    {
         unsafe { f(0, 0, w.max(1), h.max(1)) };
     }
-    if let Some(f) = resolve_gl::<unsafe extern "C" fn(c_int, c_int, c_int, c_int)>(b"glScissor\0") {
+    if let Some(f) = resolve_gl::<unsafe extern "C" fn(c_int, c_int, c_int, c_int)>(b"glScissor\0")
+    {
         unsafe { f(0, 0, w.max(1), h.max(1)) };
     }
     if let Some(f) = resolve_gl::<unsafe extern "C" fn(u32)>(b"glDisable\0") {
@@ -527,7 +536,9 @@ fn apply_rgba_visual(window: &gtk::ApplicationWindow) {
             // stays on by default; HARBOR_LINUX_NO_APP_PAINTABLE=1 turns it off
             // to test whether the missing per-frame clear is the ghosting cause.
             if probe("HARBOR_LINUX_NO_APP_PAINTABLE") {
-                eprintln!("[harbor::mpv_linux] probe: leaving GtkWindow background painter enabled");
+                eprintln!(
+                    "[harbor::mpv_linux] probe: leaving GtkWindow background painter enabled"
+                );
             } else {
                 window.set_app_paintable(true);
             }

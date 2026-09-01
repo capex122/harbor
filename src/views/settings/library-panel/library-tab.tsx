@@ -1,19 +1,35 @@
 import animeCatIcon from "@/assets/category/anime.svg";
 import livetvCatIcon from "@/assets/category/livetv.svg";
 import adultCatIcon from "@/assets/category/adult.svg";
-import { BookOpen, Download, HardDrive, Play } from "lucide-react";
+import { BookOpen, Download, HardDrive } from "lucide-react";
 import { useProfiles } from "@/lib/profiles";
 import { useSettings } from "@/lib/settings";
 import { useSampleArtwork } from "@/lib/sample-artwork";
 import { useT } from "@/lib/i18n";
 import { Dropdown, type DropdownOption } from "@/components/dropdown";
-import { Section, Segmented, ToggleRow } from "../shared";
+import { Section, ToggleRow } from "../shared";
 import { SettingGroup, SettingRow } from "../kit";
 
 export function LibraryTab() {
   const { settings, update } = useSettings();
   const { activeProfile, updateProfile } = useProfiles();
   const t = useT();
+  const posterSizes: DropdownOption[] = [
+    { value: "w342", label: t("342px (small)") },
+    { value: "w500", label: t("500px (recommended)") },
+    { value: "w780", label: t("780px (large)") },
+    { value: "original", label: t("Original") },
+  ];
+  const backdropSizes: DropdownOption[] = [
+    { value: "w780", label: t("780px (small)") },
+    { value: "w1280", label: t("1280px (recommended)") },
+    { value: "original", label: t("Original") },
+  ];
+  const logoSizes: DropdownOption[] = [
+    { value: "w300", label: t("300px (small)") },
+    { value: "w500", label: t("500px (recommended)") },
+    { value: "original", label: t("Original") },
+  ];
 
   const pushHideContent = (
     key: "anime" | "sports" | "liveTv" | "adult" | "manga",
@@ -76,24 +92,6 @@ export function LibraryTab() {
       >
         <SettingGroup label={t("On disk")}>
           <SettingRow
-            icon={<Play size={16} />}
-            label={t("When a title is in your local library")}
-            desc={t("What Play does when a movie or episode also exists on your disk.")}
-            tip={t(
-              "What Play does when a movie or episode also exists on your disk. Autoplay always prefers the local copy unless set to Stream.",
-            )}
-          >
-            <Segmented
-              value={settings.localPlaybackMode}
-              onChange={(v) => update({ localPlaybackMode: v })}
-              options={[
-                { value: "ask", label: t("Ask") },
-                { value: "local", label: t("Play local") },
-                { value: "stream", label: t("Stream") },
-              ]}
-            />
-          </SettingRow>
-          <SettingRow
             icon={<HardDrive size={16} />}
             label={t("Minimum file size")}
             desc={t("Files smaller than this are skipped when scanning a folder.")}
@@ -132,21 +130,21 @@ export function LibraryTab() {
                 label={t("Poster")}
                 ratio="portrait"
                 value={settings.nfoPosterSize}
-                options={POSTER_SIZES}
+                options={posterSizes}
                 onChange={(v) => update({ nfoPosterSize: v })}
               />
               <ArtworkField
                 label={t("Backdrop")}
                 ratio="landscape"
                 value={settings.nfoBackdropSize}
-                options={BACKDROP_SIZES}
+                options={backdropSizes}
                 onChange={(v) => update({ nfoBackdropSize: v })}
               />
               <ArtworkField
                 label={t("Logo")}
                 ratio="logo"
                 value={settings.nfoLogoSize}
-                options={LOGO_SIZES}
+                options={logoSizes}
                 onChange={(v) => update({ nfoLogoSize: v })}
               />
             </div>
@@ -157,24 +155,8 @@ export function LibraryTab() {
   );
 }
 
-const POSTER_SIZES: DropdownOption[] = [
-  { value: "w342", label: "342px (small)" },
-  { value: "w500", label: "500px (recommended)" },
-  { value: "w780", label: "780px (large)" },
-  { value: "original", label: "Original" },
-];
-const BACKDROP_SIZES: DropdownOption[] = [
-  { value: "w780", label: "780px (small)" },
-  { value: "w1280", label: "1280px (recommended)" },
-  { value: "original", label: "Original" },
-];
-const LOGO_SIZES: DropdownOption[] = [
-  { value: "w300", label: "300px (small)" },
-  { value: "w500", label: "500px (recommended)" },
-  { value: "original", label: "Original" },
-];
-
 function ArtworkSwatch({ ratio }: { ratio: "portrait" | "landscape" | "logo" }) {
+  const t = useT();
   const art = useSampleArtwork();
   if (ratio === "logo") {
     return (
@@ -187,7 +169,9 @@ function ArtworkSwatch({ ratio }: { ratio: "portrait" | "landscape" | "logo" }) 
             className="max-h-6 max-w-full object-contain"
           />
         ) : (
-          <span className="font-display text-[13px] italic tracking-tight text-ink/50">Logo</span>
+          <span className="font-display text-[13px] italic tracking-tight text-ink/50">
+            {t("Logo")}
+          </span>
         )}
       </div>
     );

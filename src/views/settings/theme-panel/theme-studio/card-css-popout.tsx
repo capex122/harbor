@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { CodeEditor } from "@/components/code-editor";
 import { topMovies, type Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 
 const STARTER = `/* Custom cards: .your-card targets each poster. */
 .your-card {
@@ -25,12 +26,36 @@ const HOOKS = [
 ];
 
 const FALLBACK: Array<{ id: string; name: string; poster: string }> = [
-  { id: "tt0111161", name: "The Shawshank Redemption", poster: "https://images.metahub.space/poster/medium/tt0111161/img" },
-  { id: "tt0468569", name: "The Dark Knight", poster: "https://images.metahub.space/poster/medium/tt0468569/img" },
-  { id: "tt1375666", name: "Inception", poster: "https://images.metahub.space/poster/medium/tt1375666/img" },
-  { id: "tt0816692", name: "Interstellar", poster: "https://images.metahub.space/poster/medium/tt0816692/img" },
-  { id: "tt0137523", name: "Fight Club", poster: "https://images.metahub.space/poster/medium/tt0137523/img" },
-  { id: "tt0110912", name: "Pulp Fiction", poster: "https://images.metahub.space/poster/medium/tt0110912/img" },
+  {
+    id: "tt0111161",
+    name: "The Shawshank Redemption",
+    poster: "https://images.metahub.space/poster/medium/tt0111161/img",
+  },
+  {
+    id: "tt0468569",
+    name: "The Dark Knight",
+    poster: "https://images.metahub.space/poster/medium/tt0468569/img",
+  },
+  {
+    id: "tt1375666",
+    name: "Inception",
+    poster: "https://images.metahub.space/poster/medium/tt1375666/img",
+  },
+  {
+    id: "tt0816692",
+    name: "Interstellar",
+    poster: "https://images.metahub.space/poster/medium/tt0816692/img",
+  },
+  {
+    id: "tt0137523",
+    name: "Fight Club",
+    poster: "https://images.metahub.space/poster/medium/tt0137523/img",
+  },
+  {
+    id: "tt0110912",
+    name: "Pulp Fiction",
+    poster: "https://images.metahub.space/poster/medium/tt0110912/img",
+  },
 ];
 
 export function CardCssPopout({
@@ -42,6 +67,7 @@ export function CardCssPopout({
   onChange: (patch: { css: string }) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const [picks, setPicks] = useState(FALLBACK);
 
   useEffect(() => {
@@ -85,17 +111,17 @@ export function CardCssPopout({
         <header className="flex shrink-0 items-start gap-4 px-6 pb-5 pt-6">
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <span className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-subtle">
-              Custom cards
+              {t("Custom cards")}
             </span>
             <h2 className="truncate text-[17px] font-semibold tracking-tight text-ink">
-              Write CSS, watch real posters react
+              {t("Write CSS, watch real posters react")}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Done"
-            title="Done"
+            aria-label={t("Done")}
+            title={t("Done")}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
           >
             <X size={16} />
@@ -112,7 +138,7 @@ export function CardCssPopout({
                 className="harbor-press-pop ms-auto flex h-8 items-center gap-1.5 rounded-md bg-elevated px-2.5 text-[12.5px] font-semibold text-ink-muted transition-colors hover:text-ink"
               >
                 <Sparkles size={14} strokeWidth={2.2} />
-                Insert starter
+                {t("Insert starter")}
               </button>
             </div>
             <div className="relative min-h-0 flex-1">
@@ -126,8 +152,12 @@ export function CardCssPopout({
               {!css && (
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-8 text-center">
                   <span className="text-[13px] leading-relaxed text-ink-subtle">
-                    Style <span className="font-mono text-ink-muted">.your-card</span> and the posters on
-                    the right update live. Hit Insert starter for a head start.
+                    {t(
+                      "Style {selector} and the posters on the right update live. Hit Insert starter for a head start.",
+                      {
+                        selector: ".your-card",
+                      },
+                    )}
                   </span>
                 </div>
               )}
@@ -140,10 +170,10 @@ export function CardCssPopout({
                 <span
                   key={h.sel}
                   className="inline-flex items-center gap-1.5 rounded-md bg-elevated px-2 py-1 text-[11.5px]"
-                  title={h.note}
+                  title={t(h.note)}
                 >
                   <code className="font-mono text-ink">{h.sel}</code>
-                  <span className="text-ink-subtle">{h.note}</span>
+                  <span className="text-ink-subtle">{t(h.note)}</span>
                 </span>
               ))}
             </div>
@@ -167,7 +197,9 @@ export function CardCssPopout({
                         />
                       </div>
                     </div>
-                    <p className="line-clamp-2 text-[12.5px] font-medium leading-snug text-ink">{p.name}</p>
+                    <p className="line-clamp-2 text-[12.5px] font-medium leading-snug text-ink">
+                      {p.name}
+                    </p>
                   </button>
                 ))}
               </div>

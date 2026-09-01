@@ -28,6 +28,10 @@ export type BpCatalogPage = {
   retry: () => void;
 };
 
+export type BpShowsPage = BpCatalogPage & {
+  runtimeTitleKeys: ReadonlySet<string>;
+};
+
 export const BP_TOP10_ROW_KEY = "bp-top10";
 
 const FALLBACK_ROW_CAP = 30;
@@ -306,8 +310,25 @@ export function useBpCatalogPage(kind: BpCatalogKind): BpCatalogPage {
   return { rows: useHideAnimeRows(rows), hero, loading, failed, retry };
 }
 
-export function useBpShows(): BpCatalogPage {
-  return useBpCatalogPage("shows");
+export function useBpShows(): BpShowsPage {
+  const page = useBpCatalogPage("shows");
+  const custom = useMemo(() => loadPageRows("shows"), []);
+  const runtimeTitleKeys = useMemo(
+    () =>
+      new Set(
+        page.rows
+          .filter(
+            (row) =>
+              row.key.startsWith("collection-") ||
+              row.sourceRow != null ||
+              custom.renamed[row.key] != null,
+          )
+          .map((row) => row.key),
+      ),
+    [page.rows, custom],
+  );
+
+  return { ...page, runtimeTitleKeys };
 }
 
 /**

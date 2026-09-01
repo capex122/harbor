@@ -16,7 +16,10 @@ const readerState = readFileSync(
   new URL("../src/lib/ebook/reader-state.ts", import.meta.url),
   "utf8",
 );
-const downloads = readFileSync(new URL("../src/views/downloads/download-row.tsx", import.meta.url), "utf8");
+const downloads = readFileSync(
+  new URL("../src/views/downloads/download-row.tsx", import.meta.url),
+  "utf8",
+);
 const providers = readFileSync(new URL("../src/lib/ebook/providers.ts", import.meta.url), "utf8");
 
 test("eBook cards and the featured book open the dedicated wheel menu", () => {
@@ -45,7 +48,7 @@ test("duplicate books retain all readable sources and expose the details source 
   assert.match(api, /export function dedupeEBooks/);
   assert.match(api, /books: ordered\.length > 1 \? ordered : undefined/);
   assert.match(api, /Script=Latin/);
-  assert.match(view, /buttonLabel="Source"/);
+  assert.match(view, /buttonLabel=\{t\("Source"\)\}/);
   assert.match(view, /setSourceRoute/);
   assert.match(view, /sourceEBookChapters\(sourceRoute\)/);
   assert.match(view, /searchSourceEBookCatalog\(query, "all"\)/);
@@ -72,7 +75,7 @@ test("the wheel exposes every requested eBook action", () => {
 });
 
 test("book details resolve source metadata and chapter statistics without a loading loop", () => {
-  assert.match(wheel, /sourceEBookDetail\(route\)\.then/);
+  assert.match(wheel, /sourceEBookDetail\(route\)[\s\S]*?\.then/);
   assert.match(wheel, /sourceEBookChapters\(route\)/);
   assert.match(wheel, /authors: detail\.authors\.length \? detail\.authors : ebook\.authors/);
   assert.match(view, /if \(current\.id !== detail\.id\) return \{ \.\.\.current, books \}/);
@@ -165,7 +168,7 @@ test("the eBook home replaces Universes with the live Shelf view", () => {
 });
 
 test("the home bookmark rail is distinct from the Shelf collection", () => {
-  assert.match(view, /title: "Continue your bookmarks"/);
+  assert.match(view, /title: t\("Continue your bookmarks"\)/);
   assert.match(view, /resume: loadEBookResume\(activeId \?\? "default", ebook\.id\)/);
   assert.match(view, /items: continueBookmarks/);
   assert.match(view, /resumeReading: true/);
@@ -180,8 +183,8 @@ test("book showcases distinguish read and partially read titles", () => {
   assert.match(view, /tracking\.status === "COMPLETED"/);
   assert.match(view, /savedLine > 0/);
   assert.match(view, /status: "read" \| "partial"/);
-  assert.match(view, /complete \? "Read" : "Reading"/);
-  assert.match(view, /aria-label=\{complete \? "Read" : "Partially read"\}/);
+  assert.match(view, /complete \? t\("Read"\) : t\("Reading"\)/);
+  assert.match(view, /aria-label=\{complete \? t\("Read"\) : t\("Partially read"\)\}/);
   assert.match(view, /const readStatus = useEBookReadStatus\(ebook, profile\)/);
   assert.match(view, /ebook-details-book-cover/);
   assert.match(view, /ebook-details-book-spine/);

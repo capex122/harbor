@@ -789,6 +789,9 @@ pub async fn mpv_start(
     }
     // mpv may auto-select an embedded subtitle as soon as loadfile runs. Keep
     // both subtitle slots empty until Harbor applies the user's language choice.
+    // Still discover sidecars beside local files so they are available in the
+    // track picker even for libraries indexed before sidecars were persisted.
+    let _ = mpv.set_property("sub-auto", "all");
     let _ = mpv.set_property("sid", "no");
     let _ = mpv.set_property("secondary-sid", "no");
     if want_embed {
@@ -804,13 +807,6 @@ pub async fn mpv_start(
     let _ = mpv.set_property("sub-font-provider", "auto");
     let _ = mpv.set_property("sub-font", "Noto Sans JP");
     let _ = mpv.set_property("embeddedfonts", "yes");
-
-    if let Some(subs) = &args.subtitles {
-        for s in subs {
-            let url = s.url.replace('\\', "/");
-            let _ = mpv_argv_command(&mpv, &["sub-add", &url, "auto"]);
-        }
-    }
 
     if let Some(extra) = args.extra_options.as_deref() {
         apply_extra_mpv_options(&mpv, extra);
@@ -858,6 +854,21 @@ pub async fn mpv_start(
         format!("loadfile: {}", e)
     })?;
     eprintln!("[harbor::mpv] loadfile OK");
+
+    // `loadfile replace` clears tracks added to the previous playlist entry,
+    // so explicit sidecars must be attached after the video is loaded.
+    // This is required for sidecars whose filename differs from the video and
+    // therefore cannot be discovered by mpv's `sub-auto` matching alone.
+    if let Some(subs) = &args.subtitles {
+        for subtitle in subs {
+            let url = subtitle.url.replace('\\', "/");
+            if let Err(error) = mpv_argv_command(&mpv_arc, &["sub-add", &url, "auto"])
+            {
+                eprintln!("[harbor::mpv] sub-add failed for {}: {}", url, error);
+            }
+        }
+    }
+    attach_local_sidecars(&mpv_arc, &args.url);
 
     *g = Some(MpvSession {
         mpv: mpv_arc,
@@ -1139,7 +1150,28 @@ pub async fn mpv_command(state: State<'_, MpvState>, cmd: Vec<Value>) -> Result<
     for s in &tail {
         argv.push(s.as_str());
     }
-    mpv_argv_command(&mpv, &argv)
+    mpv_argv_command(&mpv, &argv)?;
+    if head == "loadfile" {
+        if let Some(url) = tail.first() {
+            attach_local_sidecars(&mpv, url);
+        }
+    }
+    Ok(())
+}
+
+fn attach_local_sidecars(mpv: &Mpv, url: &str) {
+    if url.contains("://") {
+        return;
+    }
+    for subtitle in crate::local_lib::adjacent_subtitles(std::path::Path::new(url)) {
+        let normalized = subtitle.replace('\\', "/");
+        if let Err(error) = mpv_argv_command(mpv, &["sub-add", &normalized, "auto"]) {
+            eprintln!(
+                "[harbor::mpv] adjacent sub-add failed for {}: {}",
+                normalized, error
+            );
+        }
+    }
 }
 
 const MPV_ALLOWED_COMMANDS: &[&str] = &[

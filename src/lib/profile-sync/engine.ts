@@ -3,13 +3,16 @@ import {
   fetchSyncState,
   isAuthFailure,
   isRateLimited,
+  isRejection,
   pushSyncWrites,
+  rejectedKeyOf,
   resultKey,
   syncArm,
 } from "./client";
 import { ACCOUNT_KEY, removeKey } from "./keys";
 import { knownSyncIds, localIdFor } from "./id-map";
 import { clearAllParked, clearParked, park } from "./parked";
+import { MAX_PUSH_BYTES, MAX_WRITES_PER_PUSH, byteLength, sectionLimit } from "./limits";
 import { clearQueue, dropFromQueue, enqueueDirty, queueEntries, queueSize, queuedSince } from "./queue";
 import {
   bindAccount,
@@ -45,6 +48,7 @@ import {
 } from "./types";
 
 const RATE_LIMIT_BACKOFF_MS = 60000;
+const REJECT_BACKOFF_MS = 60_000;
 
 export type PullOutcome = { ok: true; firstPull: boolean } | { ok: false; reason: SyncErrorKind };
 export type PushOutcome =
@@ -102,6 +106,7 @@ function refreshQueueStatus(): void {
 function classify(e: unknown): SyncErrorKind {
   if (isRateLimited(e)) return "rate-limited";
   if (isAuthFailure(e)) return "auth";
+  if (isRejection(e)) return "server";
   return "network";
 }
 
@@ -276,6 +281,7 @@ type Prepared = {
   serialized: string;
   section: SectionKey;
   profileId: string;
+  bytes?: number;
 };
 
 function prepareWrites(): Prepared[] {
@@ -323,7 +329,40 @@ function prepareWrites(): Prepared[] {
       dropFromQueue(key);
       continue;
     }
-    out.push({ write: { key, baseRev, value }, serialized, section: parsed.section, profileId });
+    const bytes = byteLength(serialized);
+    if (bytes > sectionLimit(parsed.section)) {
+      park(key, value, revOf(key));
+      dropFromQueue(key);
+      continue;
+    }
+    out.push({
+      write: { key, baseRev, value },
+      serialized,
+      section: parsed.section,
+      profileId,
+      bytes,
+    });
+  }
+  return capPush(out);
+}
+
+/**
+ * The server refuses a push carrying more than MAX_WRITES_PER_PUSH writes or
+ * MAX_PUSH_BYTES of value, and it refuses the WHOLE batch rather than the offending
+ * write. An uncapped client therefore sends an over-limit batch, takes a 413, retries
+ * the identical batch on the next tick and never drains: every section behind it is
+ * stalled for as long as the account stays dirty. Sending a prefix that fits leaves the
+ * rest queued for the next pass instead.
+ */
+function capPush(all: Prepared[]): Prepared[] {
+  const out: Prepared[] = [];
+  let bytes = 0;
+  for (const entry of all) {
+    if (out.length >= MAX_WRITES_PER_PUSH) break;
+    const next = bytes + (entry.bytes ?? 0);
+    if (out.length > 0 && next > MAX_PUSH_BYTES) break;
+    out.push(entry);
+    bytes = next;
   }
   return out;
 }
@@ -379,6 +418,22 @@ export async function runPush(): Promise<PushOutcome> {
   } catch (e) {
     const reason = classify(e);
     if (reason === "rate-limited") rateLimitedUntil = Date.now() + RATE_LIMIT_BACKOFF_MS;
+    if (reason === "server") {
+      // The batch was refused whole. Park and drop the write the server named so the rest
+      // can drain; when it named none, drop the largest so the batch shrinks every pass
+      // instead of resending the same refused bytes forever.
+      const named = rejectedKeyOf(e);
+      const victim =
+        prepared.find((entry) => entry.write.key === named) ??
+        prepared.reduce((worst, entry) => ((entry.bytes ?? 0) > (worst.bytes ?? 0) ? entry : worst));
+      if (victim) {
+        const mine = "value" in victim.write ? victim.write.value : undefined;
+        if (mine !== undefined) park(victim.write.key, mine, revOf(victim.write.key));
+        dropFromQueue(victim.write.key);
+        refreshQueueStatus();
+      }
+      rateLimitedUntil = Date.now() + REJECT_BACKOFF_MS;
+    }
     patchSyncStatus({ phase: "idle", lastError: reason });
     return { ok: false, reason };
   }

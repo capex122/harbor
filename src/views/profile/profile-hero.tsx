@@ -85,7 +85,11 @@ export function ProfileHero({
   const presenceLabel = p.isOwner
     ? myStatus === "online"
       ? t("Online now")
-      : meta.label
+      : myStatus === "away"
+        ? t("Away")
+        : myStatus === "dnd"
+          ? t("Do not disturb")
+          : t("Appear offline")
     : p.online
       ? t("Online now")
       : t("Offline");

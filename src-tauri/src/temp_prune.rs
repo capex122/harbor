@@ -155,7 +155,11 @@ pub fn sweep_mpv_cache(dir: PathBuf) -> u64 {
         if age < MPV_CACHE_MAX_AGE {
             continue;
         }
-        let size = if meta.is_dir() { dir_size(&path) } else { meta.len() };
+        let size = if meta.is_dir() {
+            dir_size(&path)
+        } else {
+            meta.len()
+        };
         let removed = if meta.is_dir() {
             std::fs::remove_dir_all(&path).is_ok()
         } else {

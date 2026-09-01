@@ -63,7 +63,10 @@ export function TopDock() {
           <button
             type="button"
             onClick={() => navigate(item)}
-            className={`relative h-9 whitespace-nowrap rounded-full px-3 text-[12.5px] font-medium transition-colors ${
+            aria-label={label}
+            data-harbor-nav={item.id}
+            data-active={active ? "" : undefined}
+            className={`relative flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12.5px] font-medium transition-colors ${
               active ? "text-ink" : "text-ink-muted hover:text-ink"
             }`}
           >
@@ -73,7 +76,10 @@ export function TopDock() {
                 className="absolute inset-0 -z-10 rounded-full bg-white/15 ring-1 ring-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_12px_-2px_rgba(0,0,0,0.3)] backdrop-blur-md"
               />
             )}
-            {label}
+            <span data-topdock-icon aria-hidden className="hidden">
+              {item.render(active)}
+            </span>
+            <span data-topdock-label>{label}</span>
           </button>
         ),
       };

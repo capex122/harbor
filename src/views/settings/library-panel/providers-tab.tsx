@@ -7,8 +7,6 @@ import { hasCustomMetaAddon } from "@/lib/meta-resource";
 import { useT } from "@/lib/i18n";
 import { Section, Segmented, ToggleRow } from "../shared";
 import { SettingGroup, SettingRow, Nested } from "../kit";
-import { RegionField } from "../region-cascade";
-import { AiSearchSection } from "../ai-search-section";
 import { EpisodeOrderSetting } from "../episode-order-setting";
 import { useProviderKeys, type ProviderKeysArgs } from "./provider-keys";
 
@@ -22,13 +20,15 @@ export function ProvidersTab(props: ProviderKeysArgs) {
     <>
       {modals}
 
-      <Section
-        title={t("Metadata providers")}
-        subtitle={t(
-          "A free TMDB key is highly recommended. It unlocks the full Harbor experience. The rest are optional, and Cinemeta works out of the box without any.",
-        )}
-      >
-        <SettingGroup label={t("Provider keys")}>
+      <Section title={t("Metadata providers")}>
+        <SettingGroup>
+          <SettingRow
+            wide
+            label={t("Bring your own keys")}
+            desc={t(
+              "A free TMDB key is highly recommended. It unlocks the full Harbor experience. The rest are optional, and Cinemeta works out of the box without any.",
+            )}
+          />
           {keyRow("tmdb")}
           {keyRow("omdb")}
           {keyRow("tvdb")}
@@ -36,9 +36,12 @@ export function ProvidersTab(props: ProviderKeysArgs) {
           {keyRow("fanart")}
           {keyRow("rpdb")}
           {keyRow("postersrv")}
+          {keyRow("nyt")}
         </SettingGroup>
+      </Section>
 
-        <SettingGroup label={t("Titles and descriptions")}>
+      <Section title={t("Titles and descriptions")}>
+        <SettingGroup>
           <ToggleRow
             label={t("Use Cinemeta for title metadata")}
             sub={t(
@@ -71,47 +74,38 @@ export function ProvidersTab(props: ProviderKeysArgs) {
             onChange={(v) => update({ imdbApiFallback: v })}
           />
         </SettingGroup>
+      </Section>
 
-        <SettingGroup label={t("Episode order")}>
+      <Section title={t("Episode order")}>
+        <SettingGroup>
           <EpisodeOrderSetting />
         </SettingGroup>
       </Section>
 
-      <Section
-        title={t("Region & language")}
-        subtitle={t(
-          "Used for streaming availability and the Now Playing release window. Pick a country and Harbor can match the interface, metadata, and subtitle languages to it.",
-        )}
-      >
-        <RegionField />
+      <Section title={t("Song identification")}>
+        <SettingGroup>
+          <SettingRow
+            icon={<Music size={16} />}
+            label={t("Song ID provider")}
+            desc={t("Which service names the track when you tap Identify song in the player.")}
+          >
+            <Segmented
+              value={settings.songIdProvider}
+              options={[
+                { value: "audd", label: t("AudD") },
+                { value: "ai", label: t("AI (Gemini)") },
+              ]}
+              onChange={(v) => update({ songIdProvider: v as "audd" | "ai" })}
+            />
+          </SettingRow>
+          <Nested>{settings.songIdProvider === "ai" ? keyRow("songai") : keyRow("audd")}</Nested>
+        </SettingGroup>
       </Section>
 
-      <AiSearchSection />
-
-      <Section
-        title={t("Song identification")}
-        subtitle={t("Which service names the track when you tap Identify song in the player.")}
-      >
-        <SettingRow icon={<Music size={16} />} label={t("Song ID provider")}>
-          <Segmented
-            value={settings.songIdProvider}
-            options={[
-              { value: "audd", label: t("AudD") },
-              { value: "ai", label: t("AI (Gemini)") },
-            ]}
-            onChange={(v) => update({ songIdProvider: v as "audd" | "ai" })}
-          />
-        </SettingRow>
-        <Nested>{settings.songIdProvider === "ai" ? keyRow("songai") : keyRow("audd")}</Nested>
-      </Section>
-
-      <Section
-        title={t("API budget")}
-        subtitle={t(
-          "Daily call counter for OMDb rating lookups. Reset if it stops returning fresh scores.",
-        )}
-      >
-        <OmdbBudgetRow />
+      <Section title={t("API budget")}>
+        <SettingGroup>
+          <OmdbBudgetRow />
+        </SettingGroup>
       </Section>
     </>
   );

@@ -2,6 +2,7 @@ import { BookOpen, Check, Copy, Download, Play, Redo2, Undo2, X } from "lucide-r
 import { useState } from "react";
 import { CodeEditor, type CodeLang } from "@/components/code-editor";
 import { downloadText } from "@/lib/download-text";
+import { useT } from "@/lib/i18n";
 import { CheatSheet } from "./cheat-sheet";
 import { FileTree } from "./code-popout/file-tree";
 import { THEME_FILES } from "./code-popout/files";
@@ -35,6 +36,7 @@ export function CodePopout({
   canUndo: boolean;
   canRedo: boolean;
 }) {
+  const t = useT();
   const [tab, setTab] = useState<CodeLang>(initialTab);
   const [caret, setCaret] = useState({ line: 1, col: 1 });
   const [copied, setCopied] = useState(false);
@@ -51,7 +53,7 @@ export function CodePopout({
 
   const download = (id: CodeLang) => {
     const f = THEME_FILES.find((x) => x.id === id);
-    if (f) void downloadText(f.name, values[id], [f.id], "Harbor theme");
+    if (f) void downloadText(f.name, values[id], [f.id], t("Harbor theme"));
   };
 
   const copy = () => {
@@ -70,15 +72,17 @@ export function CodePopout({
       <header className="flex shrink-0 items-start gap-4 px-6 pb-5 pt-6">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-subtle">
-            Code
+            {t("Code")}
           </span>
-          <h2 className="truncate text-[17px] font-semibold tracking-tight text-ink">{themeName}</h2>
+          <h2 className="truncate text-[17px] font-semibold tracking-tight text-ink">
+            {themeName}
+          </h2>
         </div>
         <button
           type="button"
           onClick={requestClose}
-          aria-label="Done"
-          title="Done"
+          aria-label={t("Done")}
+          title={t("Done")}
           className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
         >
           <X size={16} />
@@ -124,7 +128,7 @@ export function CodePopout({
                 type="button"
                 onClick={onUndo}
                 disabled={!canUndo}
-                title="Undo (Ctrl/Cmd + Z)"
+                title={t("Undo (Ctrl/Cmd + Z)")}
                 className="grid h-9 w-9 place-items-center rounded-md text-ink-subtle transition-colors hover:bg-elevated hover:text-ink disabled:pointer-events-none disabled:opacity-30"
               >
                 <Undo2 size={16} strokeWidth={2.2} />
@@ -133,7 +137,7 @@ export function CodePopout({
                 type="button"
                 onClick={onRedo}
                 disabled={!canRedo}
-                title="Redo (Ctrl/Cmd + Shift + Z)"
+                title={t("Redo (Ctrl/Cmd + Shift + Z)")}
                 className="grid h-9 w-9 place-items-center rounded-md text-ink-subtle transition-colors hover:bg-elevated hover:text-ink disabled:pointer-events-none disabled:opacity-30"
               >
                 <Redo2 size={16} strokeWidth={2.2} />
@@ -144,7 +148,7 @@ export function CodePopout({
                 className="flex h-9 items-center gap-1.5 rounded-md px-3 text-[12.5px] font-semibold text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
               >
                 <BookOpen size={16} strokeWidth={2.2} />
-                Cheat sheet
+                {t("Cheat sheet")}
               </button>
               {tab === "js" && (
                 <button
@@ -154,7 +158,7 @@ export function CodePopout({
                   className="harbor-press-pop flex h-9 items-center gap-1.5 rounded-md bg-success px-3.5 text-[12.5px] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-30"
                 >
                   <Play size={14} strokeWidth={2.6} fill="currentColor" />
-                  Run
+                  {t("Run")}
                 </button>
               )}
               <button
@@ -164,8 +168,12 @@ export function CodePopout({
                   copied ? "text-success" : "text-ink-subtle hover:text-ink"
                 }`}
               >
-                {copied ? <Check size={16} strokeWidth={2.6} /> : <Copy size={16} strokeWidth={2.2} />}
-                {copied ? "Copied" : "Copy"}
+                {copied ? (
+                  <Check size={16} strokeWidth={2.6} />
+                ) : (
+                  <Copy size={16} strokeWidth={2.2} />
+                )}
+                {copied ? t("Copied") : t("Copy")}
               </button>
               <button
                 type="button"
@@ -173,7 +181,7 @@ export function CodePopout({
                 className="flex h-9 items-center gap-1.5 rounded-md px-3 text-[12.5px] font-semibold text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
               >
                 <Download size={16} strokeWidth={2.2} />
-                Download
+                {t("Download")}
               </button>
             </div>
           </div>
@@ -191,7 +199,7 @@ export function CodePopout({
             {!value && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <span className="text-[13px] text-ink-subtle">
-                  {meta.name} is empty. Start typing to restyle Harbor.
+                  {t("{file} is empty. Start typing to restyle Harbor.", { file: meta.name })}
                 </span>
               </div>
             )}

@@ -35,6 +35,7 @@ const BAND_TOP = "calc(var(--bp-bar-h) + clamp(5px,0.64vh,10px))";
 type BpLiveCategory = {
   key: string;
   label: string;
+  translateLabel?: boolean;
   flagCode?: string;
   star?: boolean;
   channels: IptvChannel[];
@@ -56,8 +57,14 @@ export function BpLive() {
     // Favourites is pinned to slot zero here rather than taken from the rail
     // order, so it can never move or vanish when use-live-home reshuffles.
     const out: BpLiveCategory[] = [
-      { key: FAV_KEY, label: "Favorites", star: true, channels: fav?.channels ?? [] },
-      { key: ALL_KEY, label: "All", channels: live.channels },
+      {
+        key: FAV_KEY,
+        label: "Favorites",
+        translateLabel: true,
+        star: true,
+        channels: fav?.channels ?? [],
+      },
+      { key: ALL_KEY, label: "All", translateLabel: true, channels: live.channels },
     ];
     const hidden = new Set(groupPrefs.hidden);
     for (const rail of rails) {
@@ -137,37 +144,39 @@ export function BpLive() {
 
   return (
     <div className="flex h-full flex-col">
-      {!showSetup && activeSource && (
-        // The mask stays on this tall container, never on the filter row: it is
-        // a horizontal fade and clips nothing vertically, so the segment ring
-        // has room, and the source button sits at the gutter well clear of the
-        // fade so it never dims.
-        <div
-          className="flex shrink-0 flex-col gap-[clamp(7px,0.9vh,15px)] px-[var(--bp-gutter)] pb-[clamp(7px,0.96vh,16px)]"
-          style={{
-            paddingTop: BAND_TOP,
-            maskImage: EDGE_MASK,
-            WebkitMaskImage: EDGE_MASK,
-          }}
-        >
-          <BpLiveSourceButton
-            name={activeSource.name}
-            channelCount={live.channels.length}
-            onOpen={() => openSources(false)}
-          />
-          <BpLiveFilters
-            items={categories.map((c) => ({
-              key: c.key,
-              label: c.label,
-              count: c.channels.length,
-              star: c.star,
-              flagCode: c.flagCode,
-            }))}
-            activeKey={catKey}
-            onSelect={setKey}
-          />
-        </div>
-      )}
+      {!showSetup &&
+        activeSource && (
+          // The mask stays on this tall container, never on the filter row: it is
+          // a horizontal fade and clips nothing vertically, so the segment ring
+          // has room, and the source button sits at the gutter well clear of the
+          // fade so it never dims.
+          <div
+            className="flex shrink-0 flex-col gap-[clamp(7px,0.9vh,15px)] px-[var(--bp-gutter)] pb-[clamp(7px,0.96vh,16px)]"
+            style={{
+              paddingTop: BAND_TOP,
+              maskImage: EDGE_MASK,
+              WebkitMaskImage: EDGE_MASK,
+            }}
+          >
+            <BpLiveSourceButton
+              name={activeSource.name}
+              channelCount={live.channels.length}
+              onOpen={() => openSources(false)}
+            />
+            <BpLiveFilters
+              items={categories.map((c) => ({
+                key: c.key,
+                label: c.label,
+                translateLabel: c.translateLabel,
+                count: c.channels.length,
+                star: c.star,
+                flagCode: c.flagCode,
+              }))}
+              activeKey={catKey}
+              onSelect={setKey}
+            />
+          </div>
+        )}
 
       {showSetup && (
         // First run stands alone with no band above it, so it owns the top-bar

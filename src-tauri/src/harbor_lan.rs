@@ -79,7 +79,13 @@ fn app_version() -> String {
 fn sanitize_host(raw: &str) -> String {
     let mut out: String = raw
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '-' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' {
+                c
+            } else {
+                '-'
+            }
+        })
         .collect();
     while out.starts_with('-') {
         out.remove(0);
@@ -143,7 +149,11 @@ pub fn harbor_lan_advertise(
     props.insert("plat".into(), me.platform.clone());
     props.insert(
         "cmd".into(),
-        if commandable { "1".into() } else { "0".to_string() },
+        if commandable {
+            "1".into()
+        } else {
+            "0".to_string()
+        },
     );
     if let Some(active) = theme.as_ref().filter(|t| !t.is_empty()) {
         props.insert("theme".into(), active.to_string());
@@ -171,8 +181,14 @@ pub fn harbor_lan_advertise(
 
 #[tauri::command]
 pub fn harbor_lan_stop_advertise() {
-    let Some(daemon) = advert_daemon() else { return };
-    let Some(fullname) = registered_slot().lock().ok().and_then(|mut slot| slot.take()) else {
+    let Some(daemon) = advert_daemon() else {
+        return;
+    };
+    let Some(fullname) = registered_slot()
+        .lock()
+        .ok()
+        .and_then(|mut slot| slot.take())
+    else {
         return;
     };
     let _ = daemon.unregister(&fullname);
