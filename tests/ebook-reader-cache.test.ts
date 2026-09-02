@@ -93,12 +93,13 @@ test("Book Mode generation is cached and cancellable", async () => {
   assert.match(pages, /AbortError/);
 });
 
-test("the line tracker marks every completed line with the tracker color", async () => {
+test("the line tracker keeps completed lines marked after moving backward", async () => {
   const reader = await readFile(
     new URL("../src/views/ebook/harbor-reader.tsx", import.meta.url),
     "utf8",
   );
-  assert.match(reader, /index < current \? "reader-read"/);
+  assert.match(reader, /setReadThrough\(\(line\) => Math\.max\(line, current\)\)/);
+  assert.match(reader, /index <= readThrough \? "reader-read"/);
   assert.match(reader, /--reader-read-color/);
   assert.match(reader, /\.reader-read\{color:var\(--reader-read-color\)\}/);
 });
@@ -114,6 +115,62 @@ test("narrator voices exist only in the reader controller, not Reading settings"
   assert.doesNotMatch(settings, /Narrator voice/);
   assert.match(reader.slice(0, settingsStart), /<VoicePicker/);
   assert.match(settings, /Setting label=\{t\("Saved audio"\)\}/);
+});
+
+test("right-click opens the passage toolbar and bookmarks become the resume point", async () => {
+  const reader = await readFile("src/views/ebook/harbor-reader.tsx", "utf8");
+
+  assert.match(reader, /onContextMenu=\{\(event\) => \{[\s\S]*?tracedLine\.current = index;[\s\S]*?persistReadingPosition\(index\);[\s\S]*?setSelection\(\{[\s\S]*?ranges: \[\{ line: index, start: 0, end: text\.length \}\]/);
+  assert.match(reader, /label=\{t\("Passage bookmark"\)\}/);
+  assert.match(reader, /onBookmark=\{\(\) => \{\s*addBookmark\(selection\.ranges\[0\]\?\.line \?\? current\)/);
+  assert.match(reader, /label=\{t\("Listen from here"\)\}/);
+  assert.match(reader, /onListenFrom=\{\(\) => \{[\s\S]*?void speakFrom\(line\)/);
+  assert.match(reader, /const addBookmark = \(index = current\) => \{\s*persistReadingPosition\(index\)/);
+  assert.match(reader, /window\.addEventListener\("pagehide", saveCurrentPassage\)/);
+  assert.match(reader, /document\.visibilityState === "hidden"/);
+  assert.match(reader, /return \(\) => \{\s*saveCurrentPassage\(\)/);
+});
+
+test("only bookmarks in the open chapter can continue narration", async () => {
+  const reader = await readFile("src/views/ebook/harbor-reader.tsx", "utf8");
+
+  assert.match(reader, /bookmark\.chapterId === chapter\.id && \(\s*<button/);
+  assert.match(reader, /aria-label=\{t\("Listen from here"\)\}/);
+  assert.match(reader, /void speakFrom\(bookmark\.line\)/);
+  assert.doesNotMatch(reader, /pendingBookmarkNarration/);
+});
+
+test("narration playback cycles through the supported speeds", async () => {
+  const reader = await readFile("src/views/ebook/harbor-reader.tsx", "utf8");
+
+  assert.match(reader, /const playbackRates = \[1, 1\.5, 2, 3\] as const/);
+  assert.match(reader, /player\.playbackRate = playbackRate/);
+  assert.match(reader, /if \(audio\.current\) audio\.current\.playbackRate = next/);
+  assert.match(reader, /\{playbackRate\}×/);
+});
+
+test("Edge TTS reuses one complete chapter track and seeks to the selected line", async () => {
+  const reader = await readFile(
+    new URL("../src/views/ebook/harbor-reader.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(reader, /const windowEnd = paragraphs\.length/);
+  assert.match(reader, /const chapterText = paragraphs\.join/);
+  assert.match(reader, /player\.currentTime = timeForParagraph\(duration, boundaries\)/);
+  assert.match(reader, /player\.currentTime = timeForParagraph\(duration, boundaries\);\s*setAudioPosition\(player\.currentTime\);\s*void player\.play\(\)/);
+  assert.match(reader, /boundaryWords\[cursor \+ offset\] === word/);
+  assert.match(reader, /Math\.max\(0, boundary\.offsetMs \/ 1_000 - 0\.12\)/);
+  assert.doesNotMatch(reader, /NARRATION_BUDGETS|narrationWindowEnd|narrationAhead/);
+});
+
+test("the reader can return a displaced line tracker to the active audio line", async () => {
+  const reader = await readFile(
+    new URL("../src/views/ebook/harbor-reader.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(reader, /current !== narrationLine\.current/);
+  assert.match(reader, /goTo\(narrationLine\.current\)/);
+  assert.match(reader, /Return to the audio line/);
 });
 
 test("Book Mode keeps the current pages visible while settings regenerate replacements", async () => {

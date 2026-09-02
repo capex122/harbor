@@ -13,6 +13,7 @@ import {
   Languages,
   Link2,
   Loader2,
+  LocateFixed,
   MessageSquareText,
   Moon,
   Pause,
@@ -125,6 +126,7 @@ const trackerColors = [
   "#8fc9c2",
   "#b4cfa2",
 ];
+const playbackRates = [1, 1.5, 2, 3] as const;
 const narrationVoices = [
   { id: "en-US-AvaNeural", label: "Ava", tone: "American · Female", locale: "en-US" },
   { id: "en-US-AndrewNeural", label: "Andrew", tone: "American · Male", locale: "en-US" },
@@ -568,6 +570,7 @@ export function HarborReader({
   const [query, setQuery] = useState("");
   const [showFutureResults, setShowFutureResults] = useState(false);
   const [current, setCurrent] = useState(0);
+  const [readThrough, setReadThrough] = useState(0);
   const [speaking, setSpeaking] = useState(false);
   const [narrationPaused, setNarrationPaused] = useState(false);
   const [narrationLoading, setNarrationLoading] = useState(false);
@@ -575,6 +578,7 @@ export function HarborReader({
   const [generationPercent, setGenerationPercent] = useState(0);
   const [audioPosition, setAudioPosition] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState<(typeof playbackRates)[number]>(1);
   const audio = useRef<HTMLAudioElement | null>(null);
   const audioUrl = useRef("");
   const voicePreviewAudio = useRef<HTMLAudioElement | null>(null);
@@ -586,13 +590,6 @@ export function HarborReader({
   const narrationRun = useRef(0);
   const narrationRequestId = useRef("");
   const narrationLine = useRef(-1);
-  const narrationStep = useRef(0);
-  const narrationAhead = useRef<{
-    start: number;
-    end: number;
-    voice: string;
-    promise: ReturnType<typeof synthesizeNarration>;
-  } | null>(null);
   const [readerText, setReaderText] = useState(content.text ?? "");
   const originalTitle = chapter.title || bookTitle;
   const originalText = content.originalText ?? content.text ?? "";
@@ -968,7 +965,28 @@ export function HarborReader({
   );
 
   useEffect(() => {
+    setReadThrough((line) => Math.max(line, current));
+  }, [current]);
+
+  useEffect(() => {
+    const saveCurrentPassage = () => {
+      if (tracedLine.current >= 0) persistReadingPosition(tracedLine.current);
+    };
+    const saveWhenHidden = () => {
+      if (document.visibilityState === "hidden") saveCurrentPassage();
+    };
+    window.addEventListener("pagehide", saveCurrentPassage);
+    document.addEventListener("visibilitychange", saveWhenHidden);
+    return () => {
+      saveCurrentPassage();
+      window.removeEventListener("pagehide", saveCurrentPassage);
+      document.removeEventListener("visibilitychange", saveWhenHidden);
+    };
+  }, [persistReadingPosition]);
+
+  useEffect(() => {
     const saved = loadEBookProgress(profile, bookId, progressId);
+    setReadThrough(saved);
     const timer = window.setTimeout(() => {
       goTo(saved);
       persistReadingPosition(saved);
@@ -1289,22 +1307,6 @@ export function HarborReader({
     onSelectChapter(target);
   };
 
-  const NARRATION_BUDGETS = [700, 1500, 3000, 4000];
-  const narrationBudget = (step: number) =>
-    NARRATION_BUDGETS[Math.min(step, NARRATION_BUDGETS.length - 1)];
-
-  const narrationWindowEnd = (start: number, budget: number) => {
-    let end = start;
-    let chars = 0;
-    while (end < paragraphs.length) {
-      const size = paragraphs[end].length + 2;
-      if (chars && chars + size > budget) break;
-      chars += size;
-      end += 1;
-    }
-    return end;
-  };
-
   const speakWithDevice = (index = current) => {
     if (!("speechSynthesis" in window) || !paragraphs.length) return;
     window.speechSynthesis.cancel();
@@ -1335,11 +1337,8 @@ export function HarborReader({
       globalThis.crypto?.randomUUID?.() ??
       `reader-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     narrationRequestId.current = requestId;
-    const ready = narrationAhead.current;
-    const usePrefetched = !!ready && ready.start === index;
-    if (!usePrefetched) narrationStep.current = 0;
-    const windowEnd = usePrefetched ? ready!.end : narrationWindowEnd(index, narrationBudget(0));
-    const chapterText = paragraphs.slice(index, windowEnd).join("\n\n").trim();
+    const windowEnd = paragraphs.length;
+    const chapterText = paragraphs.join("\n\n").trim();
     if (!chapterText) {
       setNarrationNotice("There is nothing to read aloud on this page.");
       return;
@@ -1348,7 +1347,7 @@ export function HarborReader({
       availableNarrationVoices.find((voice) => voice.id === prefs.narrationVoice) ??
       fallbackNarrationVoices.find((voice) => voice.id === prefs.narrationVoice) ??
       fallbackNarrationVoices[0];
-    const spokenParagraphs = paragraphs.slice(index, windowEnd);
+    const spokenParagraphs = paragraphs;
     const spokenWeights = spokenParagraphs.map((text) => Math.max(1, text.trim().length));
     const totalWeight = spokenWeights.reduce((total, weight) => total + weight, 0);
     const spokenWordEnds: number[] = [];
@@ -1374,16 +1373,50 @@ export function HarborReader({
         }
         const spokenWord = Math.max(0, low - 1);
         const paragraphOffset = spokenWordEnds.findIndex((end) => spokenWord < end);
-        if (paragraphOffset >= 0) return index + paragraphOffset;
+        if (paragraphOffset >= 0) return paragraphOffset;
       }
-      if (!duration || !totalWeight) return index;
+      if (!duration || !totalWeight) return 0;
       const target = Math.min(1, Math.max(0, position / duration)) * totalWeight;
       let accumulated = 0;
       for (let offset = 0; offset < spokenWeights.length; offset += 1) {
         accumulated += spokenWeights[offset];
-        if (target <= accumulated) return index + offset;
+        if (target <= accumulated) return offset;
       }
       return windowEnd - 1;
+    };
+    const timeForParagraph = (
+      duration: number,
+      boundaries: Array<{ offsetMs: number; text?: string }>,
+    ) => {
+      const firstWord = index > 0 ? spokenWordEnds[index - 1] : 0;
+      const normalizeWord = (value: string) =>
+        stripMarks(value).replace(/[^\p{L}\p{N}'’]+/gu, "");
+      const passageWords =
+        spokenParagraphs[index]
+          ?.match(/[\p{L}\p{M}\p{N}'’]+/gu)
+          ?.map(normalizeWord)
+          .filter(Boolean) ?? [];
+      const boundaryWords = boundaries.map((boundary) => normalizeWord(boundary.text ?? ""));
+      let matched = -1;
+      for (let length = Math.min(4, passageWords.length); length > 0 && matched < 0; length -= 1) {
+        let distance = Number.POSITIVE_INFINITY;
+        for (let cursor = 0; cursor <= boundaryWords.length - length; cursor += 1) {
+          if (!passageWords.slice(0, length).every((word, offset) => boundaryWords[cursor + offset] === word))
+            continue;
+          const nextDistance = Math.abs(cursor - firstWord);
+          if (nextDistance < distance) {
+            matched = cursor;
+            distance = nextDistance;
+          }
+        }
+      }
+      const boundary = boundaries[matched >= 0 ? matched : firstWord];
+      if (boundary) return Math.max(0, boundary.offsetMs / 1_000 - 0.12);
+      if (!duration || !totalWeight) return 0;
+      const precedingWeight = spokenWeights
+        .slice(0, index)
+        .reduce((total, weight) => total + weight, 0);
+      return (precedingWeight / totalWeight) * duration;
     };
     setSpeaking(true);
     setNarrationPaused(false);
@@ -1391,30 +1424,34 @@ export function HarborReader({
     setGenerationPercent(1);
     setNarrationNotice("");
     try {
-      const ahead = narrationAhead.current;
-      narrationAhead.current = null;
-      const pending =
-        ahead && ahead.start === index && ahead.voice === selectedVoice.id
-          ? ahead.promise
-          : synthesizeNarration(
-              requestId,
-              chapterText,
-              selectedVoice.id,
-              selectedVoice.locale,
-              (progress) => setGenerationPercent(progress.percent),
-            );
-      const { blob, boundaries } = await pending;
+      const { blob, boundaries } = await synthesizeNarration(
+        requestId,
+        chapterText,
+        selectedVoice.id,
+        selectedVoice.locale,
+        (progress) => setGenerationPercent(progress.percent),
+      );
       if (run !== narrationRun.current) return;
       if (narrationRequestId.current === requestId) narrationRequestId.current = "";
       setGenerationPercent(100);
       const url = URL.createObjectURL(blob);
       audioUrl.current = url;
       const player = new Audio(url);
+      player.playbackRate = playbackRate;
       audio.current = player;
       setAudioPosition(0);
       setAudioDuration(0);
-      player.ondurationchange = () =>
-        setAudioDuration(Number.isFinite(player.duration) ? player.duration : 0);
+      let positioned = false;
+      player.ondurationchange = () => {
+        const duration = Number.isFinite(player.duration) ? player.duration : 0;
+        setAudioDuration(duration);
+        if (!positioned && duration > 0) {
+          positioned = true;
+          player.currentTime = timeForParagraph(duration, boundaries);
+          setAudioPosition(player.currentTime);
+          void player.play();
+        }
+      };
       player.ontimeupdate = () => {
         setAudioPosition(player.currentTime);
         const line = paragraphForTime(player.currentTime, player.duration, boundaries);
@@ -1423,41 +1460,15 @@ export function HarborReader({
         goTo(line);
         window.requestAnimationFrame(() => updateTrace());
       };
+      narrationLine.current = index;
       goTo(index);
       setNarrationLoading(false);
-      if (windowEnd < paragraphs.length) {
-        const aheadEnd = narrationWindowEnd(windowEnd, narrationBudget(narrationStep.current + 1));
-        const aheadText = paragraphs.slice(windowEnd, aheadEnd).join("\n\n").trim();
-        if (aheadText) {
-          const promise = synthesizeNarration(
-            `${requestId}-ahead`,
-            aheadText,
-            selectedVoice.id,
-            selectedVoice.locale,
-            () => {},
-          );
-          promise.catch(() => {
-            if (narrationAhead.current?.promise === promise) narrationAhead.current = null;
-          });
-          narrationAhead.current = {
-            start: windowEnd,
-            end: aheadEnd,
-            voice: selectedVoice.id,
-            promise,
-          };
-        }
-      }
       await new Promise<void>((resolve, reject) => {
         player.onended = () => resolve();
         player.onerror = () => reject(new Error(t("The generated audio could not be played")));
       });
       URL.revokeObjectURL(url);
       audioUrl.current = "";
-      if (run === narrationRun.current && windowEnd < paragraphs.length) {
-        narrationStep.current += 1;
-        void speakFrom(windowEnd).catch(() => setSpeaking(false));
-        return;
-      }
       if (run === narrationRun.current) {
         setSpeaking(false);
         setGenerationPercent(0);
@@ -1469,7 +1480,6 @@ export function HarborReader({
       setSpeaking(false);
       setNarrationLoading(false);
       setGenerationPercent(0);
-      narrationAhead.current = null;
       const message = error instanceof Error ? error.message : t("Edge TTS failed");
       if (/desktop app/i.test(message)) {
         setNarrationNotice(
@@ -1488,6 +1498,7 @@ export function HarborReader({
   };
 
   const addBookmark = (index = current) => {
+    persistReadingPosition(index);
     setBookmarks(
       addEBookBookmark(profile, {
         bookId,
@@ -1893,9 +1904,22 @@ export function HarborReader({
                 ref={(node) => {
                   blocks.current[index] = node;
                 }}
-                className={`relative mb-[1.1em] scroll-mt-24 text-pretty transition-colors ${index === current ? "reader-current" : index < current ? "reader-read" : ""}`}
+                className={`relative mb-[1.1em] scroll-mt-24 text-pretty transition-colors ${index === current ? "reader-current" : index <= readThrough ? "reader-read" : ""}`}
                 style={{ textAlign: "start" }}
                 onMouseEnter={() => prefs.mouseLineTrack && setCurrent(index)}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  tracedLine.current = index;
+                  setCurrent(index);
+                  persistReadingPosition(index);
+                  setSelection({
+                    ranges: [{ line: index, start: 0, end: text.length }],
+                    text,
+                    x: event.clientX,
+                    y: event.clientY - 12,
+                  });
+                }}
                 onDoubleClick={() => {
                   setCurrent(index);
                   addBookmark(index);
@@ -1938,6 +1962,11 @@ export function HarborReader({
             utterance.lang = effectiveDirection === "rtl" ? "ar" : "en";
             window.speechSynthesis.speak(utterance);
           }}
+          onListenFrom={() => {
+            const line = selection.ranges[0]?.line ?? current;
+            setSelection(null);
+            void speakFrom(line);
+          }}
           onNote={() => setEditing(selectedAnnotation ?? draftAnnotation(false))}
           onReference={() =>
             setEditing(
@@ -1946,6 +1975,10 @@ export function HarborReader({
                 : draftAnnotation(true),
             )
           }
+          onBookmark={() => {
+            addBookmark(selection.ranges[0]?.line ?? current);
+            setSelection(null);
+          }}
           onCopy={() => navigator.clipboard.writeText(selection.text)}
           onHoverStart={cancelAnnotationDismiss}
           onHoverEnd={() =>
@@ -1971,6 +2004,7 @@ export function HarborReader({
           className="reader-icon"
           onClick={() => addBookmark()}
           aria-label={t("Bookmark current passage")}
+          title={t("Continue from this passage next time")}
         >
           <Bookmark size={18} />
         </button>
@@ -2097,7 +2131,7 @@ export function HarborReader({
           </div>
         )}
         {(speaking || audioDuration > 0) && (
-          <div className="flex w-[clamp(170px,19vw,280px)] items-center gap-2 px-2">
+          <div className="flex w-[clamp(210px,22vw,330px)] items-center gap-2 px-2">
             <span className="w-9 text-end text-[10px] tabular-nums" style={{ color: colors.muted }}>
               {formatAudioTime(audioPosition)}
             </span>
@@ -2125,8 +2159,37 @@ export function HarborReader({
             <span className="w-9 text-[10px] tabular-nums" style={{ color: colors.muted }}>
               -{formatAudioTime(Math.max(0, audioDuration - audioPosition))}
             </span>
+            <button
+              type="button"
+              className="min-w-9 rounded-lg px-1.5 py-1 text-[11px] font-semibold tabular-nums hover:bg-white/[.08]"
+              onClick={() => {
+                const next = playbackRates[(playbackRates.indexOf(playbackRate) + 1) % playbackRates.length];
+                setPlaybackRate(next);
+                if (audio.current) audio.current.playbackRate = next;
+              }}
+              aria-label={t("Playback speed: {speed}x", { speed: playbackRate })}
+              title={t("Change playback speed")}
+            >
+              {playbackRate}×
+            </button>
           </div>
         )}
+        {prefs.mode === "harbor" &&
+          audioDuration > 0 &&
+          narrationLine.current >= 0 &&
+          current !== narrationLine.current && (
+            <button
+              className="reader-icon"
+              onClick={() => {
+                goTo(narrationLine.current);
+                window.requestAnimationFrame(() => updateTrace());
+              }}
+              aria-label={t("Return to the audio line")}
+              title={t("Return to the audio line")}
+            >
+              <LocateFixed size={18} />
+            </button>
+          )}
         <div className="px-3 text-xs tabular-nums" style={{ color: colors.muted }}>
           {Math.round(
             prefs.mode === "book"
@@ -2496,6 +2559,20 @@ export function HarborReader({
                           {bookmark.preview}
                         </div>
                       </button>
+                      {bookmark.chapterId === chapter.id && (
+                        <button
+                          onClick={() => {
+                            setPanel(null);
+                            void speakFrom(bookmark.line);
+                          }}
+                          className="flex shrink-0 items-center gap-1.5 self-start rounded-lg px-2 py-2 text-xs hover:bg-white/[.06]"
+                          aria-label={t("Listen from here")}
+                          title={t("Listen from here")}
+                        >
+                          <Play size={14} fill="currentColor" />
+                          <span>{t("Listen from here")}</span>
+                        </button>
+                      )}
                       <button
                         onClick={() =>
                           setBookmarks(removeEBookBookmark(profile, bookId, bookmark.id))
@@ -2537,8 +2614,10 @@ function SelectionToolbar({
   direction,
   onColor,
   onListen,
+  onListenFrom,
   onNote,
   onReference,
+  onBookmark,
   onCopy,
   onHoverStart,
   onHoverEnd,
@@ -2547,8 +2626,10 @@ function SelectionToolbar({
   direction: "ltr" | "rtl";
   onColor: (color: string) => void;
   onListen: () => void;
+  onListenFrom: () => void;
   onNote: () => void;
   onReference: () => void;
+  onBookmark: () => void;
   onCopy: () => Promise<void>;
   onHoverStart: () => void;
   onHoverEnd: () => void;
@@ -2593,6 +2674,11 @@ function SelectionToolbar({
       <div className="flex items-center overflow-x-auto p-1.5 text-xs">
         <SelectionAction icon={<Headphones size={15} />} label={t("Listen")} onClick={onListen} />
         <SelectionAction
+          icon={<Play size={15} fill="currentColor" />}
+          label={t("Listen from here")}
+          onClick={onListenFrom}
+        />
+        <SelectionAction
           icon={<MessageSquareText size={15} />}
           label={t("Note")}
           onClick={onNote}
@@ -2601,6 +2687,11 @@ function SelectionToolbar({
           icon={<Link2 size={15} />}
           label={t("Add reference")}
           onClick={onReference}
+        />
+        <SelectionAction
+          icon={<Bookmark size={15} />}
+          label={t("Passage bookmark")}
+          onClick={onBookmark}
         />
         <SelectionAction
           icon={copied ? <Check size={15} /> : <Copy size={15} />}
