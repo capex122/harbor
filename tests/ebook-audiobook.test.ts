@@ -41,6 +41,9 @@ test("local folders discover M4B audiobooks and expose playable asset URLs", asy
   assert.match(providers, /convertFileSrc\(path\)/);
   assert.match(providers, /ebook_audio_cover/);
   assert.match(providers, /ebook_audio_chapters/);
+  assert.match(providers, /ebook_audio_zip_entries/);
+  assert.match(providers, /ebook_audio_zip_extract/);
+  assert.match(providers, /ebook_audio_zip_cover/);
   assert.match(providers, /book\|volume\|vol/);
   assert.match(providers, /internalCover: cover/);
 });
