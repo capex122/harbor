@@ -145,7 +145,7 @@ const EBOOK_EXAMPLE_REPO = `{
     {
       "id": "example-source",
       "name": "Example eBook Source",
-      "version": "1.7.0",
+      "version": "2.0.0",
       "lang": "en",
       "nsfw": false,
       "icon": "https://example-ebook-host.test/icon.png",
@@ -584,7 +584,39 @@ function cardToSummary(el) {`,
       { id: "sort:rating", name: "Rating", group: "Sort" },
     ];
   },`;
-  return `${withContent.slice(0, tagsStart)}${nativeTags}${withContent.slice(tagsEnd + 5)}`;
+  const audiobookMethods = `  // Optional audiobook support. Keep these two methods together. The book id
+  // is the same id used by detail()/chapters(); audio chapter ids are opaque.
+  async audiobookChapters(id) {
+    const data = await harbor.http(
+      BASE + "/api/ebook/" + encodeURIComponent(id) + "/audio-chapters",
+      { responseType: "json" },
+    );
+    if (!data || !Array.isArray(data.chapters)) return [];
+    return data.chapters
+      .map((track, position) => ({
+        id: String(track.id || ""),
+        title: track.title || "Chapter " + (position + 1),
+        chapter: track.chapter == null ? undefined : String(track.chapter),
+        volume: track.volume == null ? undefined : String(track.volume),
+        duration: Number(track.duration) > 0 ? Number(track.duration) : undefined,
+        language: track.language || undefined,
+      }))
+      .filter((track) => track.id);
+  },
+
+  async audiobookStream(chapterId) {
+    const data = await harbor.http(
+      BASE + "/api/audio/" + encodeURIComponent(chapterId),
+      { responseType: "json" },
+    );
+    if (!data || !data.url) return null;
+    return {
+      url: abs(data.url),
+      duration: Number(data.duration) > 0 ? Number(data.duration) : undefined,
+      format: data.format || undefined,
+    };
+  },`;
+  return `${withContent.slice(0, tagsStart)}${audiobookMethods}\n\n${nativeTags}${withContent.slice(tagsEnd + 5)}`;
 }
 
 const EBOOK_API_REFERENCE = String.raw`# Harbor eBook source plugin API
@@ -601,7 +633,7 @@ fetch, storage, files, or Tauri access. Networking and HTML parsing go through h
       chapters(id: string): Promise<Array<EBookChapter | EBookVolume>>;
       content(chapterId: string): Promise<string | { text?: string; images?: string[] }>;
       audiobookChapters?(id: string): Promise<EBookAudioChapter[]>;
-      audiobookStream?(chapterId: string): Promise<string | EBookAudioStream>;
+      audiobookStream?(chapterId: string): Promise<string | EBookAudioStream | null>;
       tags?(): Promise<EBookTag[]>;
     };
 
@@ -774,6 +806,13 @@ the eBook details page shows Listen and saves listening progress separately from
 progress. Audio URLs must be directly playable and must not require cookies or private
 request headers.
 
+Both audiobook methods must be implemented together. A hybrid source returns readable
+chapters through chapters()/content() and audio tracks through the optional methods. An
+audiobook-only source still implements the five required methods: popular(), search(),
+detail(), chapters(), and content(). It may return [] from chapters() and an empty string
+from content(), then provide playback through audiobookChapters()/audiobookStream(). There
+is no audiobook flag in repo.json; the optional methods are the capability signal.
+
 Select the narrowest real chapter container and its content blocks rather than reading the
 whole page. Do not hardcode randomized decoy class names. harbor.parseHtml removes script,
 style, and iframe nodes and omits elements hidden by explicit stylesheet rules using
@@ -845,7 +884,7 @@ the plugin file on HTTPS, then paste the manifest URL into eBook > Sources > Ext
       "plugins": [{
       "id": "my-source",
       "name": "My Source",
-      "version": "1.7.0",
+      "version": "2.0.0",
         "lang": "en",
         "nsfw": false,
         "entry": "my-source.plugin.js"
@@ -853,7 +892,8 @@ the plugin file on HTTPS, then paste the manifest URL into eBook > Sources > Ext
     }
 
 The provider id must match the manifest id. repo.json contains installation metadata
-only. Return book metadata hints, volumes, chapters, dates, and views from
+only; audiobook plugins also use "type": "ebook" and need no extra manifest field. Return
+book metadata hints, volumes, chapters, dates, views, and optional audio methods from
 example.plugin.js. Source files are
 limited to 2 MB. Harbor validates popular, search, detail, chapters, and content during
 installation. Existing image-based plugins using pageUrls remain supported for

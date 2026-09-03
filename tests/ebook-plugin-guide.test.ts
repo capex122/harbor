@@ -23,11 +23,14 @@ test("eBook plugin downloads document browse-filter metadata", () => {
 
 test("eBook example manifest is current and explicitly typed", () => {
   assert.match(guide, /"type": "ebook"/);
-  assert.match(guide, /"version": "1\.7\.0"/);
+  assert.match(guide, /"version": "2\.0\.0"/);
 });
 
 test("eBook plugin reference documents optional audiobook support", () => {
   assert.match(guide, /audiobookChapters\?\(id: string\)/);
   assert.match(guide, /audiobookStream\?\(chapterId: string\)/);
+  assert.match(guide, /async audiobookChapters\(id\)/);
+  assert.match(guide, /async audiobookStream\(chapterId\)/);
+  assert.match(guide, /There\s+is no audiobook flag in repo\.json/);
   assert.match(guide, /saves listening progress separately from reading/);
 });
