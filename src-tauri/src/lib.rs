@@ -63,6 +63,8 @@ mod dlna;
 #[cfg(desktop)]
 mod dvr;
 #[cfg(desktop)]
+mod ebook_audio;
+#[cfg(desktop)]
 mod fullscreen;
 #[cfg(desktop)]
 mod harbor_lan;
@@ -941,6 +943,8 @@ pub fn run() {
             dvr::dvr_list,
             dvr::dvr_default_dir,
             dvr::dvr_reveal,
+            ebook_audio::ebook_audio_cover,
+            ebook_audio::ebook_audio_chapters,
             multiview::multiview_open,
             multiview::multiview_prespawn,
             multiview::multiview_geometry,

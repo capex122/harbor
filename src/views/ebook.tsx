@@ -9,6 +9,7 @@ import {
   Database,
   ExternalLink,
   Heart,
+  Headphones,
   LayoutGrid,
   Library,
   List,
@@ -97,10 +98,12 @@ import {
   prefetchSourceEBookContent,
   searchSourceEBookCatalog,
   sourceEBookChapters,
+  sourceEBookAudiobookChapters,
   sourceEBookContent,
   sourceEBookDetail,
   type EBookChapter,
   type EBookChapterContent,
+  type EBookAudioChapter,
   type EBookCursor,
   type EBookProvider,
   ebookProviderIcon,
@@ -119,6 +122,8 @@ import { openUrl } from "@/lib/window";
 import { EBookSourcesView } from "./ebook/ebook-sources-panel";
 import { EBookSetup } from "./ebook/ebook-setup";
 import { EBookReader } from "./ebook/ebook-reader";
+import { EBookAudiobookPlayer } from "./ebook/audiobook-player";
+import { loadEBookListeningProgress } from "@/lib/ebook/audiobook-state";
 import { EBookWheelMenu, type EBookWheelTarget } from "./ebook/ebook-wheel-menu";
 import { MangaRail } from "./manga/manga-rail";
 
@@ -2671,6 +2676,8 @@ function EBookDetails({
   const [recommendationsError, setRecommendationsError] = useState(false);
   const [recommendationsAttempt, setRecommendationsAttempt] = useState(0);
   const [chapters, setChapters] = useState<EBookChapter[] | null>(null);
+  const [audioChapters, setAudioChapters] = useState<EBookAudioChapter[]>([]);
+  const [listening, setListening] = useState<EBookAudioChapter | null>(null);
   const [sourceOptions, setSourceOptions] = useState<EBook[]>([]);
   const [sourceRoute, setSourceRoute] = useState<string | null>(null);
   const [selectedVolume, setSelectedVolume] = useState<string | null>(null);
@@ -2825,6 +2832,7 @@ function EBookDetails({
   }, [ebookId, genreKey, recommendationsAttempt]);
   useEffect(() => {
     setReading(null);
+    setListening(null);
   }, [ebookId]);
   useEffect(() => {
     if (!ebook) return;
@@ -2903,6 +2911,7 @@ function EBookDetails({
     if (!sourceRoute) {
       setSelectedVolume(null);
       setChapters(null);
+      setAudioChapters([]);
       return;
     }
     setSelectedVolume(null);
@@ -2910,13 +2919,28 @@ function EBookDetails({
     void sourceEBookChapters(sourceRoute)
       .then((items) => active && setChapters(items))
       .catch(() => active && setChapters([]));
+    void sourceEBookAudiobookChapters(sourceRoute)
+      .then((items) => active && setAudioChapters(items))
+      .catch(() => active && setAudioChapters([]));
     return () => {
       active = false;
     };
   }, [sourceRoute]);
+  const displayedChapters = useMemo<EBookChapter[] | null>(() => {
+    if (chapters === null) return null;
+    if (chapters.length) return chapters;
+    return audioChapters.map((chapter, position) => ({
+      id: chapter.id,
+      title: chapter.title,
+      chapter: chapter.chapter,
+      volume: chapter.volume,
+      volumeTitle: chapter.volume ? `Book ${chapter.volume}` : undefined,
+      position,
+    }));
+  }, [audioChapters, chapters]);
   const volumeGroups = useMemo(() => {
     const groups = new Map<string, { title?: string; chapters: EBookChapter[] }>();
-    for (const chapter of chapters ?? []) {
+    for (const chapter of displayedChapters ?? []) {
       const volume = chapter.volume?.trim() ?? "";
       const group = groups.get(volume) ?? { chapters: [] };
       groups.set(volume, {
@@ -2945,7 +2969,7 @@ function EBookDetails({
           sensitivity: "base",
         });
       });
-  }, [chapters]);
+  }, [displayedChapters]);
   useEffect(() => {
     if (selectedVolume !== null && !volumeGroups.some((group) => group.volume === selectedVolume))
       setSelectedVolume(null);
@@ -3139,6 +3163,22 @@ function EBookDetails({
                     {saved ? <Library size={19} /> : <Bookmark size={19} />}
                     {saved ? t("Bookmarked") : t("Bookmark")}
                   </button>
+                  {sourceRoute && audioChapters.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const saved = loadEBookListeningProgress(profile, ebook.id);
+                        setListening(
+                          audioChapters.find((chapter) => chapter.id === saved?.chapterId) ??
+                            audioChapters[0],
+                        );
+                      }}
+                      className="inline-flex h-12 items-center gap-2.5 rounded-full bg-accent px-6 text-[15px] font-semibold text-canvas transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98]"
+                    >
+                      <Headphones size={19} />
+                      {t("Listen")}
+                    </button>
+                  )}
                   {sourceOptions.length > 0 && sourceRoute && (
                     <EBookDetailDropdown
                       options={sourceOptions.map((source) => ({
@@ -3203,13 +3243,17 @@ function EBookDetails({
         <div className="flex flex-col gap-10">
           {(resolvingSource || sourceRoute) && (
             <EBookChapterSection
-              chapters={chapters}
+              chapters={displayedChapters}
               loading={resolvingSource}
               volumeGroups={volumeGroups}
               selectedVolume={selectedVolume}
               onSelectVolume={setSelectedVolume}
               sourceRoute={sourceRoute}
-              onRead={readChapter}
+              onRead={(chapter) => {
+                const audio = audioChapters.find((item) => item.id === chapter.id);
+                if (audio && !chapters?.length) setListening(audio);
+                else readChapter(chapter);
+              }}
             />
           )}
           {(ebook.books?.length ?? 0) > 1 && (
@@ -3324,6 +3368,18 @@ function EBookDetails({
           }
           onSelectChapter={readChapter}
           onClose={() => setReading(null)}
+        />
+      )}
+      {listening && sourceRoute && (
+        <EBookAudiobookPlayer
+          profile={profile}
+          bookId={ebook.id}
+          bookTitle={ebook.title}
+          cover={ebook.cover}
+          sourceRoute={sourceRoute}
+          chapters={audioChapters}
+          initialChapter={listening}
+          onClose={() => setListening(null)}
         />
       )}
       {showScrollTop && !reading && (

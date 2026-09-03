@@ -45,6 +45,25 @@ export type EBookChapterContent = {
   translatedTitle?: string;
 };
 
+export type EBookAudioChapter = {
+  id: string;
+  title: string;
+  chapter?: string;
+  volume?: string;
+  duration?: number;
+  start?: number;
+  end?: number;
+  language?: string;
+};
+
+export type EBookAudioStream = {
+  url: string;
+  duration?: number;
+  format?: string;
+  start?: number;
+  end?: number;
+};
+
 type Provider = {
   id: string;
   name: string;
@@ -54,13 +73,18 @@ type Provider = {
   detail(id: string): Promise<EBook | null>;
   chapters(id: string): Promise<EBookChapter[]>;
   content(id: string): Promise<EBookChapterContent>;
+  audiobookChapters?(id: string): Promise<EBookAudioChapter[]>;
+  audiobookStream?(id: string): Promise<EBookAudioStream | null>;
 };
 
 const workers = new Map<string, PluginWorker>();
 const htmlPages = new Map<string, Map<string, Map<number, number>>>();
 const details = new Map<string, Promise<EBook | null>>();
-const localBooks = new Map<string, Map<string, { title: string; paths: string[] }>>();
+type LocalBook = { title: string; ebookPaths: string[]; audioPaths: string[] };
+const localBooks = new Map<string, Map<string, LocalBook>>();
 const localEpubs = new Map<string, Promise<EpubBook>>();
+const localAudioCovers = new Map<string, Promise<string | undefined>>();
+const localAudioChapterMarkers = new Map<string, Promise<EBookAudioChapter[]>>();
 const LOCAL_EPUB_CACHE_LIMIT = 6;
 const chapterContentPending = new Map<string, Promise<EBookChapterContent>>();
 let extensionsReady: Promise<void> | null = null;
@@ -254,6 +278,34 @@ function pluginContent(value: unknown): EBookChapterContent {
   return { text: body ? cleanSourceText(body) : undefined, images };
 }
 
+function pluginAudioChapters(value: unknown): EBookAudioChapter[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry, index) => {
+    const item = record(entry);
+    const id = text(item.id);
+    if (!id) return [];
+    return [{
+      id,
+      title: text(item.title) ?? `Chapter ${index + 1}`,
+      chapter: scalarText(item.chapter),
+      volume: scalarText(item.volume),
+      duration: typeof item.duration === "number" && item.duration > 0 ? item.duration : undefined,
+      language: text(item.language),
+    }];
+  });
+}
+
+function pluginAudioStream(value: unknown): EBookAudioStream | null {
+  const item = record(value);
+  const streamUrl = url(typeof value === "string" ? value : item.url);
+  if (!streamUrl) return null;
+  return {
+    url: streamUrl,
+    duration: typeof item.duration === "number" && item.duration > 0 ? item.duration : undefined,
+    format: text(item.format),
+  };
+}
+
 function cleanSourceText(value: string): string {
   const text = value.replace(/\r/g, "").trim();
   const boundary = [
@@ -277,7 +329,7 @@ async function localJoin(parent: string, child: string): Promise<string> {
 function localTitle(name: string): string {
   return (
     name
-      .replace(/\.epub$/i, "")
+      .replace(/\.(?:epub|m4b|m4a|mp3|aac|ogg|opus|flac|wav)$/i, "")
       .replaceAll(/[_-]+/g, " ")
       .trim() || "Untitled eBook"
   );
@@ -309,27 +361,79 @@ async function localPackage(path: string): Promise<EpubBook> {
   return pending;
 }
 
+function localAudioCover(path: string): Promise<string | undefined> {
+  let cover = localAudioCovers.get(path);
+  if (!cover) {
+    cover = import("@tauri-apps/api/core")
+      .then(({ invoke }) => invoke<string | null>("ebook_audio_cover", { path }))
+      .then((value) => value ?? undefined)
+      .catch(() => undefined);
+    localAudioCovers.set(path, cover);
+  }
+  return cover;
+}
+
+function localAudioChapters(path: string): Promise<EBookAudioChapter[]> {
+  let chapters = localAudioChapterMarkers.get(path);
+  if (!chapters) {
+    chapters = import("@tauri-apps/api/core")
+      .then(({ invoke }) =>
+        invoke<Array<{ title: string; start: number; end: number }>>("ebook_audio_chapters", {
+          path,
+        }),
+      )
+      .then((items) =>
+        items.map((item, index) => {
+          const volume = item.title.match(/\b(?:book|volume|vol\.?)[\s:_-]*(\d+)/i)?.[1];
+          return {
+            id: JSON.stringify([path, item.start, item.end]),
+            title: item.title,
+            chapter: String(index + 1),
+            volume,
+            duration: item.end - item.start,
+            start: item.start,
+            end: item.end,
+          };
+        }),
+      )
+      .catch(() => []);
+    localAudioChapterMarkers.set(path, chapters);
+  }
+  return chapters;
+}
+
 async function scanLocalBooks(
   source: EBookSource,
-): Promise<Map<string, { title: string; paths: string[] }>> {
+): Promise<Map<string, LocalBook>> {
   const { readDir } = await import("@tauri-apps/plugin-fs");
   const entries = await readDir(source.location);
-  const books = new Map<string, { title: string; paths: string[] }>();
+  const books = new Map<string, LocalBook>();
+  const isEBook = (name: string) => /\.epub$/i.test(name);
+  const isAudio = (name: string) => /\.(?:m4b|m4a|mp3|aac|ogg|opus|flac|wav)$/i.test(name);
   for (const item of entries.sort((a, b) =>
     a.name.localeCompare(b.name, undefined, { numeric: true }),
   )) {
     const path = await localJoin(source.location, item.name);
-    if (item.isFile && /\.epub$/i.test(item.name))
-      books.set(path, { title: localTitle(item.name), paths: [path] });
-    if (!item.isDirectory) continue;
-    const files = await readDir(path).catch(() => []);
-    const epubs = files
-      .filter((file) => file.isFile && /\.epub$/i.test(file.name))
-      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    if (epubs.length)
+    if (item.isFile && (isEBook(item.name) || isAudio(item.name)))
       books.set(path, {
         title: localTitle(item.name),
-        paths: await Promise.all(epubs.map((file) => localJoin(path, file.name))),
+        ebookPaths: isEBook(item.name) ? [path] : [],
+        audioPaths: isAudio(item.name) ? [path] : [],
+      });
+    if (!item.isDirectory) continue;
+    const files = await readDir(path).catch(() => []);
+    const media = files
+      .filter((file) => file.isFile && (isEBook(file.name) || isAudio(file.name)))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    if (media.length)
+      books.set(path, {
+        title: localTitle(item.name),
+        ebookPaths: await Promise.all(
+          media.filter((file) => isEBook(file.name)).map((file) => localJoin(path, file.name)),
+        ),
+        audioPaths: await Promise.all(
+          media.filter((file) => isAudio(file.name)).map((file) => localJoin(path, file.name)),
+        ),
       });
   }
   localBooks.set(source.id, books);
@@ -398,7 +502,7 @@ function localProvider(source: EBookSource): Provider {
   const provider = { id: source.id, name: source.name, iconUrl: source.iconUrl } as Provider;
   const find = async (id: string) =>
     localBooks.get(source.id)?.get(id) ?? (await scanLocalBooks(source)).get(id);
-  const summary = (id: string, book: { title: string; paths: string[] }): EBook => ({
+  const summary = (id: string, book: LocalBook): EBook => ({
     id: routeId(provider.id, id),
     source: "source",
     providerId: provider.id,
@@ -408,7 +512,7 @@ function localProvider(source: EBookSource): Provider {
     authors: [],
     description: "",
     genres: [],
-    volumes: book.paths.length > 1 ? book.paths.length : undefined,
+    volumes: book.ebookPaths.length > 1 ? book.ebookPaths.length : undefined,
   });
   const list = async (query: string, offset: number) => {
     const books = [...(await scanLocalBooks(source))].filter(([, book]) =>
@@ -417,12 +521,15 @@ function localProvider(source: EBookSource): Provider {
     return Promise.all(
       books.slice(offset, offset + 24).map(async ([id, book]) => {
         const item = summary(id, book);
-        const epub = await localPackage(book.paths[0]).catch(() => null);
-        if (!epub?.cover) return item;
+        const epub = book.ebookPaths[0]
+          ? await localPackage(book.ebookPaths[0]).catch(() => null)
+          : null;
+        const cover = epub?.cover ?? (book.audioPaths[0] && await localAudioCover(book.audioPaths[0]));
+        if (!cover) return item;
         return {
           ...item,
-          cover: epub.cover,
-          internalCover: epub.cover,
+          cover,
+          internalCover: cover,
         };
       }),
     );
@@ -432,23 +539,35 @@ function localProvider(source: EBookSource): Provider {
   provider.detail = async (id) => {
     const book = await find(id);
     if (!book) return null;
-    const epub = await localPackage(book.paths[0]);
+    if (!book.ebookPaths.length) {
+      const cover = book.audioPaths[0] && await localAudioCover(book.audioPaths[0]);
+      const markers = (await Promise.all(book.audioPaths.map(localAudioChapters))).flat();
+      const volumes = new Set(markers.map((chapter) => chapter.volume).filter(Boolean)).size;
+      return {
+        ...summary(id, book),
+        cover: cover || undefined,
+        internalCover: cover || undefined,
+        chapters: markers.length || undefined,
+        volumes: volumes || undefined,
+      };
+    }
+    const epub = await localPackage(book.ebookPaths[0]);
     return {
       ...summary(id, book),
-      title: book.paths.length > 1 ? book.title : epub.title || book.title,
+      title: book.ebookPaths.length > 1 ? book.title : epub.title || book.title,
       authors: epub.authors,
       cover: epub.cover,
       description: epub.description,
       year: epub.year,
       genres: epub.subjects,
-      chapters: book.paths.length === 1 ? epub.chapters.length : undefined,
+      chapters: book.ebookPaths.length === 1 ? epub.chapters.length : undefined,
     };
   };
   provider.chapters = async (id) => {
     const book = await find(id);
     if (!book) return [];
     const chapters: EBookChapter[] = [];
-    for (const [volumeIndex, path] of book.paths.entries()) {
+    for (const [volumeIndex, path] of book.ebookPaths.entries()) {
       const epub = await localPackage(path);
       for (const [chapterIndex, chapter] of epub.chapters.entries())
         chapters.push({
@@ -456,8 +575,8 @@ function localProvider(source: EBookSource): Provider {
           title: chapter.title,
           chapter: String(chapterIndex + 1),
           position: chapters.length,
-          volume: book.paths.length > 1 ? String(volumeIndex + 1) : undefined,
-          volumeTitle: book.paths.length > 1 ? epub.title : undefined,
+          volume: book.ebookPaths.length > 1 ? String(volumeIndex + 1) : undefined,
+          volumeTitle: book.ebookPaths.length > 1 ? epub.title : undefined,
         });
     }
     return chapters;
@@ -465,6 +584,29 @@ function localProvider(source: EBookSource): Provider {
   provider.content = async (id) => {
     const [path, chapter] = JSON.parse(id) as [string, string];
     return { text: cleanSourceText(readEpubChapter(await localPackage(path), chapter)) };
+  };
+  provider.audiobookChapters = async (id) => {
+    const book = await find(id);
+    const files = book?.audioPaths ?? [];
+    const embedded = (await Promise.all(files.map(localAudioChapters))).flat();
+    return embedded.length
+      ? embedded
+      : files.map((path, index) => ({
+          id: path,
+          title: files.length === 1 ? book!.title : localTitle(path.split(/[\\/]/).at(-1) ?? ""),
+          chapter: String(index + 1),
+        }));
+  };
+  provider.audiobookStream = async (id) => {
+    const marker = id.startsWith("[") ? (JSON.parse(id) as [string, number, number]) : null;
+    const [path, start, end] = marker ?? [id, undefined, undefined];
+    return {
+    url: (await import("@tauri-apps/api/core")).convertFileSrc(path),
+    format: path.split(".").at(-1)?.toLocaleLowerCase(),
+      start,
+      end,
+      duration: start !== undefined && end !== undefined ? end - start : undefined,
+    };
   };
   return provider;
 }
@@ -517,6 +659,10 @@ function pluginProvider(plugin: InstalledPlugin): Provider {
       return pluginContent({ images });
     }
   };
+  provider.audiobookChapters = (itemId) =>
+    call("audiobookChapters", [itemId]).then(pluginAudioChapters);
+  provider.audiobookStream = (chapterId) =>
+    call("audiobookStream", [chapterId], 30_000).then(pluginAudioStream);
   return provider;
 }
 
@@ -904,6 +1050,28 @@ export async function sourceEBookChapters(route: string): Promise<EBookChapter[]
   return [];
 }
 
+export async function sourceEBookAudiobookChapters(
+  route: string,
+): Promise<EBookAudioChapter[]> {
+  const found = await providerFor(route);
+  if (!found?.provider.audiobookChapters) return [];
+  try {
+    return await found.provider.audiobookChapters(found.itemId);
+  } catch (cause) {
+    if (cause instanceof Error && cause.message.includes("no method: audiobookChapters")) return [];
+    throw cause;
+  }
+}
+
+export async function sourceEBookAudiobookStream(
+  route: string,
+  chapterId: string,
+): Promise<EBookAudioStream | null> {
+  const found = await providerFor(route);
+  if (!found?.provider.audiobookStream) return null;
+  return found.provider.audiobookStream(chapterId);
+}
+
 const chapterCacheKey = (route: string, chapterId: string) => `${route}\n${chapterId}`;
 
 async function fetchAndCacheSourceEBookContent(
@@ -994,7 +1162,9 @@ export function ebookProviderIcon(providerId?: string): string | undefined {
 export function sourceFavicon(location?: string): string | undefined {
   if (!location) return undefined;
   try {
-    return new URL("/favicon.ico", location).href;
+    const url = new URL(location);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return undefined;
+    return new URL("/favicon.ico", url).href;
   } catch {
     return undefined;
   }

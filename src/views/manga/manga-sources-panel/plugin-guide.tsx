@@ -600,7 +600,24 @@ fetch, storage, files, or Tauri access. Networking and HTML parsing go through h
       detail(id: string): Promise<EBookSummary | null>;
       chapters(id: string): Promise<Array<EBookChapter | EBookVolume>>;
       content(chapterId: string): Promise<string | { text?: string; images?: string[] }>;
+      audiobookChapters?(id: string): Promise<EBookAudioChapter[]>;
+      audiobookStream?(chapterId: string): Promise<string | EBookAudioStream>;
       tags?(): Promise<EBookTag[]>;
+    };
+
+    type EBookAudioChapter = {
+      id: string;
+      title?: string;
+      chapter?: string;
+      volume?: string;
+      duration?: number; // seconds
+      language?: string;
+    };
+
+    type EBookAudioStream = {
+      url: string;       // absolute HTTP(S) audio URL
+      duration?: number; // seconds
+      format?: string;   // for example mp3 or m4b
     };
 
     type EBookChapter = {
@@ -745,6 +762,17 @@ nodes in DOM order, so map them directly and join them without sort(), reverse()
 deduplication, or direction-dependent reordering. This rule also applies to decoded repeated
 fields and streamed messages from binary gRPC sources. Harbor handles RTL presentation; a
 plugin must not reverse Arabic text or paragraph order.
+
+## Optional audiobook support
+
+An existing eBook plugin can expose audiobookChapters() and audiobookStream() without
+changing its manifest. audiobookChapters() receives the same book id as chapters() and
+returns tracks in playback order. audiobookStream() receives the selected audio chapter id
+and returns either an absolute HTTP(S) URL or an object containing url, duration, and format.
+When these methods are absent, Harbor keeps the source eBook-only. When they are present,
+the eBook details page shows Listen and saves listening progress separately from reading
+progress. Audio URLs must be directly playable and must not require cookies or private
+request headers.
 
 Select the narrowest real chapter container and its content blocks rather than reading the
 whole page. Do not hardcode randomized decoy class names. harbor.parseHtml removes script,
