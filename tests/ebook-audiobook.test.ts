@@ -16,6 +16,22 @@ test("audiobook plugin methods are optional and old eBook plugins remain valid",
   assert.match(providers, /sourceEBookAudiobookChapters/);
   assert.match(providers, /sourceEBookAudiobookStream/);
   assert.match(providers, /no method: audiobookChapters/);
+  assert.match(providers, /const PLUGIN_METHOD_TIMEOUT = 50_000/);
+  assert.doesNotMatch(providers, /timeout = 25_000/);
+});
+
+test("combined audiobook tracks map chapter ranges without guessed timestamps", async () => {
+  const providers = await readFile("src/lib/ebook/providers.ts", "utf8");
+  const ebook = await readFile("src/views/ebook.tsx", "utf8");
+
+  assert.match(providers, /function audioChapterRange/);
+  assert.match(providers, /if \(!numbers\?\.length\) return undefined/);
+  assert.match(providers, /chapterStart: scalarText\(item\.chapterStart\) \?\? inferredRange/);
+  assert.match(ebook, /currentNumber >= \(labelNumber\(audio\.chapterStart\)/);
+  assert.match(ebook, /if \(hasNamedRange\)/);
+  assert.match(ebook, /harbor-combined-audio:/);
+  assert.match(ebook, /combinedChapterParts\.get\(chapter\.id\) \?\? \[chapter\]/);
+  assert.match(ebook, /allTranslated = contents\.every/);
 });
 
 test("audiobook playback has durable progress and core controls", async () => {

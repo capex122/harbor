@@ -145,7 +145,7 @@ const EBOOK_EXAMPLE_REPO = `{
     {
       "id": "example-source",
       "name": "Example eBook Source",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "lang": "en",
       "nsfw": false,
       "icon": "https://example-ebook-host.test/icon.png",
@@ -404,7 +404,7 @@ function asEBookPlugin(text: string): string {
     )
     .replace(
       `async function getDoc(path) {
-  const res = await harbor.http(BASE + path, { responseType: "text" });
+  const res = await harbor.http(BASE + path, { responseType: "text", timeoutMs: 45000 });
   if (!res.ok) throw new Error("http " + res.status + " for " + path);
   return harbor.parseHtml(res.body);
 }`,
@@ -436,6 +436,24 @@ async function grpcMessages(methodPath, requestBytes, decodeMessage) {
     .replace(/\\s+(?:kol|كول)$/iu, "")
     .replace(/\\s+/g, " ")
     .trim();
+}
+
+// Use this when a source exposes every chapter inside one plain-text file.
+// Short matches are usually table-of-contents entries, so they are discarded.
+function splitFullBookText(value) {
+  const text = (value || "").replace(/\\r\\n?/g, "\\n");
+  const heading = /^(?:chapter|chap\\.?)\\s+([0-9]+|[ivxlcdm]+)(?:\\s*[-:.—]\\s*(.*))?$/gim;
+  const matches = Array.from(text.matchAll(heading));
+  return matches
+    .map((match, position) => ({
+      title: match[0].trim(),
+      chapter: match[1],
+      text: text.slice(
+        (match.index || 0) + match[0].length,
+        matches[position + 1]?.index ?? text.length,
+      ).trim(),
+    }))
+    .filter((chapter) => chapter.text.length >= 200);
 }
 
 function cardToSummary(el) {`,
@@ -586,17 +604,23 @@ function cardToSummary(el) {`,
   },`;
   const audiobookMethods = `  // Optional audiobook support. Keep these two methods together. The book id
   // is the same id used by detail()/chapters(); audio chapter ids are opaque.
+  // Return EVERY audio chapter in playback order, not only the first audio track.
+  // If the source paginates its audio list, fetch every page before returning.
   async audiobookChapters(id) {
     const data = await harbor.http(
       BASE + "/api/ebook/" + encodeURIComponent(id) + "/audio-chapters",
-      { responseType: "json" },
+      { responseType: "json", timeoutMs: 45000 },
     );
     if (!data || !Array.isArray(data.chapters)) return [];
     return data.chapters
       .map((track, position) => ({
         id: String(track.id || ""),
         title: track.title || "Chapter " + (position + 1),
+        description: track.description || undefined,
         chapter: track.chapter == null ? undefined : String(track.chapter),
+        // For one audio file covering several chapters, keep it as one track.
+        chapterStart: track.chapterStart == null ? undefined : String(track.chapterStart),
+        chapterEnd: track.chapterEnd == null ? undefined : String(track.chapterEnd),
         volume: track.volume == null ? undefined : String(track.volume),
         duration: Number(track.duration) > 0 ? Number(track.duration) : undefined,
         language: track.language || undefined,
@@ -604,10 +628,12 @@ function cardToSummary(el) {`,
       .filter((track) => track.id);
   },
 
+  // Resolve the selected chapter's own audio URL. Do not reuse one book-level
+  // audio URL for every chapter when the source provides separate chapter files.
   async audiobookStream(chapterId) {
     const data = await harbor.http(
       BASE + "/api/audio/" + encodeURIComponent(chapterId),
-      { responseType: "json" },
+      { responseType: "json", timeoutMs: 45000 },
     );
     if (!data || !data.url) return null;
     return {
@@ -640,7 +666,10 @@ fetch, storage, files, or Tauri access. Networking and HTML parsing go through h
     type EBookAudioChapter = {
       id: string;
       title?: string;
+      description?: string;
       chapter?: string;
+      chapterStart?: string; // first text chapter covered by this audio track
+      chapterEnd?: string;   // last text chapter covered by this audio track
       volume?: string;
       duration?: number; // seconds
       language?: string;
@@ -795,12 +824,33 @@ deduplication, or direction-dependent reordering. This rule also applies to deco
 fields and streamed messages from binary gRPC sources. Harbor handles RTL presentation; a
 plugin must not reverse Arabic text or paragraph order.
 
+## Complete-book text files
+
+Some sources expose one TXT, HTML, or PDF download containing every logical chapter. Do
+not return that complete file as one chapter. Prefer structured EPUB, HTML, or plain text
+over PDF when the source offers multiple formats. In chapters(), fetch the complete text,
+split it at real chapter headings, discard duplicate headings from the table of contents,
+and return every resulting chapter in source order. In content(chapterId), fetch and split
+the same text and return only the selected chapter. Encode the document URL and chapter
+index in the opaque chapter id so content() can reproduce the split. Never return the
+complete book body for every chapter.
+
+The generated example includes splitFullBookText(text). Its minimum body-length check
+removes common contents-page entries. Adapt its heading expression and threshold to the
+source's actual document structure; do not guess headings from arbitrary short lines. A
+plugin cannot parse PDF binary data with parseHtml. Use a TXT/HTML/EPUB companion when
+available; a PDF-only source requires text supplied by the source or Harbor-side extraction.
+
 ## Optional audiobook support
 
 An existing eBook plugin can expose audiobookChapters() and audiobookStream() without
 changing its manifest. audiobookChapters() receives the same book id as chapters() and
-returns tracks in playback order. audiobookStream() receives the selected audio chapter id
-and returns either an absolute HTTP(S) URL or an object containing url, duration, and format.
+must return every available audio chapter in playback order. Do not return only the first
+RSS enclosure, player item, or API result. If the source paginates its audio list, request
+every page before returning. audiobookStream() receives the selected audio chapter id and
+must resolve that chapter's own audio URL; do not reuse one whole-book URL for every chapter
+when the source provides separate chapter files. It returns either an absolute HTTP(S) URL
+or an object containing url, duration, and format.
 When these methods are absent, Harbor keeps the source eBook-only. When they are present,
 the eBook details page shows Listen and saves listening progress separately from reading
 progress. Audio URLs must be directly playable and must not require cookies or private
@@ -812,6 +862,15 @@ audiobook-only source still implements the five required methods: popular(), sea
 detail(), chapters(), and content(). It may return [] from chapters() and an empty string
 from content(), then provide playback through audiobookChapters()/audiobookStream(). There
 is no audiobook flag in repo.json; the optional methods are the capability signal.
+
+When one source audio file covers multiple text chapters, return one audio track rather
+than inventing timestamps or duplicating the URL. Set chapterStart and chapterEnd from the
+source title or description, for example { title: "Chapters 4-6", chapterStart: "4",
+chapterEnd: "6" }. Harbor also recognizes single numbers and numeric ranges written after
+Chapter, Chapters, Chap., فصل, or الفصول in the returned title/description. Every covered text chapter maps
+to that same combined original recording. If translated text is displayed, Harbor uses
+Edge TTS instead. Do not divide a combined recording evenly unless the source supplies
+real start/end timestamps.
 
 Select the narrowest real chapter container and its content blocks rather than reading the
 whole page. Do not hardcode randomized decoy class names. harbor.parseHtml removes script,
@@ -827,6 +886,11 @@ harbor.http supports method, headers, body, responseType (text, json, or base64)
 timeoutMs. Private, loopback, and link-local hosts are blocked; cookies and sensitive
 headers are stripped. harbor.parseHtml exposes querySelector, querySelectorAll, text(),
 and attr(name). Script, style, and iframe nodes are removed.
+
+timeoutMs defaults to 20,000 ms and is clamped to 1,000-45,000 ms. Harbor keeps the
+enclosing provider method alive for 50,000 ms, leaving time to parse and sanitize a full
+45-second response. Slow sources should set timeoutMs explicitly instead of implementing
+their own timer.
 
 ## Binary gRPC transport
 
@@ -884,7 +948,7 @@ the plugin file on HTTPS, then paste the manifest URL into eBook > Sources > Ext
       "plugins": [{
       "id": "my-source",
       "name": "My Source",
-      "version": "2.0.0",
+      "version": "2.0.1",
         "lang": "en",
         "nsfw": false,
         "entry": "my-source.plugin.js"

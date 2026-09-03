@@ -29,7 +29,12 @@ import {
   X,
 } from "lucide-react";
 import { getUiLanguage, useT } from "@/lib/i18n";
-import type { EBookChapter, EBookChapterContent } from "@/lib/ebook/providers";
+import {
+  sourceEBookAudiobookStream,
+  type EBookAudioChapter,
+  type EBookChapter,
+  type EBookChapterContent,
+} from "@/lib/ebook/providers";
 import { createEBookFlipPages, type EBookFlipPages } from "@/lib/ebook/book-pages";
 import {
   addEBookBookmark,
@@ -71,6 +76,7 @@ type Props = {
   direction: "ltr" | "rtl";
   volumes: EBookReaderVolume[];
   onSelectChapter: (chapter: EBookChapter) => void;
+  originalAudio?: { sourceRoute: string; chapter: EBookAudioChapter };
   onClose: () => void;
 };
 
@@ -431,6 +437,7 @@ const formatAudioTime = (seconds: number) => {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 };
 const trackerGutter = 8;
+const EDGE_BOUNDARY_LEAD_SECONDS = 0.12;
 const trackerRect = (rect: DOMRect) => ({
   top: rect.top - 2,
   left: rect.left - trackerGutter,
@@ -518,6 +525,7 @@ export function HarborReader({
   direction,
   volumes,
   onSelectChapter,
+  originalAudio,
   onClose,
 }: Props) {
   const t = useT();
@@ -581,6 +589,8 @@ export function HarborReader({
   const [audioDuration, setAudioDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState<(typeof playbackRates)[number]>(1);
   const audio = useRef<HTMLAudioElement | null>(null);
+  const audioStart = useRef(0);
+  const lastAudioUiUpdate = useRef(0);
   const audioUrl = useRef("");
   const voicePreviewAudio = useRef<HTMLAudioElement | null>(null);
   const voicePreviewUrl = useRef("");
@@ -633,6 +643,10 @@ export function HarborReader({
   const tracedLine = useRef(-1);
   const smartTarget = useRef<number | null>(null);
   const chromeTimer = useRef<number | undefined>(undefined);
+  const progressTimer = useRef<number | undefined>(undefined);
+  const pendingProgress = useRef<number | null>(null);
+  const audioFollowScrolling = useRef(false);
+  const audioFollowScrollTimer = useRef<number | undefined>(undefined);
   const traceFrame = useRef(0);
   const traceY = useRef<number | null>(null);
   const annotationHoverTimer = useRef<number | undefined>(undefined);
@@ -692,6 +706,17 @@ export function HarborReader({
       progressId,
       resumeVolumeLabel,
     ],
+  );
+  const scheduleReadingPosition = useCallback(
+    (line: number) => {
+      pendingProgress.current = line;
+      window.clearTimeout(progressTimer.current);
+      progressTimer.current = window.setTimeout(() => {
+        if (pendingProgress.current != null) persistReadingPosition(pendingProgress.current);
+        pendingProgress.current = null;
+      }, 180);
+    },
+    [persistReadingPosition],
   );
   const colors = paper[prefs.background];
   const effectiveDirection =
@@ -851,8 +876,11 @@ export function HarborReader({
     setTranslationProgress({ percent: 0, etaMs: null });
   }, [content.text, content.translated, content.translatedTitle, originalTitle]);
 
+  const usesOriginalAudiobook = Boolean(originalAudio && !(translation && !showOriginal));
+  const lineTrackerEnabled = !usesOriginalAudiobook || prefs.audiobookLineTracker;
   const updateTrace = useCallback(
     (mouseY?: number) => {
+      if (!lineTrackerEnabled) return;
       if (mouseY != null) {
         traceY.current = mouseY;
         smartTarget.current = null;
@@ -922,7 +950,7 @@ export function HarborReader({
         if (Number.isInteger(line) && tracedLine.current !== line) {
           tracedLine.current = line;
           setCurrent(line);
-          persistReadingPosition(line);
+          scheduleReadingPosition(line);
         }
         const next = trackerRect(paragraphRect);
         setTrace((previous) =>
@@ -936,8 +964,15 @@ export function HarborReader({
         );
       });
     },
-    [persistReadingPosition],
+    [lineTrackerEnabled, scheduleReadingPosition],
   );
+
+  useEffect(() => {
+    if (lineTrackerEnabled) return;
+    smartTarget.current = null;
+    traceY.current = null;
+    setTrace(null);
+  }, [lineTrackerEnabled]);
 
   const patchPrefs = (patch: Partial<EBookReaderPrefs>) => {
     setPrefs((value) => {
@@ -954,7 +989,7 @@ export function HarborReader({
   }, [prefs.focusMode]);
 
   const goTo = useCallback(
-    (index: number) => {
+    (index: number, followAudio = false) => {
       const next = Math.max(0, Math.min(paragraphs.length - 1, index));
       if (prefs.mode === "book" && flipPages.urls.length) {
         const page = pageForParagraph(flipPages.paragraphStarts, next);
@@ -965,11 +1000,19 @@ export function HarborReader({
         return;
       }
       smartTarget.current = next;
+      if (followAudio) {
+        audioFollowScrolling.current = true;
+        window.clearTimeout(audioFollowScrollTimer.current);
+        audioFollowScrollTimer.current = window.setTimeout(() => {
+          audioFollowScrolling.current = false;
+          updateTrace();
+        }, 120);
+      }
       blocks.current[next]?.scrollIntoView({ block: "center", behavior: "smooth" });
       tracedLine.current = next;
       setCurrent(next);
     },
-    [flipPages.paragraphStarts, flipPages.urls.length, paragraphs.length, prefs.mode],
+    [flipPages.paragraphStarts, flipPages.urls.length, paragraphs.length, prefs.mode, updateTrace],
   );
 
   useEffect(() => {
@@ -978,6 +1021,8 @@ export function HarborReader({
 
   useEffect(() => {
     const saveCurrentPassage = () => {
+      window.clearTimeout(progressTimer.current);
+      pendingProgress.current = null;
       if (tracedLine.current >= 0) persistReadingPosition(tracedLine.current);
     };
     const saveWhenHidden = () => {
@@ -1004,23 +1049,33 @@ export function HarborReader({
   }, [bookId, goTo, persistReadingPosition, profile, progressId, updateTrace]);
 
   useEffect(() => {
+    if (!lineTrackerEnabled) return;
     const root = scroller.current;
     if (!root) return;
-    let frame = 0;
+    let timer = 0;
     const update = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
+      window.clearTimeout(timer);
+      if (audioFollowScrolling.current) {
+        window.clearTimeout(audioFollowScrollTimer.current);
+        audioFollowScrollTimer.current = window.setTimeout(() => {
+          audioFollowScrolling.current = false;
+          updateTrace();
+        }, 80);
+        return;
+      }
+      timer = window.setTimeout(() => {
         updateTrace();
-      });
+      }, 50);
     };
     root.addEventListener("scroll", update, { passive: true });
     return () => {
       root.removeEventListener("scroll", update);
-      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
     };
-  }, [bookId, prefs.mode, profile, progressId, updateTrace]);
+  }, [bookId, lineTrackerEnabled, prefs.mode, profile, progressId, updateTrace]);
 
   useEffect(() => {
+    if (!lineTrackerEnabled) return;
     const page = article.current;
     if (!page) return;
     let frame = 0;
@@ -1036,9 +1091,10 @@ export function HarborReader({
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [prefs.mode, updateTrace]);
+  }, [lineTrackerEnabled, prefs.mode, updateTrace]);
 
   useEffect(() => {
+    if (!lineTrackerEnabled) return;
     const root = scroller.current;
     if (!root) return;
     let wheel = 0;
@@ -1066,7 +1122,7 @@ export function HarborReader({
       smartTarget.current = next;
       tracedLine.current = next;
       setCurrent(next);
-      persistReadingPosition(next);
+      scheduleReadingPosition(next);
       const rect = paragraph.getBoundingClientRect();
       const safeTop = 88;
       const safeBottom = window.innerHeight - 104;
@@ -1074,7 +1130,7 @@ export function HarborReader({
       if (rect.height > safeBottom - safeTop) offset = rect.top - safeTop;
       else if (rect.bottom > safeBottom) offset = rect.bottom - safeBottom;
       else if (rect.top < safeTop) offset = rect.top - safeTop;
-      if (offset) root.scrollBy({ top: offset, behavior: "smooth" });
+      if (offset) root.scrollBy({ top: offset, behavior: "auto" });
       updateTrace();
     };
     root.addEventListener("wheel", onWheel, { passive: false });
@@ -1082,9 +1138,10 @@ export function HarborReader({
       root.removeEventListener("wheel", onWheel);
       window.clearTimeout(reset);
     };
-  }, [paragraphs.length, persistReadingPosition, prefs.mode, updateTrace]);
+  }, [lineTrackerEnabled, paragraphs.length, prefs.mode, scheduleReadingPosition, updateTrace]);
 
   useEffect(() => {
+    if (!lineTrackerEnabled) return;
     const root = scroller.current;
     if (!root) return;
     let hold = 0;
@@ -1170,13 +1227,14 @@ export function HarborReader({
       root.removeEventListener("pointercancel", up);
       root.removeEventListener("click", click, true);
     };
-  }, [prefs.mode, updateTrace]);
+  }, [lineTrackerEnabled, prefs.mode, updateTrace]);
 
   useEffect(() => {
     return () => {
       window.clearTimeout(chromeTimer.current);
       window.clearTimeout(annotationHoverTimer.current);
       window.clearTimeout(annotationHideTimer.current);
+      window.clearTimeout(audioFollowScrollTimer.current);
       cancelAnimationFrame(traceFrame.current);
       window.speechSynthesis?.cancel();
       if (narrationRequestId.current) void cancelNarration(narrationRequestId.current);
@@ -1216,6 +1274,7 @@ export function HarborReader({
     setGenerationPercent(0);
     setAudioPosition(0);
     setAudioDuration(0);
+    audioStart.current = 0;
     narrationLine.current = -1;
     setTrace(null);
   };
@@ -1356,11 +1415,13 @@ export function HarborReader({
       fallbackNarrationVoices.find((voice) => voice.id === prefs.narrationVoice) ??
       fallbackNarrationVoices[0];
     const spokenParagraphs = paragraphs;
-    const spokenWeights = spokenParagraphs.map((text) => Math.max(1, text.trim().length));
+    const timingLocale = originalAudio?.chapter.language ?? selectedVoice.locale;
+    const spokenWeights = spokenParagraphs.map((text) =>
+      Math.max(1, narrationWordCount(text, timingLocale)),
+    );
     const totalWeight = spokenWeights.reduce((total, weight) => total + weight, 0);
     const spokenWordEnds: number[] = [];
-    spokenParagraphs.reduce((total, text) => {
-      const count = Math.max(1, narrationWordCount(text, selectedVoice.locale));
+    spokenWeights.reduce((total, count) => {
       const next = total + count;
       spokenWordEnds.push(next);
       return next;
@@ -1380,8 +1441,14 @@ export function HarborReader({
           else high = middle;
         }
         const spokenWord = Math.max(0, low - 1);
-        const paragraphOffset = spokenWordEnds.findIndex((end) => spokenWord < end);
-        if (paragraphOffset >= 0) return paragraphOffset;
+        let paragraphLow = 0;
+        let paragraphHigh = spokenWordEnds.length;
+        while (paragraphLow < paragraphHigh) {
+          const middle = (paragraphLow + paragraphHigh) >>> 1;
+          if (spokenWordEnds[middle] <= spokenWord) paragraphLow = middle + 1;
+          else paragraphHigh = middle;
+        }
+        if (paragraphLow < spokenWordEnds.length) return paragraphLow;
       }
       if (!duration || !totalWeight) return 0;
       const target = Math.min(1, Math.max(0, position / duration)) * totalWeight;
@@ -1419,7 +1486,8 @@ export function HarborReader({
         }
       }
       const boundary = boundaries[matched >= 0 ? matched : firstWord];
-      if (boundary) return Math.max(0, boundary.offsetMs / 1_000 - 0.12);
+      if (boundary)
+        return Math.max(0, boundary.offsetMs / 1_000 - EDGE_BOUNDARY_LEAD_SECONDS);
       if (!duration || !totalWeight) return 0;
       const precedingWeight = spokenWeights
         .slice(0, index)
@@ -1432,18 +1500,32 @@ export function HarborReader({
     setGenerationPercent(1);
     setNarrationNotice("");
     try {
-      const { blob, boundaries } = await synthesizeNarration(
-        requestId,
-        chapterText,
-        selectedVoice.id,
-        selectedVoice.locale,
-        (progress) => setGenerationPercent(progress.percent),
-      );
+      const useOriginalAudio = originalAudio && !(translation && !showOriginal);
+      const stream = useOriginalAudio
+        ? await sourceEBookAudiobookStream(
+            originalAudio.sourceRoute,
+            originalAudio.chapter.id,
+          )
+        : null;
+      if (useOriginalAudio && !stream) throw new Error(t("Audio is unavailable"));
+      const generated = stream
+        ? null
+        : await synthesizeNarration(
+            requestId,
+            chapterText,
+            selectedVoice.id,
+            selectedVoice.locale,
+            (progress) => setGenerationPercent(progress.percent),
+          );
       if (run !== narrationRun.current) return;
       if (narrationRequestId.current === requestId) narrationRequestId.current = "";
       setGenerationPercent(100);
-      const url = URL.createObjectURL(blob);
-      audioUrl.current = url;
+      const boundaries = generated?.boundaries ?? [];
+      const url = stream?.url ?? URL.createObjectURL(generated!.blob);
+      audioUrl.current = stream ? "" : url;
+      const start = stream?.start ?? 0;
+      const end = stream?.end ?? Number.POSITIVE_INFINITY;
+      audioStart.current = start;
       const player = new Audio(url);
       player.playbackRate = playbackRate;
       audio.current = player;
@@ -1451,31 +1533,71 @@ export function HarborReader({
       setAudioDuration(0);
       let positioned = false;
       player.ondurationchange = () => {
-        const duration = Number.isFinite(player.duration) ? player.duration : 0;
+        const duration = Number.isFinite(end)
+          ? Math.max(0, end - start)
+          : (stream?.duration ?? (Number.isFinite(player.duration) ? player.duration - start : 0));
         setAudioDuration(duration);
         if (!positioned && duration > 0) {
           positioned = true;
-          player.currentTime = timeForParagraph(duration, boundaries);
-          setAudioPosition(player.currentTime);
+          const position = timeForParagraph(duration, boundaries);
+          player.currentTime = start + position;
+          setAudioPosition(position);
           void player.play();
         }
       };
+      let finish: () => void = () => {};
+      let trackingTimer = 0;
+      const stopTracking = () => window.clearInterval(trackingTimer);
+      const trackPlayback = () => {
+        if (player.paused || player.ended) return;
+        const position = Math.max(0, player.currentTime - start);
+        const duration = Number.isFinite(end)
+          ? end - start
+          : (stream?.duration ?? player.duration - start);
+        if (player.currentTime >= end - 0.05) {
+          player.pause();
+          finish();
+          return;
+        }
+        if (lineTrackerEnabled) {
+          const timingPosition = position + (boundaries.length ? EDGE_BOUNDARY_LEAD_SECONDS : 0);
+          const line = paragraphForTime(timingPosition, duration, boundaries);
+          if (line !== narrationLine.current) {
+            narrationLine.current = line;
+            goTo(line, true);
+          }
+        }
+      };
+      player.onplay = () => {
+        stopTracking();
+        trackPlayback();
+        trackingTimer = window.setInterval(trackPlayback, 50);
+      };
+      player.onpause = stopTracking;
       player.ontimeupdate = () => {
-        setAudioPosition(player.currentTime);
-        const line = paragraphForTime(player.currentTime, player.duration, boundaries);
-        if (line === narrationLine.current) return;
-        narrationLine.current = line;
-        goTo(line);
-        window.requestAnimationFrame(() => updateTrace());
+        const position = Math.max(0, player.currentTime - start);
+        const now = performance.now();
+        if (now - lastAudioUiUpdate.current >= 500) {
+          lastAudioUiUpdate.current = now;
+          setAudioPosition(position);
+        }
       };
       narrationLine.current = index;
       goTo(index);
       setNarrationLoading(false);
       await new Promise<void>((resolve, reject) => {
-        player.onended = () => resolve();
-        player.onerror = () => reject(new Error(t("The generated audio could not be played")));
+        finish = resolve;
+        player.onended = () => {
+          stopTracking();
+          resolve();
+        };
+        player.onerror = () => {
+          stopTracking();
+          reject(new Error(t("The generated audio could not be played")));
+        };
       });
-      URL.revokeObjectURL(url);
+      stopTracking();
+      if (!stream) URL.revokeObjectURL(url);
       audioUrl.current = "";
       if (run === narrationRun.current) {
         setSpeaking(false);
@@ -1858,6 +1980,8 @@ export function HarborReader({
                   bg={layer.presentation.background}
                   resumePage={layer.resumePage}
                   soundEnabled={isActive}
+                  textureSize={1024}
+                  pixelRatio={1}
                   onReady={(api) => activateFlipLayer(layer.id, api)}
                   onProgress={(page) => {
                     if (activeFlipLayerIdRef.current !== layer.id) return;
@@ -1929,7 +2053,7 @@ export function HarborReader({
                 ref={(node) => {
                   blocks.current[index] = node;
                 }}
-                className={`relative mb-[1.1em] scroll-mt-24 text-pretty transition-colors ${index === current ? "reader-current" : index <= readThrough ? "reader-read" : ""}`}
+                className={`relative mb-[1.1em] scroll-mt-24 text-pretty transition-colors ${lineTrackerEnabled ? (index === current ? "reader-current" : index <= readThrough ? "reader-read" : "") : ""}`}
                 style={{ textAlign: "start" }}
                 onContextMenu={(event) => {
                   event.preventDefault();
@@ -1965,10 +2089,10 @@ export function HarborReader({
         </div>
       )}
 
-      {prefs.mode === "harbor" && trace && (
+      {prefs.mode === "harbor" && lineTrackerEnabled && trace && (
         <div
           dir={effectiveDirection}
-          className="pointer-events-none fixed z-20 rounded-md transition-[top,height] duration-100"
+          className="pointer-events-none fixed z-20 rounded-md transition-[top,left,width,height] duration-200 ease-out will-change-[top,height]"
           style={{
             ...trace,
             background: `color-mix(in srgb, ${prefs.lineTrackColor} 15%, transparent)`,
@@ -2141,12 +2265,17 @@ export function HarborReader({
                 ? narrationPaused
                   ? t("Resume narration")
                   : t("Pause narration")
-                : t("Read chapter with Edge TTS")
+                : originalAudio && !(translation && !showOriginal)
+                  ? t("Play original audiobook chapter")
+                  : t("Read chapter with Edge TTS")
           }
           title={
             narrationLoading
               ? t("Cancel audio generation")
-              : narrationNotice || t("Read the complete chapter with Edge TTS")
+              : narrationNotice ||
+                (originalAudio && !(translation && !showOriginal)
+                  ? t("Play original audiobook chapter")
+                  : t("Read the complete chapter with Edge TTS"))
           }
         >
           {narrationLoading ? (
@@ -2182,7 +2311,8 @@ export function HarborReader({
               onChange={(event) => {
                 const next = Number(event.target.value);
                 if (!audio.current || !Number.isFinite(next)) return;
-                audio.current.currentTime = next;
+                audio.current.currentTime = audioStart.current + next;
+                lastAudioUiUpdate.current = performance.now();
                 setAudioPosition(next);
               }}
               aria-label={t("Audio position")}
@@ -2421,7 +2551,14 @@ export function HarborReader({
             </button>
           </div>
           <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {panel === "settings" && <Settings prefs={prefs} patch={patchPrefs} colors={colors} />}
+            {panel === "settings" && (
+              <Settings
+                prefs={prefs}
+                patch={patchPrefs}
+                colors={colors}
+                audiobook={Boolean(originalAudio)}
+              />
+            )}
             {panel === "search" && (
               <div>
                 <div
@@ -3002,10 +3139,12 @@ function Settings({
   prefs,
   patch,
   colors,
+  audiobook,
 }: {
   prefs: EBookReaderPrefs;
   patch: (value: Partial<EBookReaderPrefs>) => void;
   colors: (typeof paper)[keyof typeof paper];
+  audiobook: boolean;
 }) {
   const t = useT();
   const [adjustmentsOpen, setAdjustmentsOpen] = useState(true);
@@ -3257,7 +3396,18 @@ function Settings({
           className="h-5 w-5 accent-[var(--color-accent)]"
         />
       </label>
-      <Setting label={t("Line tracker")}>
+      {audiobook && (
+        <label className="flex items-center justify-between gap-4">
+          <span>{t("Line tracker")}</span>
+          <input
+            type="checkbox"
+            checked={prefs.audiobookLineTracker}
+            onChange={(event) => patch({ audiobookLineTracker: event.target.checked })}
+            className="h-5 w-5 accent-[var(--color-accent)]"
+          />
+        </label>
+      )}
+      {(!audiobook || prefs.audiobookLineTracker) && <Setting label={t("Line tracker")}>
         <div
           className="rounded-2xl border p-4"
           style={{ background: `${colors.desk}55`, borderColor: `${colors.muted}30` }}
@@ -3306,7 +3456,7 @@ function Settings({
             </div>
           </div>
         </div>
-      </Setting>
+      </Setting>}
     </div>
   );
 }

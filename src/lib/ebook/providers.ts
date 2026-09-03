@@ -48,13 +48,25 @@ export type EBookChapterContent = {
 export type EBookAudioChapter = {
   id: string;
   title: string;
+  description?: string;
   chapter?: string;
+  chapterStart?: string;
+  chapterEnd?: string;
   volume?: string;
   duration?: number;
   start?: number;
   end?: number;
   language?: string;
 };
+
+function audioChapterRange(...values: Array<string | undefined>): [string, string] | undefined {
+  const value = values.filter(Boolean).join(" ");
+  const section = value.match(/(?:chapters?|chap\.?|الفصول?|فصول)\s+([^|;]+)/i)?.[1];
+  if (!section) return undefined;
+  const numbers = section.match(/\d+(?:\.\d+)?/g);
+  if (!numbers?.length) return undefined;
+  return [numbers[0], numbers.at(-1)!];
+}
 
 export type EBookAudioStream = {
   url: string;
@@ -78,6 +90,7 @@ type Provider = {
 };
 
 const workers = new Map<string, PluginWorker>();
+const PLUGIN_METHOD_TIMEOUT = 50_000;
 const htmlPages = new Map<string, Map<string, Map<number, number>>>();
 const details = new Map<string, Promise<EBook | null>>();
 type LocalBook = { title: string; ebookPaths: string[]; audioPaths: string[]; archivePath?: string };
@@ -285,10 +298,16 @@ function pluginAudioChapters(value: unknown): EBookAudioChapter[] {
     const item = record(entry);
     const id = text(item.id);
     if (!id) return [];
+    const title = text(item.title) ?? `Chapter ${index + 1}`;
+    const description = text(item.description);
+    const inferredRange = audioChapterRange(title, description);
     return [{
       id,
-      title: text(item.title) ?? `Chapter ${index + 1}`,
+      title,
+      description,
       chapter: scalarText(item.chapter),
+      chapterStart: scalarText(item.chapterStart) ?? inferredRange?.[0],
+      chapterEnd: scalarText(item.chapterEnd) ?? inferredRange?.[1],
       volume: scalarText(item.volume),
       duration: typeof item.duration === "number" && item.duration > 0 ? item.duration : undefined,
       language: text(item.language),
@@ -694,7 +713,9 @@ function pluginProvider(plugin: InstalledPlugin): Provider {
     worker = new PluginWorker(plugin);
     workers.set(id, worker);
   }
-  const call = (method: string, args: unknown[], timeout = 25_000) =>
+  // harbor.http may consume its full 45-second allowance. Keep the enclosing
+  // worker call alive long enough to return and sanitize that response.
+  const call = (method: string, args: unknown[], timeout = PLUGIN_METHOD_TIMEOUT) =>
     worker!.call(method, args, timeout);
   const provider = {
     id,
@@ -728,17 +749,17 @@ function pluginProvider(plugin: InstalledPlugin): Provider {
   provider.chapters = (itemId) => call("chapters", [itemId]).then(pluginChapters);
   provider.content = async (chapterId) => {
     try {
-      return pluginContent(await call("content", [chapterId], 30_000));
+      return pluginContent(await call("content", [chapterId]));
     } catch (cause) {
       if (!(cause instanceof Error) || !cause.message.includes("no method: content")) throw cause;
-      const images = await call("pageUrls", [chapterId], 30_000);
+      const images = await call("pageUrls", [chapterId]);
       return pluginContent({ images });
     }
   };
   provider.audiobookChapters = (itemId) =>
     call("audiobookChapters", [itemId]).then(pluginAudioChapters);
   provider.audiobookStream = (chapterId) =>
-    call("audiobookStream", [chapterId], 30_000).then(pluginAudioStream);
+    call("audiobookStream", [chapterId]).then(pluginAudioStream);
   return provider;
 }
 
