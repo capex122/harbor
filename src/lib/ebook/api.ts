@@ -43,6 +43,7 @@ export type EBook = {
   genres: string[];
   chapters?: number;
   volumes?: number;
+  audiobook?: boolean;
   score?: number;
   trendingScore?: number;
   siteUrl?: string;

@@ -42,6 +42,7 @@ import {
   loadEBookBookmarks,
   loadEBookProgress,
   loadEBookReaderPrefs,
+  markEBookChapterRead,
   removeEBookBookmark,
   removeEBookAnnotation,
   saveEBookAnnotation,
@@ -685,6 +686,7 @@ export function HarborReader({
         ((chapterIndex + chapterProgress / 100) / bookChapters.length) * 100,
       );
       saveEBookProgress(profile, bookId, progressId, safeLine);
+      if (chapterProgress >= 100) markEBookChapterRead(profile, bookId, chapter.id);
       saveEBookResume(profile, bookId, {
         chapterId: chapter.id,
         chapterTitle: chapter.title,

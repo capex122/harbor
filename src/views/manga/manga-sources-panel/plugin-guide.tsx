@@ -145,7 +145,7 @@ const EBOOK_EXAMPLE_REPO = `{
     {
       "id": "example-source",
       "name": "Example eBook Source",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "lang": "en",
       "nsfw": false,
       "icon": "https://example-ebook-host.test/icon.png",
@@ -508,6 +508,8 @@ function cardToSummary(el) {`,
     .replace(
       '    cover: abs(img?.attr("data-src") || img?.attr("src")),',
       `    cover: abs(img?.attr("data-src") || img?.attr("src")),
+    // Set true when this catalog item has playable audiobook chapters.
+    audiobook: true,
     status: el.attr("data-status") || undefined,
     originalLanguage: el.attr("data-original-language") || undefined,
     genres: (el.attr("data-genres") || "").split("|").filter(Boolean),
@@ -526,6 +528,7 @@ function cardToSummary(el) {`,
     .replace(
       '      title: cleanTitle(root.querySelector("h1")?.text() || id),',
       `      title: cleanTitle(root.querySelector("h1")?.text() || id),
+      audiobook: true,
       // Send every identifier the site exposes. Omit unknown values; never invent IDs.
       seriesTitle: root.querySelector(".series-title")?.text(),
       altTitles: root.querySelectorAll(".alt-title").map((node) => node.text()).filter(Boolean),
@@ -720,6 +723,7 @@ fetch, storage, files, or Tauri access. Networking and HTML parsing go through h
       genres?: string[];
       chapters?: number;
       volumes?: number;
+      audiobook?: boolean;
       score?: number;
       trendingScore?: number;
       siteUrl?: string;
@@ -739,7 +743,8 @@ status should use a stable source value such as ongoing, completed, or hiatus.
 originalLanguage accepts a language name or ISO-style code such as zh, ko, or ja. score
 is the source rating, while trendingScore is an optional numeric signal used for
 Harbor-side Trending sorting. Return chapters on summaries when the source exposes a
-total chapter count.
+total chapter count. Set audiobook: true on each popular(), search(), and detail() result
+that has playable audio so Harbor can label it on the eBook home page.
 
 ## Browse filters and tags
 
@@ -861,7 +866,8 @@ chapters through chapters()/content() and audio tracks through the optional meth
 audiobook-only source still implements the five required methods: popular(), search(),
 detail(), chapters(), and content(). It may return [] from chapters() and an empty string
 from content(), then provide playback through audiobookChapters()/audiobookStream(). There
-is no audiobook flag in repo.json; the optional methods are the capability signal.
+is no audiobook flag in repo.json; it remains an eBook plugin manifest. The optional
+methods declare provider capability, while audiobook: true identifies playable catalog items.
 
 When one source audio file covers multiple text chapters, return one audio track rather
 than inventing timestamps or duplicating the URL. Set chapterStart and chapterEnd from the
@@ -948,7 +954,7 @@ the plugin file on HTTPS, then paste the manifest URL into eBook > Sources > Ext
       "plugins": [{
       "id": "my-source",
       "name": "My Source",
-      "version": "2.0.1",
+      "version": "2.0.2",
         "lang": "en",
         "nsfw": false,
         "entry": "my-source.plugin.js"
@@ -957,7 +963,8 @@ the plugin file on HTTPS, then paste the manifest URL into eBook > Sources > Ext
 
 The provider id must match the manifest id. repo.json contains installation metadata
 only; audiobook plugins also use "type": "ebook" and need no extra manifest field. Return
-book metadata hints, volumes, chapters, dates, views, and optional audio methods from
+book metadata hints, audiobook: true for playable items, volumes, chapters, dates, views,
+and optional audio methods from
 example.plugin.js. Source files are
 limited to 2 MB. Harbor validates popular, search, detail, chapters, and content during
 installation. Existing image-based plugins using pageUrls remain supported for

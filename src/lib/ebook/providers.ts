@@ -80,6 +80,7 @@ type Provider = {
   id: string;
   name: string;
   iconUrl?: string;
+  audiobook?: boolean;
   popular(offset: number, tagId?: string): Promise<EBook[]>;
   search(query: string, offset: number, tagId?: string): Promise<EBook[]>;
   detail(id: string): Promise<EBook | null>;
@@ -220,6 +221,10 @@ function pluginEBook(provider: Provider, value: unknown): EBook | null {
       : [],
     chapters: typeof item.chapters === "number" ? Math.trunc(item.chapters) : undefined,
     volumes: typeof item.volumes === "number" ? Math.trunc(item.volumes) : undefined,
+    audiobook:
+      item.audiobook === true ||
+      ["audiobook", "audio"].includes(text(item.type)?.toLocaleLowerCase() ?? "") ||
+      provider.audiobook,
     score: typeof item.score === "number" ? item.score : undefined,
     trendingScore: typeof item.trendingScore === "number" ? item.trendingScore : undefined,
     siteUrl: url(item.siteUrl),
@@ -601,6 +606,7 @@ function localProvider(source: EBookSource): Provider {
     authors: [],
     description: "",
     genres: [],
+    audiobook: book.audioPaths.length > 0,
     volumes: book.ebookPaths.length > 1 ? book.ebookPaths.length : undefined,
   });
   const list = async (query: string, offset: number) => {
@@ -722,6 +728,10 @@ function pluginProvider(plugin: InstalledPlugin): Provider {
     name: plugin.name,
     iconUrl: plugin.icon,
   } as Provider;
+  const capabilities = worker.meta().then((meta) => {
+    const methods = new Set(meta.methods ?? []);
+    provider.audiobook = methods.has("audiobookChapters") && methods.has("audiobookStream");
+  });
   let supportedTags: Promise<Set<string>> | null = null;
   const supportedTag = async (tagId?: string) => {
     if (!tagId) return undefined;
@@ -736,16 +746,22 @@ function pluginProvider(plugin: InstalledPlugin): Provider {
       .catch(() => new Set<string>());
     return (await supportedTags).has(tagId) ? tagId : undefined;
   };
-  provider.popular = async (offset, tagId) =>
-    call("popular", [offset, await supportedTag(tagId)]).then((items) =>
+  provider.popular = async (offset, tagId) => {
+    await capabilities;
+    return call("popular", [offset, await supportedTag(tagId)]).then((items) =>
       pluginList(provider, items),
     );
-  provider.search = async (query, offset, tagId) =>
-    call("search", [query, offset, await supportedTag(tagId)]).then((items) =>
+  };
+  provider.search = async (query, offset, tagId) => {
+    await capabilities;
+    return call("search", [query, offset, await supportedTag(tagId)]).then((items) =>
       pluginList(provider, items),
     );
-  provider.detail = (itemId) =>
-    call("detail", [itemId]).then((item) => pluginEBook(provider, item));
+  };
+  provider.detail = async (itemId) => {
+    await capabilities;
+    return call("detail", [itemId]).then((item) => pluginEBook(provider, item));
+  };
   provider.chapters = (itemId) => call("chapters", [itemId]).then(pluginChapters);
   provider.content = async (chapterId) => {
     try {

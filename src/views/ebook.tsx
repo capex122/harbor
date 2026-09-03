@@ -90,7 +90,12 @@ import {
   toggleEBookFavorite,
   toggleEBookLibrary,
 } from "@/lib/ebook/library";
-import { loadEBookProgress, loadEBookResume, saveEBookResume } from "@/lib/ebook/reader-state";
+import {
+  loadCompletedEBookChapters,
+  loadEBookProgress,
+  loadEBookResume,
+  saveEBookResume,
+} from "@/lib/ebook/reader-state";
 import {
   listEBookProviders,
   loadSourceEBookCatalogPage,
@@ -1876,19 +1881,22 @@ function EBookCard({
       onContextMenu={(event) => openMenu(ebook, event)}
       className="group flex w-full min-w-0 flex-col gap-2 text-start"
     >
-      <EBookBook3D
-        cover={ebook.cover}
-        seed={`ebook:${ebook.id}`}
-        title={displayTitle}
-        author={ebook.authors[0]}
-        text={ebook.description}
-        imprint={ebook.providerName}
-        thickness={7}
-        mode="lift"
-        lazy
-      >
-        {readStatus && <EBookReadMark status={readStatus} />}
-      </EBookBook3D>
+      <div className="relative">
+        <EBookBook3D
+          cover={ebook.cover}
+          seed={`ebook:${ebook.id}`}
+          title={displayTitle}
+          author={ebook.authors[0]}
+          text={ebook.description}
+          imprint={ebook.providerName}
+          thickness={7}
+          mode="lift"
+          lazy
+        >
+          {readStatus && <EBookReadMark status={readStatus} />}
+        </EBookBook3D>
+        {ebook.audiobook && <EBookAudiobookMark />}
+      </div>
       <p className="line-clamp-2 min-h-9 text-[13px] font-medium leading-snug text-ink">
         {displayTitle}
       </p>
@@ -1925,6 +1933,20 @@ function EBookCard({
         </div>
       )}
     </button>
+  );
+}
+
+function EBookAudiobookMark() {
+  const t = useT();
+  return (
+    <span
+      aria-label={t("Audiobook")}
+      title={t("Audiobook")}
+      className="pointer-events-none absolute bottom-2 left-2 z-20 inline-flex h-7 items-center gap-1.5 rounded-full border border-white/15 bg-canvas/85 px-2.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white/90 shadow-lg shadow-black/30 backdrop-blur-md"
+    >
+      <Headphones size={12} strokeWidth={2.25} />
+      {t("Audiobook")}
+    </span>
   );
 }
 
@@ -2011,6 +2033,8 @@ function EBookChapterSection({
   selectedVolume,
   onSelectVolume,
   sourceRoute,
+  bookId,
+  profile,
   onRead,
 }: {
   chapters: EBookChapter[] | null;
@@ -2019,12 +2043,15 @@ function EBookChapterSection({
   selectedVolume: string | null;
   onSelectVolume: (volume: string) => void;
   sourceRoute: string | null;
+  bookId: string;
+  profile: string;
   onRead: (chapter: EBookChapter) => void;
 }) {
   const t = useT();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"newest" | "oldest">("oldest");
   const [pagination, setPagination] = useState({ key: "", count: 30 });
+  const [progressVersion, setProgressVersion] = useState(0);
   const [view, setView] = useState<"grid" | "list">(() =>
     typeof localStorage !== "undefined" &&
     localStorage.getItem("harbor.ebook.chapterview") === "list"
@@ -2032,6 +2059,20 @@ function EBookChapterSection({
       : "grid",
   );
   useEffect(() => localStorage.setItem("harbor.ebook.chapterview", view), [view]);
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      const detail = (event as CustomEvent<string>).detail;
+      if (!detail || detail === bookId) setProgressVersion((version) => version + 1);
+    };
+    window.addEventListener("harbor:ebook-resume", refresh);
+    return () => window.removeEventListener("harbor:ebook-resume", refresh);
+  }, [bookId]);
+  const completed = useMemo(() => {
+    const result = loadCompletedEBookChapters(profile, bookId);
+    const resume = loadEBookResume(profile, bookId);
+    if ((resume?.chapterProgress ?? 0) >= 100) result.add(resume!.chapterId);
+    return result;
+  }, [bookId, profile, progressVersion]);
   const hasVolumes = volumeGroups.some((group) => group.volume);
   const selected = hasVolumes
     ? (volumeGroups.find((group) => group.volume === selectedVolume)?.chapters ?? [])
@@ -2237,8 +2278,9 @@ function EBookChapterSection({
             >
               <div className="flex min-w-0 flex-col gap-0.5">
                 {chapter.chapter && (
-                  <span className="text-[12px] text-ink-subtle">
-                    {t("Ch. {chapter}", { chapter: chapter.chapter })}
+                  <span className="flex items-center gap-2 text-[12px] text-ink-subtle">
+                    <span>{t("Ch. {chapter}", { chapter: chapter.chapter })}</span>
+                    {completed.has(chapter.id) && <EBookChapterReadMark />}
                   </span>
                 )}
                 <span className="truncate text-[16px] font-semibold text-ink">{chapter.title}</span>
@@ -2267,8 +2309,9 @@ function EBookChapterSection({
             >
               <div className="flex flex-col gap-0.5">
                 {chapter.chapter && (
-                  <span className="text-[12px] text-ink-subtle">
-                    {t("Ch. {chapter}", { chapter: chapter.chapter })}
+                  <span className="flex items-center gap-2 text-[12px] text-ink-subtle">
+                    <span>{t("Ch. {chapter}", { chapter: chapter.chapter })}</span>
+                    {completed.has(chapter.id) && <EBookChapterReadMark />}
                   </span>
                 )}
                 <span className="line-clamp-1 text-[15px] font-semibold text-ink">
@@ -2313,6 +2356,16 @@ function EBookChapterSection({
         </div>
       )}
     </section>
+  );
+}
+
+function EBookChapterReadMark() {
+  const t = useT();
+  return (
+    <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-accent/12 px-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-accent ring-1 ring-inset ring-accent/25">
+      <Check size={11} strokeWidth={2.5} />
+      {t("Read")}
+    </span>
   );
 }
 
@@ -3343,6 +3396,8 @@ function EBookDetails({
               selectedVolume={selectedVolume}
               onSelectVolume={setSelectedVolume}
               sourceRoute={sourceRoute}
+              bookId={ebook.id}
+              profile={profile}
               onRead={(chapter) => {
                 const audio = audioChapters.find((item) => item.id === chapter.id);
                 if (audio && !chapters?.length) setListening(audio);

@@ -58,6 +58,8 @@ export type EBookAnnotation = {
 };
 
 const PREFS = "harbor.ebook.reader.v1";
+const completedChaptersKey = (profile: string, bookId: string) =>
+  `harbor.ebook.completed.v1.${encodeURIComponent(profile)}.${encodeURIComponent(bookId)}`;
 const DEFAULTS: EBookReaderPrefs = {
   mode: "harbor",
   doubleGap: 16,
@@ -181,6 +183,23 @@ export function saveEBookProgress(
   line: number,
 ): void {
   persistCritical(progressKey(profile, bookId, chapterId), String(line));
+}
+
+export function loadCompletedEBookChapters(profile: string, bookId: string): Set<string> {
+  try {
+    const value = JSON.parse(localStorage.getItem(completedChaptersKey(profile, bookId)) || "[]");
+    return new Set(Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function markEBookChapterRead(profile: string, bookId: string, chapterId: string): void {
+  const completed = loadCompletedEBookChapters(profile, bookId);
+  if (completed.has(chapterId)) return;
+  completed.add(chapterId);
+  persistCritical(completedChaptersKey(profile, bookId), JSON.stringify([...completed]));
+  window.dispatchEvent(new CustomEvent("harbor:ebook-resume", { detail: bookId }));
 }
 
 export function loadEBookResume(profile: string, bookId: string): EBookResume | null {
