@@ -28,7 +28,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { useT } from "@/lib/i18n";
+import { getUiLanguage, useT } from "@/lib/i18n";
 import type { EBookChapter, EBookChapterContent } from "@/lib/ebook/providers";
 import { createEBookFlipPages, type EBookFlipPages } from "@/lib/ebook/book-pages";
 import {
@@ -47,6 +47,7 @@ import {
   type EBookReaderPrefs,
 } from "@/lib/ebook/reader-state";
 import { translateEBookChapter } from "@/lib/ebook/translation";
+import { explainPassage, type WordExplanation } from "@/lib/ebook/explain";
 import { BookFlip, type BookApi } from "@/views/manga/manga-reader/book-view";
 import { useCustomFonts } from "@/lib/custom-fonts";
 import { Flag } from "@/components/flag";
@@ -611,6 +612,13 @@ export function HarborReader({
   const [bookmarks, setBookmarks] = useState(() => loadEBookBookmarks(profile, bookId));
   const [annotations, setAnnotations] = useState(() => loadEBookAnnotations(profile, bookId));
   const [selection, setSelection] = useState<ReaderSelection | null>(null);
+  const [explanation, setExplanation] = useState<{
+    loading: boolean;
+    results?: WordExplanation[];
+    error?: string;
+    x: number;
+    y: number;
+  } | null>(null);
   const [editing, setEditing] = useState<EBookAnnotation | null>(null);
   const [trace, setTrace] = useState<{
     top: number;
@@ -1209,7 +1217,7 @@ export function HarborReader({
     setAudioPosition(0);
     setAudioDuration(0);
     narrationLine.current = -1;
-    if (!prefs.mouseLineTrack) setTrace(null);
+    setTrace(null);
   };
 
   const previewVoice = async (voice: ReaderNarrationVoice) => {
@@ -1473,7 +1481,7 @@ export function HarborReader({
         setSpeaking(false);
         setGenerationPercent(0);
         narrationLine.current = -1;
-        if (!prefs.mouseLineTrack) setTrace(null);
+        setTrace(null);
       }
     } catch (error) {
       if (run !== narrationRun.current) return;
@@ -1545,12 +1553,10 @@ export function HarborReader({
     return () => window.clearTimeout(timer);
   }, [chapter.id, chaptersOpen, sidebarVolume]);
   useEffect(() => {
-    if (!prefs.mouseLineTrack) {
-      traceY.current = null;
-      setTrace(null);
-    }
+    traceY.current = null;
+    setTrace(null);
     updateTrace();
-  }, [prefs.mouseLineTrack, prefs.fontSize, prefs.lineHeight, prefs.width, updateTrace]);
+  }, [prefs.fontSize, prefs.lineHeight, prefs.width, updateTrace]);
 
   useEffect(() => {
     if (prefs.mode !== "harbor") return;
@@ -1588,6 +1594,7 @@ export function HarborReader({
     });
     if (!ranges.length) return setSelection(null);
     const rect = source.getBoundingClientRect();
+    setExplanation(null);
     setSelection({
       ranges,
       text: selected.toString().trim(),
@@ -1615,6 +1622,25 @@ export function HarborReader({
       reference,
       createdAt: Date.now(),
     };
+
+  const explainSelection = async () => {
+    if (!selection) return;
+    const selected = selection;
+    const line = selected.ranges[0]?.line ?? current;
+    const context = paragraphs.slice(Math.max(0, line - 1), line + 2).join("\n\n");
+    setExplanation({ loading: true, x: selected.x, y: selected.y });
+    try {
+      const results = await explainPassage(selected.text, context, getUiLanguage());
+      setExplanation({ loading: false, results, x: selected.x, y: selected.y });
+    } catch (error) {
+      setExplanation({
+        loading: false,
+        error: error instanceof Error ? error.message : t("Wiktionary lookup failed."),
+        x: selected.x,
+        y: selected.y,
+      });
+    }
+  };
 
   const storeAnnotation = (annotation: EBookAnnotation) => {
     setAnnotations(saveEBookAnnotation(profile, bookId, annotation));
@@ -1870,7 +1896,6 @@ export function HarborReader({
               } as CSSProperties
             }
             onMouseUp={captureSelection}
-            onMouseMove={(event) => prefs.mouseLineTrack && updateTrace(event.clientY)}
           >
             <div className="pointer-events-none absolute inset-y-0 start-0 w-px bg-gradient-to-b from-transparent via-black/10 to-transparent" />
             {chapterIndex === 0 && (internalCover || bookCover) && (
@@ -1906,13 +1931,13 @@ export function HarborReader({
                 }}
                 className={`relative mb-[1.1em] scroll-mt-24 text-pretty transition-colors ${index === current ? "reader-current" : index <= readThrough ? "reader-read" : ""}`}
                 style={{ textAlign: "start" }}
-                onMouseEnter={() => prefs.mouseLineTrack && setCurrent(index)}
                 onContextMenu={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
                   tracedLine.current = index;
                   setCurrent(index);
                   persistReadingPosition(index);
+                  setExplanation(null);
                   setSelection({
                     ranges: [{ line: index, start: 0, end: text.length }],
                     text,
@@ -1951,7 +1976,7 @@ export function HarborReader({
         />
       )}
 
-      {selection && !editing && (
+      {selection && !editing && !explanation && (
         <SelectionToolbar
           selection={selection}
           direction={effectiveDirection}
@@ -1967,6 +1992,7 @@ export function HarborReader({
             setSelection(null);
             void speakFrom(line);
           }}
+          onExplain={() => void explainSelection()}
           onNote={() => setEditing(selectedAnnotation ?? draftAnnotation(false))}
           onReference={() =>
             setEditing(
@@ -1984,6 +2010,17 @@ export function HarborReader({
           onHoverEnd={() =>
             selection.annotationId && scheduleAnnotationDismiss(selection.annotationId)
           }
+        />
+      )}
+
+      {explanation && (
+        <ExplanationCard
+          explanation={explanation}
+          direction={effectiveDirection}
+          onClose={() => {
+            setExplanation(null);
+            setSelection(null);
+          }}
         />
       )}
 
@@ -2615,6 +2652,7 @@ function SelectionToolbar({
   onColor,
   onListen,
   onListenFrom,
+  onExplain,
   onNote,
   onReference,
   onBookmark,
@@ -2627,6 +2665,7 @@ function SelectionToolbar({
   onColor: (color: string) => void;
   onListen: () => void;
   onListenFrom: () => void;
+  onExplain: () => void;
   onNote: () => void;
   onReference: () => void;
   onBookmark: () => void;
@@ -2679,6 +2718,11 @@ function SelectionToolbar({
           onClick={onListenFrom}
         />
         <SelectionAction
+          icon={<BookOpen size={15} />}
+          label={t("Explain")}
+          onClick={onExplain}
+        />
+        <SelectionAction
           icon={<MessageSquareText size={15} />}
           label={t("Note")}
           onClick={onNote}
@@ -2700,6 +2744,97 @@ function SelectionToolbar({
           active={copied}
         />
       </div>
+    </div>
+  );
+}
+
+function ExplanationCard({
+  explanation,
+  direction,
+  onClose,
+}: {
+  explanation: {
+    loading: boolean;
+    results?: WordExplanation[];
+    error?: string;
+    x: number;
+    y: number;
+  };
+  direction: "ltr" | "rtl";
+  onClose: () => void;
+}) {
+  const t = useT();
+  const results = explanation.results ?? [];
+  const single = results.length === 1;
+  return (
+    <div
+      dir={direction}
+      className="fixed z-[80] w-[min(380px,calc(100vw-24px))] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#101011]/95 p-4 text-[#e8e3d9] shadow-[0_22px_70px_rgba(0,0,0,.62)] backdrop-blur-2xl"
+      style={{
+        left: Math.min(window.innerWidth - 202, Math.max(202, explanation.x)),
+        top: Math.min(window.innerHeight - 280, Math.max(88, explanation.y)),
+      }}
+    >
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-white/45">
+            {t("Explain")}
+          </p>
+          {single && (
+            <h3 className="mt-1 text-lg font-semibold">
+              {results[0].word}{" "}
+              <span className="text-xs font-normal text-white/50">
+                · {results[0].partOfSpeech}
+              </span>
+            </h3>
+          )}
+          {!single && results.length > 0 && (
+            <h3 className="mt-1 text-lg font-semibold">{t("Passage context")}</h3>
+          )}
+        </div>
+        <button className="reader-icon -m-2" onClick={onClose} aria-label={t("Close")}>
+          <X size={16} />
+        </button>
+      </div>
+      {explanation.loading && (
+        <div className="flex items-center gap-2 py-6 text-sm text-white/60">
+          <Loader2 size={16} className="animate-spin" /> {t("Checking Wiktionary…")}
+        </div>
+      )}
+      {explanation.error && <p className="text-sm text-red-300">{explanation.error}</p>}
+      {results.length > 0 && (
+        <div className="max-h-[min(55vh,520px)] space-y-3 overflow-y-auto text-sm leading-relaxed">
+          {results.map((result) => (
+            <div
+              key={`${result.word}:${result.partOfSpeech}`}
+              className="rounded-xl bg-white/[.06] p-3"
+            >
+              {!single && (
+                <strong className="mb-1 block">
+                  {result.word}{" "}
+                  <span className="text-xs font-normal text-white/45">
+                    · {result.partOfSpeech}
+                  </span>
+                </strong>
+              )}
+              <p>{result.meaning}</p>
+              <p className="mt-2 text-white/65">{result.contextMeaning}</p>
+              {result.translation && (
+                <p className="mt-2">
+                  <strong>{t("Arabic")}:</strong>{" "}
+                  <span dir="rtl">{result.translation}</span>
+                </p>
+              )}
+              <span className="mt-2 block text-[10px] uppercase tracking-wider text-white/35">
+                {t("{confidence} confidence", { confidence: result.confidence })}
+              </span>
+            </div>
+          ))}
+          <div className="text-end text-[10px] uppercase tracking-wider text-white/35">
+            {t("Source: Wiktionary")}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3127,16 +3262,7 @@ function Settings({
           className="rounded-2xl border p-4"
           style={{ background: `${colors.desk}55`, borderColor: `${colors.muted}30` }}
         >
-          <label className="flex items-center justify-between gap-4">
-            <span className="text-sm font-medium">{t("Mouse tracker")}</span>
-            <input
-              type="checkbox"
-              checked={prefs.mouseLineTrack}
-              onChange={(event) => patch({ mouseLineTrack: event.target.checked })}
-              className="h-5 w-5 accent-[var(--color-accent)]"
-            />
-          </label>
-          <div className="mt-4 border-t pt-4" style={{ borderColor: `${colors.muted}25` }}>
+          <div>
             <div className="mb-3 flex items-center justify-between text-xs">
               <span style={{ color: colors.muted }}>{t("Tracker color")}</span>
               <span className="font-mono uppercase" style={{ color: prefs.lineTrackColor }}>

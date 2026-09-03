@@ -117,6 +117,14 @@ test("narrator voices exist only in the reader controller, not Reading settings"
   assert.match(settings, /Setting label=\{t\("Saved audio"\)\}/);
 });
 
+test("the eBook reader has no mouse-driven tracker or setting", async () => {
+  const reader = await readFile("src/views/ebook/harbor-reader.tsx", "utf8");
+  const state = await readFile("src/lib/ebook/reader-state.ts", "utf8");
+
+  assert.doesNotMatch(reader, /mouseLineTrack|Mouse tracker/);
+  assert.doesNotMatch(state, /mouseLineTrack/);
+});
+
 test("right-click opens the passage toolbar and bookmarks become the resume point", async () => {
   const reader = await readFile("src/views/ebook/harbor-reader.tsx", "utf8");
 

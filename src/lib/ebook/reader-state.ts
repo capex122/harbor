@@ -10,7 +10,6 @@ export type EBookReaderPrefs = {
   background: "dark" | "dim" | "light";
   brightness: number;
   focusMode: boolean;
-  mouseLineTrack: boolean;
   lineTrackColor: string;
   font: "literary" | "arabic" | "classic";
   customFontId?: string;
@@ -68,7 +67,6 @@ const DEFAULTS: EBookReaderPrefs = {
   background: "dark",
   brightness: 100,
   focusMode: false,
-  mouseLineTrack: false,
   lineTrackColor: "#ff9f4d",
   font: "literary",
   narrationVoice: "en-US-AvaNeural",
