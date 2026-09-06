@@ -32,7 +32,6 @@
     "dialog:allow-message",
     "fs:default",
     "deep-link:default",
-    "process:default",
     "harbor-player:default",
     "barcode-scanner:default",
     {
