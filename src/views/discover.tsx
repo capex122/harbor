@@ -49,7 +49,6 @@ import { Rail } from "./discover/discover-rail";
 import { useDedupedRows } from "./discover/use-deduped-rows";
 import { ANCHOR_AWARDS, ANCHOR_TOP_RATED } from "@/lib/feed/daily-rows-anchors";
 import type { HomeRow } from "./home/home-types";
-import { CatalogCustomizeBar } from "@/components/catalog/customize-bar";
 import { CatalogBrowser } from "@/views/discover/catalog-browser";
 import { SurpriseMe } from "@/views/discover/surprise-me";
 import { VoyageBanner } from "@/components/voyage/voyage-banner";
@@ -58,11 +57,9 @@ import { RowControls } from "@/views/home/row-controls";
 import { useT } from "@/lib/i18n";
 import {
   applyPageRows,
-  hasPageRowChanges,
   movePageRow,
   orderedRowKeys,
   renamePageRow,
-  resetPageRows,
   togglePageRowHidden,
   usePageRows,
 } from "@/lib/page-rows";
@@ -432,15 +429,6 @@ export function Discover({ active = true }: { active?: boolean }) {
   const hiddenFeatured = pageRows.custom.hidden.includes("section-featured");
   const hiddenCatalog = pageRows.custom.hidden.includes("section-catalog");
   const hiddenSurprise = pageRows.custom.hidden.includes("section-surprise");
-  const customizeBar = (
-    <CatalogCustomizeBar
-      editMode={pageRows.editMode}
-      hasChanges={hasPageRowChanges(pageRows.custom)}
-      onToggleEdit={() => pageRows.setEditMode((v) => !v)}
-      onReset={() => pageRows.persist(resetPageRows())}
-    />
-  );
-
   return (
     <main ref={scrollCb} className="flex-1 overflow-y-auto overflow-x-hidden px-12 pb-20 pt-28">
       <ScrollRootContext.Provider value={scrollEl}>
@@ -459,11 +447,8 @@ export function Discover({ active = true }: { active?: boolean }) {
               <div className={hiddenFeatured ? "pointer-events-none opacity-40" : ""}>
                 <FeaturedBanner items={featReady ? shownFeatured : []} />
               </div>
-              <div className="absolute end-0 bottom-4 z-10">{customizeBar}</div>
             </div>
-          ) : (
-            <div className="flex justify-end">{customizeBar}</div>
-          )}
+          ) : null}
 
           {pageRows.editMode ? (
             <div className="flex flex-col gap-4">
@@ -495,7 +480,7 @@ export function Discover({ active = true }: { active?: boolean }) {
           ) : (
             (!hiddenCatalog || !hiddenSurprise) && (
               <div
-                className={`flex flex-wrap items-stretch gap-x-6 gap-y-4 ${!hiddenFeatured ? "-mt-8" : ""}`}
+                className={`flex flex-col items-stretch gap-x-6 gap-y-4 md:flex-row md:flex-wrap ${!hiddenFeatured ? "-mt-8" : ""}`}
               >
                 {!hiddenCatalog && <CatalogBrowser />}
                 {!hiddenSurprise && <SurpriseMe pool={shownSurprisePool} />}
