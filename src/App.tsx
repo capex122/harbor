@@ -1260,11 +1260,81 @@ function Shell({ onReady }: { onReady?: () => void }) {
     }
   }, [activeProfile?.id]);
 
+  const [immersive, setImmersive] = useState(false);
   const playerActive = !!player;
   useEffect(() => setNativeMemoryActive(playerActive), [playerActive]);
   useEffect(() => {
     if (!playerActive) void exitWindowFullscreenOnPlayerClose();
   }, [playerActive]);
+
+  useEffect(() => {
+    if (playerActive || immersive) return;
+
+    let tracking = false;
+    let claimed = false;
+    let startX = 0;
+    let startY = 0;
+    let latestX = 0;
+    let latestY = 0;
+
+    const isNarrow = () => window.matchMedia("(max-width: 767px)").matches;
+    const backDistance = (x: number) =>
+      document.documentElement.dir === "rtl" ? startX - x : x - startX;
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (!isNarrow() || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      const edge = 24;
+      const fromBackEdge =
+        document.documentElement.dir === "rtl"
+          ? touch.clientX >= window.innerWidth - edge
+          : touch.clientX <= edge;
+      if (!fromBackEdge) return;
+      tracking = true;
+      claimed = false;
+      startX = latestX = touch.clientX;
+      startY = latestY = touch.clientY;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!tracking || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      latestX = touch.clientX;
+      latestY = touch.clientY;
+      const horizontal = backDistance(latestX);
+      const vertical = Math.abs(latestY - startY);
+      if (!claimed && horizontal > 12 && horizontal > vertical * 1.25) claimed = true;
+      if (claimed) event.preventDefault();
+    };
+
+    const finish = () => {
+      if (!tracking) return;
+      const horizontal = backDistance(latestX);
+      const vertical = Math.abs(latestY - startY);
+      tracking = false;
+      if (!claimed || horizontal < 72 || vertical > 64) return;
+      const localBack = new Event("harbor:local-back", { cancelable: true });
+      if (!window.dispatchEvent(localBack)) return;
+      if (canGoBack) goBack();
+    };
+
+    const cancel = () => {
+      tracking = false;
+      claimed = false;
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true, capture: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
+    window.addEventListener("touchend", finish, { passive: true, capture: true });
+    window.addEventListener("touchcancel", cancel, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart, true);
+      window.removeEventListener("touchmove", onTouchMove, true);
+      window.removeEventListener("touchend", finish, true);
+      window.removeEventListener("touchcancel", cancel, true);
+    };
+  }, [canGoBack, goBack, immersive, playerActive]);
+
   const pickerTop = topKind === "picker";
   const personTop = topKind === "person";
   const profileTop = topKind === "profile";
@@ -1310,7 +1380,6 @@ function Shell({ onReady }: { onReady?: () => void }) {
   const peopleTop = topKind === "people";
   const matchDetailTop = topKind === "match-detail";
 
-  const [immersive, setImmersive] = useState(false);
   useEffect(() => {
     const onImm = (e: Event) => setImmersive((e as CustomEvent<boolean>).detail === true);
     window.addEventListener("harbor:immersive", onImm);

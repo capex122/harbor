@@ -78,6 +78,11 @@ html[data-os="ios"] body {
 }
 
 @media (max-width: 767px) {
+  [data-mobile-dock-shell] .harbor-layer-active > main[class*="px-"],
+  [data-mobile-dock-shell] .harbor-layer-active > main > div[class*="px-"] {
+    padding-inline: 14px !important;
+  }
+
   [data-mobile-dock-shell] [data-home-hero] .harbor-hero-stage {
     height: min(48svh, 340px) !important;
     min-height: 310px !important;
