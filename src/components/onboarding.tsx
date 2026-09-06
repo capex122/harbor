@@ -86,11 +86,13 @@ export function OnboardingModal() {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-canvas/85 backdrop-blur-md ${
+      data-onboarding-overlay
+      className={`fixed inset-0 z-[1000] flex items-center justify-center bg-canvas/85 backdrop-blur-md ${
         closing ? "opacity-0 transition-opacity duration-300" : "animate-fade-in"
       }`}
     >
       <div
+        data-onboarding-modal
         className={`relative flex flex-col overflow-hidden rounded-2xl border border-edge-soft bg-elevated/95 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] ${
           isTaste ? "w-[min(93vw,640px)]" : "w-[min(92vw,580px)]"
         } transition-[width] duration-300 ${closing ? "scale-[0.97] opacity-0 !transition-all !duration-300" : "animate-modal-in"}`}
@@ -110,7 +112,7 @@ export function OnboardingModal() {
         ) : (
           <>
             <div
-              className={`flex min-h-[440px] flex-col ${isTaste ? "px-8 pt-9 pb-3" : "justify-center px-12 py-10"}`}
+              className={`onboarding-step-scroll flex min-h-[440px] flex-col ${isTaste ? "px-8 pt-9 pb-3" : "justify-center px-12 py-10"}`}
             >
               <div key={step} className="animate-step-in">
                 {step === "language" && <LanguageStep />}
@@ -125,7 +127,7 @@ export function OnboardingModal() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between border-t border-edge-soft bg-canvas/40 px-8 py-5">
+            <div className="onboarding-footer flex items-center justify-between border-t border-edge-soft bg-canvas/40 px-8 py-5">
               <Dots
                 count={STEPS.length - 1}
                 active={Math.max(stepIdx - 1, 0)}
