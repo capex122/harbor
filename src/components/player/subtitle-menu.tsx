@@ -21,6 +21,7 @@ import type { SubtitleMenuProps } from "./subtitle-menu/types";
 import { buildOverlayState } from "./subtitle-menu/utils";
 import { Tooltip } from "./transport/tooltip";
 import { watchOutsideMouseDown } from "@/lib/player/overlay-dismiss";
+import { isMobileNative } from "@/lib/platform";
 
 export type { SubtitleMenuProps } from "./subtitle-menu/types";
 
@@ -207,7 +208,12 @@ export function SubtitleMenu(props: Props) {
         </button>
       </Tooltip>
       {open && (forceInline || !useOverlay) && (
-        <ResizableSubtitlePanel className="fixed end-14 bottom-[150px] animate-menu-pop">
+        <ResizableSubtitlePanel
+          viewportFit={isMobileNative()}
+          className={isMobileNative()
+            ? "fixed inset-x-3 bottom-3 mx-auto animate-menu-pop"
+            : "fixed end-14 bottom-[150px] animate-menu-pop"}
+        >
           <MenuBody
             {...props}
             preferredLanguages={preferredLanguages}

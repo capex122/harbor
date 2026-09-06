@@ -54,9 +54,11 @@ type ResizeStart = SubtitlePanelSize & {
 export function ResizableSubtitlePanel({
   children,
   className = "",
+  viewportFit = false,
 }: {
   children: ReactNode;
   className?: string;
+  viewportFit?: boolean;
 }) {
   const tr = useT();
   const [size, setSize] = useState<SubtitlePanelSize>(readStoredSize);
@@ -133,9 +135,14 @@ export function ResizableSubtitlePanel({
   };
 
   return (
-    <div className={className} style={{ width: `${size.width}px`, height: `${size.height}px` }}>
+    <div
+      className={className}
+      style={viewportFit
+        ? { width: "min(760px, calc(100vw - 24px))", height: "calc(100dvh - 24px)" }
+        : { width: `${size.width}px`, height: `${size.height}px` }}
+    >
       <div className="relative flex h-full w-full flex-col overflow-hidden rounded-md bg-elevated shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]">
-        <button
+        {!viewportFit && <button
           type="button"
           aria-label={tr("Resize subtitle menu")}
           aria-describedby="subtitle-menu-resize-help"
@@ -150,7 +157,7 @@ export function ResizableSubtitlePanel({
           }`}
         >
           <MoveDiagonal2 size={14} strokeWidth={2} className="rtl:-rotate-90" />
-        </button>
+        </button>}
         <span id="subtitle-menu-resize-help" className="sr-only">
           {tr(
             "Drag the corner to resize. Left and right change width; up and down change height; Home resets the size.",
