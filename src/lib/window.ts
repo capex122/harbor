@@ -3,7 +3,7 @@ import { getCurrentWindow, type Window } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { getWindowFullscreen } from "@/lib/fullscreen-state";
-import { isMacDesktop } from "@/lib/platform";
+import { isDesktopTauri, isMacDesktop } from "@/lib/platform";
 import {
   openExternalUrlStrict as dispatchExternalUrlStrict,
   type ExternalUrlOpenAdapter,
@@ -11,7 +11,7 @@ import {
 
 export type { ExternalUrlOpenAdapter } from "@/lib/social/external-system-opener";
 
-const win: Window | null = isTauri() ? getCurrentWindow() : null;
+const win: Window | null = isDesktopTauri() ? getCurrentWindow() : null;
 
 const IS_MAC = isMacDesktop();
 
@@ -62,9 +62,13 @@ export function useMaximized(): boolean {
     let cancelled = false;
     let timer: number | null = null;
     const check = () => {
-      (IS_MAC ? win.isFullscreen() : win.isMaximized()).then((v) => {
-        if (!cancelled) setMaxed(v);
-      });
+      (IS_MAC ? win.isFullscreen() : win.isMaximized())
+        .then((v) => {
+          if (!cancelled) setMaxed(v);
+        })
+        .catch(() => {
+          if (!cancelled) setMaxed(false);
+        });
     };
     check();
     const schedule = () => {

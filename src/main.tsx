@@ -5,7 +5,7 @@ import { App } from "@/App";
 import { hydrateCustomThemes } from "@/lib/custom-themes";
 import { getUiLanguage } from "@/lib/i18n/store";
 import { ensureUiLocale } from "@/lib/i18n/load-locale";
-import { applyOsDataset } from "@/lib/platform";
+import { applyOsDataset, isDesktopTauri } from "@/lib/platform";
 import { loadSecrets } from "@/lib/secret-store";
 import { initSubtitleCache } from "@/lib/subtitles/subtitle-cache";
 import { CaptionsApp } from "@/views/captions-app";
@@ -177,7 +177,9 @@ async function mount() {
     ensureUiLocale(getUiLanguage()),
   ]);
   if (!isHdrOverlay && !isModal && !isCaptions) void initSubtitleCache();
-  if (!isHdrOverlay && !isModal && !isCaptions && !isPip) startTaskbarProgress();
+  if (!isHdrOverlay && !isModal && !isCaptions && !isPip && isDesktopTauri()) {
+    startTaskbarProgress();
+  }
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       {isHdrOverlay ? (

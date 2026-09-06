@@ -149,6 +149,19 @@ jobs:
       - name: Generate Xcode project
         run: pnpm tauri ios init --ci --skip-targets-install -v
 
+      # cargo-mobile2 generates a fresh asset catalog for every CI build. Copy
+      # Harbor's authoritative iOS icon set into it explicitly so a stale
+      # template icon can never reach the IPA, then prove the primary asset is
+      # identical before Xcode compiles the catalog.
+      - name: Refresh and verify Harbor app icon
+        run: |
+          set -euo pipefail
+          APPICON_DIR=$(find src-tauri/gen/apple -type d -name AppIcon.appiconset | head -1)
+          test -n "$APPICON_DIR"
+          cp src-tauri/icons/ios/*.png "$APPICON_DIR/"
+          cmp src-tauri/icons/ios/AppIcon-512@2x.png "$APPICON_DIR/AppIcon-512@2x.png"
+          echo "Verified Harbor AppIcon catalog: $APPICON_DIR"
+
       # The tauri CLI merges src-tauri/Info.ios.plist during `tauri ios build`,
       # but this lane archives with raw xcodebuild (the CLI has no unsigned
       # export method), so that merge never runs here. Verify the keys the app
