@@ -26,7 +26,7 @@ export function AdvancedPanel() {
   useSubTabs(tabs, tab, (id) => setTab(id as Tab));
   return (
     <div className="advanced-settings-panel flex flex-col gap-10">
-      {!isTauri && <WebBuildBanner />}
+      {!isTauri && tab === "system" && <WebBuildBanner />}
       <div key={tab} className="harbor-cascade flex flex-col gap-10">
         {tab === "system" && <SystemTab />}
         {tab === "privacy" && <PrivacyTab />}

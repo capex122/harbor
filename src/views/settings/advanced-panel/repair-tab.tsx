@@ -22,7 +22,7 @@ export function RepairTab() {
         rows
       ) : (
         <div data-tv-skip="">
-          <DesktopOnlyBlock>{rows}</DesktopOnlyBlock>
+          <DesktopOnlyBlock compactOnMobile>{rows}</DesktopOnlyBlock>
         </div>
       )}
     </Section>
