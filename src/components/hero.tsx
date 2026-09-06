@@ -359,7 +359,7 @@ export const Hero = memo(function Hero({
       >
         <div className="max-w-2xl">
           {rank && (
-            <div className="group/rank relative mb-5 inline-flex self-start">
+            <div className="harbor-hero-rank group/rank relative mb-5 inline-flex self-start">
               <div className="inline-flex cursor-help items-center gap-1.5 rounded-md bg-canvas/85 px-2.5 py-1 text-[12px] font-semibold text-ink">
                 <TrendingUp size={12} className="text-accent" />
                 <span>
@@ -419,11 +419,11 @@ export const Hero = memo(function Hero({
             }}
           />
           {description && (
-            <p className="mt-6 line-clamp-3 max-w-xl text-[16px] leading-relaxed text-ink-muted">
+            <p className="harbor-hero-description mt-6 line-clamp-3 max-w-xl text-[16px] leading-relaxed text-ink-muted">
               {description}
             </p>
           )}
-          <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-2 text-[14px]">
+          <div className="harbor-hero-meta mt-6 flex flex-wrap items-center gap-x-8 gap-y-2 text-[14px]">
             {meta.releaseInfo && <Stat label={t("Year")} value={meta.releaseInfo} />}
             {settings.showImdbBadge && imdbRating && (
               <span className="flex items-center gap-2">
@@ -440,7 +440,7 @@ export const Hero = memo(function Hero({
             {meta.runtime && <Stat label={t("Runtime")} value={meta.runtime} />}
           </div>
           <div
-            className="mt-9 flex gap-3"
+            className="harbor-hero-actions mt-9 flex gap-3"
             onMouseEnter={() => setOverControls(true)}
             onMouseLeave={() => setOverControls(false)}
           >
@@ -513,7 +513,7 @@ function HeroTitlePlate({
   onError: () => void;
 }) {
   return (
-    <div className="relative flex min-h-[112px] items-end">
+    <div className="harbor-hero-title-plate relative flex min-h-[112px] items-end">
       {logo ? (
         <img
           ref={(el) => {
@@ -530,7 +530,7 @@ function HeroTitlePlate({
             else onLoad();
           }}
           onError={onError}
-          className="max-h-[120px] w-auto max-w-[460px] object-contain object-left rtl:object-right drop-shadow-[0_6px_22px_rgba(0,0,0,0.45)]"
+          className="harbor-hero-logo max-h-[120px] w-auto max-w-[460px] object-contain object-left rtl:object-right drop-shadow-[0_6px_22px_rgba(0,0,0,0.45)]"
           style={{
             opacity: loaded ? 1 : 0,
             transition: "opacity 360ms cubic-bezier(0.32, 0.72, 0.24, 1)",
@@ -538,7 +538,7 @@ function HeroTitlePlate({
         />
       ) : resolved ? (
         <h2
-          className="font-display text-[68px] font-medium leading-[0.98] tracking-tight text-ink"
+          className="harbor-hero-title font-display text-[68px] font-medium leading-[0.98] tracking-tight text-ink"
           style={{ animation: "harbor-fade-in 420ms cubic-bezier(0.32, 0.72, 0.24, 1) both" }}
         >
           {name}

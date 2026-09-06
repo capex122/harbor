@@ -1046,6 +1046,7 @@ export function Home({ active = true, onReady }: { active?: boolean; onReady?: (
           {cwTop && cwBlock}
           {settings.homeMode !== "classic" && !homeRowsCustom.hidden.includes("hero") && showHero && (
             <div
+              data-home-hero
               data-scroll-anchor="hero"
               className={`relative ${heroFull ? `${cwTop ? "" : "-mt-24 lg:-mt-28"} -mb-12 harbor-hero-full` : ""}`}
             >
