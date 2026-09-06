@@ -4840,4 +4840,53 @@ button.hset-rail-me:hover,
   .harbor-settings-shell .hset-content {
     inline-size: 100%;
   }
+
+  .advanced-settings-panel,
+  .advanced-settings-panel > .harbor-cascade {
+    gap: 20px;
+  }
+
+  .advanced-web-banner {
+    border-radius: 14px;
+    padding: 18px;
+  }
+
+  .advanced-web-banner-art {
+    height: 52%;
+    opacity: 0.18;
+  }
+
+  .advanced-web-banner-copy {
+    max-width: none;
+    gap: 10px;
+  }
+
+  .advanced-web-banner-copy h2 {
+    font-size: 18px;
+  }
+
+  .advanced-web-banner-copy p {
+    font-size: 13.5px;
+    line-height: 19px;
+  }
+
+  .advanced-web-banner-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .advanced-web-banner-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  [data-mobile-compact] > [inert] {
+    display: none;
+  }
+
+  [data-mobile-compact] > .desktop-only-overlay {
+    position: static;
+    justify-content: flex-start;
+    padding-top: 0;
+  }
 }

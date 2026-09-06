@@ -3,15 +3,21 @@ import { useT } from "@/lib/i18n";
 
 export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
-export function DesktopOnlyBlock({ children }: { children: ReactNode }) {
+export function DesktopOnlyBlock({
+  children,
+  compactOnMobile = false,
+}: {
+  children: ReactNode;
+  compactOnMobile?: boolean;
+}) {
   const t = useT();
   if (isTauri) return <>{children}</>;
   return (
-    <div className="relative">
+    <div className="relative" data-mobile-compact={compactOnMobile ? "" : undefined}>
       <div inert data-tv-skip className="pointer-events-none select-none opacity-40">
         {children}
       </div>
-      <div className="pointer-events-none absolute inset-0 flex items-start justify-center pt-3">
+      <div className="desktop-only-overlay pointer-events-none absolute inset-0 flex items-start justify-center pt-3">
         <span className="inline-flex h-[22px] items-center rounded-[6px] bg-elevated px-2 text-[13px] font-bold uppercase leading-[17px] tracking-[0.72px] text-ink-subtle">
           {t("Desktop only")}
         </span>

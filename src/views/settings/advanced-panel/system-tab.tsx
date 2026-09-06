@@ -23,7 +23,7 @@ export function SystemTab() {
           <DownloadsSection />
         ) : (
           <div data-tv-skip="">
-            <DesktopOnlyBlock>
+            <DesktopOnlyBlock compactOnMobile>
               <DownloadsSection />
             </DesktopOnlyBlock>
           </div>
