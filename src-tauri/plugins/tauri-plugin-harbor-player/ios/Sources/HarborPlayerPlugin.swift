@@ -7,6 +7,7 @@
 import Foundation
 import Tauri
 import UIKit
+import WebKit
 
 struct SubArg: Decodable {
   let url: String
@@ -136,6 +137,16 @@ class HarborPlayerPlugin: Plugin {
   // AVPlayer keeps the containers it is genuinely good at; mpv takes everything
   // else, including extensionless URLs. Reasoning in ios/README.md.
   private static let avPlayerExtensions: Set<String> = ["m3u8", "mp4", "m4v", "mov"]
+
+  /// Tauri installs the root WKWebView through this plugin lifecycle hook.
+  /// Let the web viewport cover the full screen and leave safe-area placement to
+  /// CSS (`viewport-fit=cover` + env(safe-area-inset-*)); UIKit's automatic
+  /// adjustment otherwise reserves the home-indicator area a second time.
+  override func load(webview: WKWebView) {
+    webview.scrollView.contentInsetAdjustmentBehavior = .never
+    webview.scrollView.contentInset = .zero
+    webview.scrollView.scrollIndicatorInsets = .zero
+  }
 
   // Plain string inspection, not Foundation URL parsing: Foundation rejects
   // strings Android happily plays (unencoded spaces, some IPv6/userinfo
