@@ -52,6 +52,8 @@ final class HarborMpvViewController: UIViewController, HarborPlayerEngine {
   private var surfaceSidePt: CGFloat = 0
   /// Crop-to-fill rather than fit; see doSetZoom.
   var zoomFill = false
+  /// User-selected display ratio; nil follows the decoded picture.
+  var aspectOverride: CGFloat?
   private let closeButton = UIButton(type: .system)
   private let titleLabel = UILabel()
   // Native transport overlay (mpv engine only; the AVPlayer engine uses AVKit's
@@ -184,8 +186,8 @@ final class HarborMpvViewController: UIViewController, HarborPlayerEngine {
     let decoded = decodedSize
     // 16:9 until the decoder reports otherwise; the dwidth/dheight observer runs
     // this again once it does.
-    let aspect =
-      decoded.width > 0 && decoded.height > 0 ? decoded.width / decoded.height : 16.0 / 9.0
+    let aspect = aspectOverride ??
+      (decoded.width > 0 && decoded.height > 0 ? decoded.width / decoded.height : 16.0 / 9.0)
     // Fit takes the smaller solution, fill the larger; the overflow is clipped by
     // the view, which is why it must clip.
     let bound = zoomFill ? max(w, aspect * h) : min(w, aspect * h)

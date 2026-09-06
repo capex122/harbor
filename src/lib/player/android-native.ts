@@ -85,6 +85,14 @@ export function createNativeBridge(): PlayerBridge {
   let volume = 1;
   let muted = false;
   let rate = 1;
+  let nativeFill = false;
+  let nativeAspect = "-1";
+  let nativeStretch = false;
+  const syncVideoGeometry = () => nativeInvoke("set_zoom", {
+    fill: nativeFill,
+    aspect: nativeAspect,
+    stretch: nativeStretch,
+  });
 
   const emit = () => {
     const s = snap;
@@ -267,10 +275,19 @@ export function createNativeBridge(): PlayerBridge {
       patch({ audioDelaySec: sec });
       nativeInvoke("set_audio_delay", { seconds: sec });
     },
-    setPanscan: noop,
+    setPanscan(value) {
+      nativeFill = value > 0;
+      syncVideoGeometry();
+    },
     setVideoZoom: noop,
-    setAspectOverride: noop,
-    setStretch: noop,
+    setAspectOverride(ratio) {
+      nativeAspect = ratio;
+      syncVideoGeometry();
+    },
+    setStretch(on) {
+      nativeStretch = on;
+      syncVideoGeometry();
+    },
     setVideoEq: noop,
     setAnime4kShaders: noop,
     async addSubtitle() {

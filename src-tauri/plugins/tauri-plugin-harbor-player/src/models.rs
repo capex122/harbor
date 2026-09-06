@@ -64,7 +64,13 @@ pub struct RateRequest {
 #[serde(rename_all = "camelCase")]
 pub struct ZoomRequest {
     pub fill: bool,
+    #[serde(default = "default_aspect")]
+    pub aspect: String,
+    #[serde(default)]
+    pub stretch: bool,
 }
+
+fn default_aspect() -> String { "-1".into() }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

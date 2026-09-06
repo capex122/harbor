@@ -11,7 +11,7 @@ extension HarborPlayerViewController {
   // the item is ready, and the shell shows nothing until it is non-zero.
   var decodedSize: CGSize { player?.currentItem?.presentationSize ?? .zero }
 
-  func doSetZoom(_ fill: Bool) {
+  func doSetZoom(_ fill: Bool, aspect: String, stretch: Bool) {
     videoGravity = fill ? .resizeAspectFill : .resizeAspect
   }
 

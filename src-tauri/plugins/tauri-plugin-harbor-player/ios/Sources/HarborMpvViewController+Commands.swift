@@ -9,9 +9,19 @@ extension HarborMpvViewController {
   /// Crop to fill. layoutSurface already solves for the square's on-screen size;
   /// fitting takes the smaller solution and filling takes the larger, so this is
   /// the same geometry with the bound flipped and needs nothing from mpv itself.
-  func doSetZoom(_ fill: Bool) {
+  func doSetZoom(_ fill: Bool, aspect: String, stretch: Bool) {
     zoomFill = fill
+    aspectOverride = Self.parseAspect(aspect)
+    setString("video-aspect-override", aspect)
+    setString("keepaspect", stretch ? "no" : "yes")
     view.setNeedsLayout()
+  }
+
+  private static func parseAspect(_ value: String) -> CGFloat? {
+    guard value != "-1" else { return nil }
+    let parts = value.split(separator: ":").compactMap { Double($0) }
+    guard parts.count == 2, parts[1] > 0 else { return nil }
+    return CGFloat(parts[0] / parts[1])
   }
 
   func doSetRate(_ rate: Double) {
