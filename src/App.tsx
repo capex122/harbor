@@ -1277,7 +1277,7 @@ function Shell({ onReady }: { onReady?: () => void }) {
     let latestX = 0;
     let latestY = 0;
 
-    const isNarrow = () => window.matchMedia("(max-width: 767px)").matches;
+    const isNarrow = () => window.matchMedia("(max-width: 1023px)").matches;
     const backDistance = (x: number) =>
       document.documentElement.dir === "rtl" ? startX - x : x - startX;
 

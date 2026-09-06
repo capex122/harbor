@@ -386,6 +386,114 @@ html[data-os="ios"] body {
   }
 }
 
+/* iPad portrait and compact split-view: dock navigation with tablet-scale content. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  html,
+  body,
+  #root,
+  [data-mobile-dock-shell] {
+    max-inline-size: 100%;
+    overflow-x: clip;
+  }
+
+  [data-mobile-dock-shell] main {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+
+  [data-mobile-dock-shell] .mobile-local-scroll {
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-mobile-dock-shell] .mobile-local-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  [data-mobile-dock-shell] .mobile-local-scroll > .mobile-local-scroll-track {
+    inline-size: max-content;
+    min-inline-size: 100%;
+    flex-wrap: nowrap;
+  }
+
+  [data-mobile-dock-shell] .catalog-filter-bar {
+    overflow: visible;
+    touch-action: auto;
+  }
+
+  [data-mobile-dock-shell] .catalog-filter-bar > .mobile-local-scroll-track {
+    display: grid;
+    inline-size: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  [data-mobile-dock-shell] .catalog-filter-bar > .mobile-local-scroll-track > *,
+  [data-mobile-dock-shell] .catalog-filter-bar > .mobile-local-scroll-track > * > button {
+    min-inline-size: 0;
+    inline-size: 100%;
+  }
+
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-stage {
+    height: min(54svh, 520px) !important;
+    min-height: 420px !important;
+  }
+
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-content {
+    padding: 28px 32px 32px !important;
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero] {
+    height: min(68svh, 720px) !important;
+    min-height: 620px !important;
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero-content] {
+    padding-inline: 32px !important;
+    padding-block-end: 38px !important;
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero-content] h1 {
+    overflow-wrap: anywhere;
+    font-size: clamp(58px, 9vw, 76px);
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero-content] img.absolute {
+    max-width: calc(100vw - 64px);
+    max-height: 112px;
+  }
+
+  [data-mobile-dock-shell] [data-player-picker] .player-picker-content {
+    width: min(100%, 760px);
+    margin-inline: auto;
+    padding-inline: 32px;
+    padding-block-end: calc(7.5rem + max(var(--harbor-safe-bottom), 0.5rem));
+  }
+
+  [data-mobile-dock-shell] .home-customize-control {
+    display: none !important;
+  }
+}
+
+/* Large iPad and tablet landscape keep the wide layout, but never a wide document. */
+@media (min-width: 1024px) and (max-width: 1366px) {
+  html,
+  body,
+  #root,
+  [data-mobile-dock-shell],
+  [data-mobile-dock-shell] main {
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    overflow-x: clip;
+  }
+}
+
 html[data-mpv-embed="1"],
 html[data-mpv-embed="1"] body,
 html[data-mpv-embed="1"] #root {
