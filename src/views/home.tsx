@@ -1026,7 +1026,7 @@ export function Home({ active = true, onReady }: { active?: boolean; onReady?: (
             </div>
           </div>
           {editMode && (
-            <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
+            <div className="home-customize-control pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
               <div className="pointer-events-auto rounded-xl border border-edge-soft bg-canvas/95 px-3 py-2 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.75)] backdrop-blur-md">
                 <CustomizeBar
                   editMode={editMode}
@@ -1067,7 +1067,7 @@ export function Home({ active = true, onReady }: { active?: boolean; onReady?: (
                 moreInfo={!!homeRowsCustom.secondaryMoreInfo}
               />
               {!editMode && (
-                <div className="pointer-events-none absolute -bottom-3 end-5 z-20 flex justify-end [&>*]:pointer-events-auto">
+                <div className="home-customize-control pointer-events-none absolute -bottom-3 end-5 z-20 flex justify-end [&>*]:pointer-events-auto">
                   <CustomizeBar
                     editMode={editMode}
                     customization={homeRowsCustom}
@@ -1086,7 +1086,7 @@ export function Home({ active = true, onReady }: { active?: boolean; onReady?: (
             />
           )}
           {!editMode && settings.homeMode !== "classic" && homeRowsCustom.hidden.includes("hero") && (
-            <div className="pointer-events-none absolute end-5 top-0 z-20 [&>*]:pointer-events-auto">
+            <div className="home-customize-control pointer-events-none absolute end-5 top-0 z-20 [&>*]:pointer-events-auto">
               <CustomizeBar
                 editMode={editMode}
                 customization={homeRowsCustom}

@@ -79,14 +79,14 @@ html[data-os="ios"] body {
 
 @media (max-width: 767px) {
   [data-mobile-dock-shell] [data-home-hero] .harbor-hero-stage {
-    height: min(55svh, 390px) !important;
-    min-height: 350px !important;
+    height: min(48svh, 340px) !important;
+    min-height: 310px !important;
     border-radius: 18px;
   }
 
   [data-mobile-dock-shell] [data-home-hero] .harbor-hero-content {
     justify-content: flex-end;
-    padding: 16px 16px 22px !important;
+    padding: 14px 14px 18px !important;
   }
 
   [data-mobile-dock-shell] [data-home-hero] .harbor-hero-rank {
@@ -94,21 +94,21 @@ html[data-os="ios"] body {
   }
 
   [data-mobile-dock-shell] [data-home-hero] .harbor-hero-title-plate {
-    min-height: 46px;
+    min-height: 40px;
   }
 
   [data-mobile-dock-shell] [data-home-hero] .harbor-hero-logo {
-    max-height: 54px;
-    max-width: min(66vw, 250px);
+    max-height: 48px;
+    max-width: min(62vw, 225px);
   }
 
   [data-mobile-dock-shell] [data-home-hero] .harbor-hero-title {
-    font-size: clamp(30px, 9vw, 38px);
+    font-size: clamp(28px, 8vw, 34px);
   }
 
   [data-mobile-dock-shell] [data-home-hero] .harbor-hero-description {
     margin-top: 7px;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     font-size: 12px;
     line-height: 1.4;
   }
@@ -126,10 +126,14 @@ html[data-os="ios"] body {
   }
 
   [data-mobile-dock-shell] [data-home-hero] .harbor-hero-actions button {
-    height: 38px;
-    padding-inline: 15px;
+    height: 36px;
+    padding-inline: 14px;
     font-size: 12px;
     white-space: nowrap;
+  }
+
+  [data-mobile-dock-shell] .home-customize-control {
+    display: none !important;
   }
 }
 
