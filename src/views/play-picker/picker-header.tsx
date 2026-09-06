@@ -18,14 +18,14 @@ export function PickerNav({
   const { settings } = useSettings();
   const groupLeft = settings.pickerRefreshNextToBack;
   return (
-    <div className="-mb-9">
+    <div className="picker-nav -mb-9">
       <div className={`flex items-center gap-3 ${groupLeft ? "justify-start" : "justify-between"}`}>
         <button
           type="button"
           onClick={onBack}
-          className="group/back -ms-2 flex w-fit items-center gap-3 rounded-full py-1.5 pe-6 ps-1.5 text-[17px] font-semibold text-ink-muted transition-colors hover:text-ink"
+          className="picker-nav-button group/back -ms-2 flex w-fit items-center gap-3 rounded-full py-1.5 pe-6 ps-1.5 text-[17px] font-semibold text-ink-muted transition-colors hover:text-ink"
         >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-elevated/70 ring-1 ring-edge-soft transition-colors group-hover/back:bg-elevated">
+          <span className="picker-nav-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-elevated/70 ring-1 ring-edge-soft transition-colors group-hover/back:bg-elevated">
             <ChevronLeft size={26} strokeWidth={2.4} className="dir-icon" />
           </span>
           Back
@@ -36,9 +36,9 @@ export function PickerNav({
             onClick={onRefresh}
             disabled={refreshing}
             aria-label={t("Refresh sources")}
-            className="group/refresh flex w-fit shrink-0 items-center gap-3 rounded-full py-1.5 pe-6 ps-1.5 text-[17px] font-semibold text-ink-muted transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
+            className="picker-nav-button group/refresh flex w-fit shrink-0 items-center gap-3 rounded-full py-1.5 pe-6 ps-1.5 text-[17px] font-semibold text-ink-muted transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-elevated/70 ring-1 ring-edge-soft transition-colors group-hover/refresh:bg-elevated">
+            <span className="picker-nav-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-elevated/70 ring-1 ring-edge-soft transition-colors group-hover/refresh:bg-elevated">
               <RefreshCw size={20} strokeWidth={2.4} className={refreshing ? "animate-spin" : ""} />
             </span>
             {t("Refresh")}
@@ -59,15 +59,15 @@ export function PickerHeader({
   absoluteEpisode?: number | null;
 }) {
   return (
-    <header className="flex flex-col gap-3">
+    <header className="picker-header flex flex-col gap-3">
       {episode ? (
         <>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-ink-subtle">
+          <p className="picker-header-eyebrow text-[11px] font-semibold uppercase tracking-[0.32em] text-ink-subtle">
             {absoluteEpisode != null
               ? `${meta.name} · Episode ${absoluteEpisode}`
               : `${meta.name} · Season ${episode.imdbSeason ?? episode.season} · Episode ${String(episode.imdbEpisode ?? episode.episode).padStart(2, "0")}`}
           </p>
-          <h1 className="font-display text-[64px] font-medium leading-[0.96] tracking-tight text-ink">
+          <h1 className="picker-header-title font-display text-[64px] font-medium leading-[0.96] tracking-tight text-ink">
             {episode.name ||
               metaEpisodeName(meta, episode) ||
               `Episode ${absoluteEpisode ?? episode.episode}`}
@@ -77,12 +77,12 @@ export function PickerHeader({
       ) : (
         <>
           {meta.releaseInfo && (
-            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-ink-subtle">
+            <p className="picker-header-eyebrow text-[11px] font-semibold uppercase tracking-[0.32em] text-ink-subtle">
               {meta.releaseInfo}
               {meta.genres?.length ? ` · ${meta.genres.slice(0, 2).join(" · ")}` : ""}
             </p>
           )}
-          <h1 className="font-display text-[68px] font-medium leading-[0.96] tracking-tight text-ink">
+          <h1 className="picker-header-title font-display text-[68px] font-medium leading-[0.96] tracking-tight text-ink">
             {meta.name}
           </h1>
         </>
@@ -105,7 +105,7 @@ function CollapsibleOverview({ text }: { text: string }) {
     return () => window.removeEventListener("resize", check);
   }, [text, expanded]);
   return (
-    <div className="mt-2 max-w-2xl">
+    <div className="picker-header-overview mt-2 max-w-2xl">
       <p
         ref={ref}
         className={`text-[14.5px] leading-relaxed text-ink-muted ${expanded ? "" : "line-clamp-2"}`}

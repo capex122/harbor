@@ -120,11 +120,11 @@ export function StremioLayout({
     filter === "all" ? t("All") : (addonOptions.find((o) => o.id === filter)?.name ?? t("All"));
   const filterLogo = filter === "all" ? null : (addonLogoMap.get(filter) ?? null);
   return (
-    <div className="flex flex-col gap-3">
+    <div className="picker-source-list flex flex-col gap-3">
       <div className="relative">
         <button
           onClick={() => setFilterOpen((v) => !v)}
-          className="flex w-full items-center justify-between gap-3 rounded-2xl bg-elevated/60 px-4 py-3 text-start text-[15px] font-medium text-ink ring-1 ring-edge-soft transition-colors hover:bg-elevated"
+          className="picker-addon-filter flex w-full items-center justify-between gap-3 rounded-2xl bg-elevated/60 px-4 py-3 text-start text-[15px] font-medium text-ink ring-1 ring-edge-soft transition-colors hover:bg-elevated"
         >
           <div className="flex min-w-0 items-center gap-3">
             <CircleLogo
@@ -180,22 +180,24 @@ export function StremioLayout({
           </div>
         )}
       </div>
-      <FacetMenuRow
-        facets={facetData}
-        onFacet={(key, v) => setFacet((prev) => ({ ...prev, [key]: v }))}
-        filters={customFilters}
-        activeFilterId={activeFilterId}
-        onSelectFilter={setActiveFilterId}
-        onNewFilter={() => {
-          setEditingFilter(null);
-          setBuilderOpen(true);
-        }}
-        onEditFilter={(f) => {
-          setEditingFilter(f);
-          setBuilderOpen(true);
-        }}
-      />
-      <div className="flex flex-col gap-2">
+      <div className="picker-facet-scroll">
+        <FacetMenuRow
+          facets={facetData}
+          onFacet={(key, v) => setFacet((prev) => ({ ...prev, [key]: v }))}
+          filters={customFilters}
+          activeFilterId={activeFilterId}
+          onSelectFilter={setActiveFilterId}
+          onNewFilter={() => {
+            setEditingFilter(null);
+            setBuilderOpen(true);
+          }}
+          onEditFilter={(f) => {
+            setEditingFilter(f);
+            setBuilderOpen(true);
+          }}
+        />
+      </div>
+      <div className="picker-stream-list flex flex-col gap-2">
         {visibleStreams.map((s, i) => (
           <StremioRow
             key={`${s.url ?? s.infoHash ?? s.title}-${i}`}

@@ -8,6 +8,89 @@
   font-display: swap;
 }
 
+/* Regular mobile player picker: compact, touch-first, and clear of the floating dock. */
+@media (max-width: 767px) {
+  [data-mobile-dock-shell] [data-player-picker] { overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+  [data-mobile-dock-shell] [data-player-picker] .player-picker-content {
+    gap: 18px; max-width: none; padding-inline: 14px;
+    padding-block-start: calc(max(env(safe-area-inset-top, 0px), 10px) + 42px);
+    padding-block-end: calc(7.5rem + max(env(safe-area-inset-bottom, 0px), 8px));
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-nav { margin-block-end: 0; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-nav > div { gap: 8px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-nav-button {
+    gap: 8px; margin-inline-start: -2px; padding: 2px 10px 2px 2px; font-size: 14px;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-nav-icon { width: 40px; height: 40px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-nav-icon svg { width: 20px; height: 20px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-header { gap: 7px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-header-eyebrow {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; letter-spacing: 0.22em;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-header-title {
+    font-size: clamp(36px, 11vw, 48px); line-height: 0.96;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-header-overview { margin-block-start: 3px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-mode-row { justify-content: flex-start; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-mode-toggle {
+    width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-mode-toggle button {
+    min-height: 36px; padding-inline: 6px; font-size: 11px;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-source-list { gap: 10px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-addon-filter {
+    min-height: 50px; border-radius: 15px; padding: 7px 12px; font-size: 14px;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-addon-filter > div > div { width: 34px; height: 34px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-facet-scroll {
+    width: calc(100% + 28px); margin-inline: -14px; overflow-x: auto; overflow-y: visible;
+    padding: 1px 14px 4px; scrollbar-width: none; touch-action: pan-x;
+    overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-facet-scroll::-webkit-scrollbar { display: none; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-facet-scroll > div {
+    width: max-content; min-width: 100%; flex-wrap: nowrap;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-list { gap: 9px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-row {
+    display: grid; grid-template-columns: 42px minmax(0, 1fr) 44px; align-items: center;
+    gap: 10px; min-height: 82px; border-radius: 16px; padding: 11px;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-addon { width: 42px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-addon img,
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-addon > span {
+    width: 40px !important; height: 40px !important; border-radius: 10px !important;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-body { gap: 3px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-headline {
+    display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    font-size: 13.5px; line-height: 1.25;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-description {
+    display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    white-space: normal; font-size: 11.5px; line-height: 1.3;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-badges {
+    max-height: 20px; overflow: hidden; gap: 4px;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-actions {
+    flex-direction: column-reverse; gap: 4px;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-actions > :not(.picker-stream-play):not(.source-download-button) {
+    width: 30px; height: 30px;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-play { width: 44px; height: 44px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-play svg { width: 20px; height: 20px; }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-row:has(.source-download-button) {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-row:has(.source-download-button) .picker-stream-actions {
+    grid-column: 1 / -1; width: 100%; flex-direction: row;
+  }
+  [data-mobile-dock-shell] [data-player-picker] .picker-stream-row .source-download-button { width: 100%; }
+}
+
 @font-face {
   font-family: "QR Ames Beta";
   src: url("./assets/fonts/qr-ames-beta.otf") format("opentype");

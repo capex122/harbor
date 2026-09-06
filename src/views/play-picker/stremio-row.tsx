@@ -48,11 +48,11 @@ export function StremioRow({
       : t("Download");
   return (
     <div
-      className={`flex items-stretch gap-5 rounded-2xl bg-elevated/40 p-5 ring-1 transition-colors ${
+      className={`picker-stream-row flex items-stretch gap-5 rounded-2xl bg-elevated/40 p-5 ring-1 transition-colors ${
         failed ? "ring-danger/40 bg-danger/5" : "ring-edge-soft/50"
       }`}
     >
-      <div className="flex w-[68px] shrink-0 flex-col items-center justify-center">
+      <div className="picker-stream-addon flex w-[68px] shrink-0 flex-col items-center justify-center">
         <AddonLogo
           addonId={stream.addonId}
           addonName={addonName}
@@ -60,17 +60,17 @@ export function StremioRow({
           size="tile"
         />
       </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
-        <p className="whitespace-pre-line text-[16px] font-semibold leading-snug text-ink [overflow-wrap:anywhere]">
+      <div className="picker-stream-body flex min-w-0 flex-1 flex-col justify-center gap-1.5">
+        <p className="picker-stream-headline whitespace-pre-line text-[16px] font-semibold leading-snug text-ink [overflow-wrap:anywhere]">
           {headline}
         </p>
         {description && (
-          <p className="whitespace-pre-line text-[14px] leading-snug text-ink-muted [overflow-wrap:anywhere]">
+          <p className="picker-stream-description whitespace-pre-line text-[14px] leading-snug text-ink-muted [overflow-wrap:anywhere]">
             {description}
           </p>
         )}
         {(badges.length > 0 || match || stream.edition || dubSub) && (
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="picker-stream-badges flex flex-wrap items-center gap-1.5">
             <HostMatchChip match={match} />
             {dubSub && <DubSubPill kind={dubSub} size="sm" />}
             {badges.map((k) => (
@@ -84,7 +84,7 @@ export function StremioRow({
           <p className="text-[13px] font-medium text-danger">{t("Unavailable, try another.")}</p>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-2 self-center">
+      <div className="picker-stream-actions flex shrink-0 items-center gap-2 self-center">
         {link && <CopyLinkButton url={link} size={16} className="h-9 w-9" />}
         <button
           type="button"
@@ -100,7 +100,7 @@ export function StremioRow({
                     ? "border-accent/25 bg-accent-soft text-accent"
                     : "border-ink/[0.06] bg-ink/[0.04] text-ink hover:scale-[1.02] hover:bg-ink/[0.07] aria-disabled:hover:scale-100"
                 }`
-              : "flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-accent text-canvas shadow-[0_2px_6px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.18)] transition-[transform,box-shadow,background-color,color] duration-150 ease-out hover:shadow-[0_5px_14px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.18)] active:scale-[0.96] active:duration-100"
+              : "picker-stream-play flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-accent text-canvas shadow-[0_2px_6px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.18)] transition-[transform,box-shadow,background-color,color] duration-150 ease-out hover:shadow-[0_5px_14px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.18)] active:scale-[0.96] active:duration-100"
           }
         >
           {preparing ? (

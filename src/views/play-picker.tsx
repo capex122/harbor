@@ -934,7 +934,7 @@ export function PlayPicker({
   }
 
   return (
-    <main ref={mainRef} className="absolute inset-0 z-50 overflow-y-auto bg-canvas">
+    <main ref={mainRef} data-player-picker className="absolute inset-0 z-50 overflow-y-auto bg-canvas">
       <BackdropLayer src={backdropSrc} />
 
       <div
@@ -943,7 +943,7 @@ export function PlayPicker({
         className="absolute start-0 end-6 top-0 z-10 h-20"
       />
 
-      <div className="relative mx-auto flex min-h-full w-full max-w-5xl flex-col gap-12 px-12 pb-32 pt-32">
+      <div className="player-picker-content relative mx-auto flex min-h-full w-full max-w-5xl flex-col gap-12 px-12 pb-32 pt-32">
         <PickerNav onBack={backToDetail} onRefresh={refresh} refreshing={loading} />
         <PickerHeader
           meta={metaForDisplay}
@@ -1078,10 +1078,11 @@ export function PlayPicker({
         )}
 
         {!isDownload && result && result.picker.all.length > 0 && (
-          <div className="flex justify-end">
+          <div className="picker-mode-row flex justify-end">
             <StreamModeToggle
               mode={settings.streamMode}
               onChange={(mode) => update({ streamMode: mode })}
+              className="picker-mode-toggle"
             />
           </div>
         )}
