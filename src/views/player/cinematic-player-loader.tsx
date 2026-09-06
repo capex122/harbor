@@ -77,7 +77,12 @@ export function CinematicPlayerLoader({
   const clockTick = usePlaybackPositionGated(true);
   void clockTick;
   const everPlayedRef = useRef(false);
-  if (snap.firstFrameReady) {
+  const playbackVisible =
+    snap.firstFrameReady ||
+    snap.status === "playing" ||
+    snap.status === "paused" ||
+    snap.positionSec > 0;
+  if (playbackVisible) {
     everPlayedRef.current = true;
   }
   const sessionKey = `${src.meta.id}::${src.episode?.season ?? ""}:${src.episode?.episode ?? ""}`;

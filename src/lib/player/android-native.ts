@@ -124,6 +124,11 @@ export function createNativeBridge(): PlayerBridge {
           positionSec: t.positionSec,
           durationSec: t.durationSec || snap.durationSec,
           bufferedSec: t.bufferedSec,
+          firstFrameReady:
+            snap.firstFrameReady ||
+            t.playing ||
+            t.positionSec > 0 ||
+            (typeof t.videoWidth === "number" && t.videoWidth > 0),
           rate: typeof t.rate === "number" && t.rate > 0 ? t.rate : snap.rate,
           status: t.playing
             ? "playing"
@@ -148,7 +153,11 @@ export function createNativeBridge(): PlayerBridge {
         if (st.status === "error") {
           patch({ status: "error", errorCode: mapError(st.errorCode), errorMessage: st.errorCode ?? "Playback error" });
         } else if (st.status === "ready") {
-          patch({ status: snap.status === "paused" ? "paused" : "playing", buffering: false });
+          patch({
+            status: snap.status === "paused" ? "paused" : "playing",
+            buffering: false,
+            firstFrameReady: true,
+          });
         } else if (st.status === "loading") {
           patch({ buffering: true });
         } else if (st.status === "ended") {
