@@ -146,6 +146,7 @@ class HarborPlayerPlugin: Plugin {
     webview.scrollView.contentInsetAdjustmentBehavior = .never
     webview.scrollView.contentInset = .zero
     webview.scrollView.scrollIndicatorInsets = .zero
+    webview.scrollView.pinchGestureRecognizer?.isEnabled = false
   }
 
   // Plain string inspection, not Foundation URL parsing: Foundation rejects

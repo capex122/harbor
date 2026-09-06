@@ -71,6 +71,12 @@ body,
   overflow: hidden;
 }
 
+/* Keep native iPhone/iPad navigation responsive without Safari's double-tap zoom. */
+html[data-os="ios"],
+html[data-os="ios"] body {
+  touch-action: manipulation;
+}
+
 html[data-mpv-embed="1"],
 html[data-mpv-embed="1"] body,
 html[data-mpv-embed="1"] #root {
