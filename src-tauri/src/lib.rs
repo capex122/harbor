@@ -72,6 +72,7 @@ mod hdr_overlay;
 mod installer_handoff;
 #[cfg(desktop)]
 mod media_controls;
+#[cfg(desktop)]
 mod modal_overlay;
 #[cfg(desktop)]
 mod mpv;
