@@ -323,6 +323,14 @@ html[data-mpv-embed="1"] #root {
   background: transparent;
 }
 
+/* iOS hosts AVPlayer/libmpv behind WKWebView; leave the video window visible. */
+html.native-video-behind,
+html.native-video-behind body,
+html.native-video-behind #root,
+html.native-video-behind [data-harbor-player] {
+  background: transparent !important;
+}
+
 html[data-os="linux"]:not([data-mpv-embed="1"]),
 html[data-os="linux"]:not([data-mpv-embed="1"]) body,
 html[data-os="linux"]:not([data-mpv-embed="1"]) #root {
