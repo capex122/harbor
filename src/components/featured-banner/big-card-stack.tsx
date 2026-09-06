@@ -139,7 +139,7 @@ export function BigCardStack({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
-      className={`group relative block h-full min-h-[420px] w-full min-w-0 overflow-hidden rounded-2xl border border-edge-soft bg-canvas text-start transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1 ${
+      className={`group relative block aspect-[16/10] min-h-0 w-full min-w-0 overflow-hidden rounded-[24px] border border-edge-soft bg-canvas text-start shadow-[0_22px_54px_-30px_rgba(0,0,0,0.9)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] active:scale-[0.96] lg:aspect-auto lg:h-full lg:min-h-[420px] lg:rounded-2xl lg:shadow-none lg:hover:-translate-y-1 ${
         dragging ? "cursor-grabbing select-none" : "cursor-pointer"
       }`}
       style={{ isolation: "isolate", touchAction: "pan-y" }}
@@ -184,7 +184,7 @@ export function BigCardStack({
       <div
         key={`badge-${current.id}`}
         style={contentAnim}
-        className="absolute start-7 top-6 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-accent"
+        className="absolute start-5 top-5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-accent lg:start-7 lg:top-6 lg:text-[10.5px] lg:tracking-[0.22em]"
       >
         {current.providerBadge ? (
           <span
@@ -207,7 +207,7 @@ export function BigCardStack({
       </div>
       <div
         key={`meta-${current.id}`}
-        className="absolute inset-x-7 bottom-7 flex flex-col gap-3"
+        className="absolute inset-x-5 bottom-4 flex flex-col gap-1.5 lg:inset-x-7 lg:bottom-7 lg:gap-3"
         style={contentAnim}
       >
         <TitlePlate title={current.name} logo={logo} />
@@ -215,7 +215,7 @@ export function BigCardStack({
           {current.releaseInfo && <span>{current.releaseInfo}</span>}
         </div>
       </div>
-      <div className="pointer-events-none absolute end-7 top-6 z-10">
+      <div className="pointer-events-none absolute end-5 top-5 z-10 hidden sm:block lg:end-7 lg:top-6">
         <MetaAwardsCorner meta={current} imdbId={resolvedImdb} />
       </div>
       {onPrev && items.length > 1 && (
@@ -224,7 +224,7 @@ export function BigCardStack({
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           style={{ position: "absolute", insetInlineStart: 6, top: "50%", transform: "translateY(-50%)", zIndex: 10 }}
-          className="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+          className="hidden opacity-0 transition-opacity duration-200 group-hover:opacity-100 lg:block"
         >
           <NavArrow dir="left" onClick={onPrev} label={t("Previous")} size={34} className="h-12 w-12" />
         </div>
@@ -235,7 +235,7 @@ export function BigCardStack({
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           style={{ position: "absolute", insetInlineEnd: 6, top: "50%", transform: "translateY(-50%)", zIndex: 10 }}
-          className="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+          className="hidden opacity-0 transition-opacity duration-200 group-hover:opacity-100 lg:block"
         >
           <NavArrow dir="right" onClick={onNext} label={t("Next")} size={34} className="h-12 w-12" />
         </div>
@@ -254,7 +254,7 @@ function TitlePlate({ title, logo }: { title: string; logo?: string }) {
   }, [logo]);
   const showLogo = !!logo && !logoFailed;
   return (
-    <div className="relative flex min-h-[64px] flex-col justify-end">
+    <div className="relative flex min-h-[42px] flex-col justify-end lg:min-h-[64px]">
       {showLogo ? (
         <img
           src={logo}
@@ -262,18 +262,17 @@ function TitlePlate({ title, logo }: { title: string; logo?: string }) {
           decoding="async"
           onLoad={() => setLogoLoaded(true)}
           onError={() => setLogoFailed(true)}
-          className="max-h-[88px] w-auto max-w-[58%] object-contain object-left rtl:object-right drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)]"
+          className="max-h-[54px] w-auto max-w-[58%] object-contain object-left rtl:object-right drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)] lg:max-h-[88px]"
           style={{
             opacity: logoLoaded ? 1 : 0,
             transition: "opacity 420ms cubic-bezier(0.32, 0.72, 0.24, 1)",
           }}
         />
       ) : (
-        <h3 className="font-display text-[42px] font-medium leading-[1.0] tracking-tight text-ink drop-shadow-[0_2px_22px_rgba(0,0,0,0.6)]">
+        <h3 className="font-display text-[27px] font-medium leading-[1.02] tracking-tight text-ink drop-shadow-[0_2px_22px_rgba(0,0,0,0.6)] lg:text-[42px] lg:leading-[1.0]">
           {title}
         </h3>
       )}
     </div>
   );
 }
-

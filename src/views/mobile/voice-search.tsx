@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Mic, MicOff, X } from "lucide-react";
-import { useT } from "@/lib/i18n";
 
 type SpeechResultLike = { isFinal: boolean; 0: { transcript: string } };
 type SpeechEventLike = {
@@ -30,7 +29,8 @@ export function getSpeechRecognition(): SpeechRecognitionCtor | null {
 }
 
 const reducedMotion = () =>
-  typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 const EXIT_MS = 260;
 const HOLD_CAPTURED = 460;
@@ -82,7 +82,6 @@ export function VoiceSearch({
   onClose: () => void;
   onSubmit: (transcript: string) => void;
 }) {
-  const t = useT();
   const [phase, setPhase] = useState<Phase>("listening");
   const [interim, setInterim] = useState("");
   const [finalText, setFinalText] = useState("");
@@ -191,7 +190,7 @@ export function VoiceSearch({
   return (
     <div
       role="dialog"
-      aria-label={t("Voice search")}
+      aria-label="Voice search"
       onClick={leave}
       className={`fixed inset-0 z-[90] flex flex-col items-center justify-center px-8 ${
         exiting ? "voice-overlay-exit" : "voice-overlay"
@@ -206,7 +205,7 @@ export function VoiceSearch({
 
       <button
         type="button"
-        aria-label={t("Cancel")}
+        aria-label="Cancel"
         onClick={(e) => {
           e.stopPropagation();
           leave();
@@ -221,10 +220,7 @@ export function VoiceSearch({
         <div className="relative grid h-[92px] w-[92px] place-items-center">
           {phase === "listening" && !reduced && (
             <>
-              <span
-                aria-hidden
-                className="voice-ring absolute inset-0 rounded-full border-[1.5px] border-accent"
-              />
+              <span aria-hidden className="voice-ring absolute inset-0 rounded-full border-[1.5px] border-accent" />
               <span
                 aria-hidden
                 className="voice-ring voice-ring-late absolute inset-0 rounded-full border-[1.5px] border-accent"
@@ -251,7 +247,7 @@ export function VoiceSearch({
           <div className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
             {phase === "listening" && (
               <>
-                <span>{t("Listening")}</span>
+                <span>Listening</span>
                 <span className="inline-flex items-center gap-[3px] pb-[1px]">
                   <span className="voice-dot h-[3px] w-[3px] rounded-full bg-ink-muted" />
                   <span className="voice-dot voice-dot-2 h-[3px] w-[3px] rounded-full bg-ink-muted" />
@@ -259,8 +255,8 @@ export function VoiceSearch({
                 </span>
               </>
             )}
-            {phase === "captured" && <span className="text-accent">{t("Got it")}</span>}
-            {phase === "error" && <span>{t("Didn't catch that")}</span>}
+            {phase === "captured" && <span className="text-accent">Got it</span>}
+            {phase === "error" && <span>Didn&apos;t catch that</span>}
           </div>
 
           <div className="flex min-h-[92px] max-w-[16rem] items-center justify-center">
@@ -271,11 +267,7 @@ export function VoiceSearch({
                 {reduced
                   ? interim
                   : words.map((w, i) => (
-                      <span
-                        key={i}
-                        className="voice-word inline-block"
-                        style={{ marginRight: "0.26em" }}
-                      >
+                      <span key={i} className="voice-word inline-block" style={{ marginRight: "0.26em" }}>
                         {w}
                       </span>
                     ))}
@@ -286,7 +278,7 @@ export function VoiceSearch({
                   reduced ? "text-ink-subtle" : "voice-hint-shimmer"
                 }`}
               >
-                {t("Say a title, actor, or genre")}
+                Say a title, actor, or genre
               </p>
             )}
           </div>
@@ -298,7 +290,7 @@ export function VoiceSearch({
           className="absolute inset-x-0 bottom-0 text-center text-[12.5px] text-ink-subtle"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 22px)" }}
         >
-          {t("Tap anywhere to cancel")}
+          Tap anywhere to cancel
         </p>
       )}
     </div>

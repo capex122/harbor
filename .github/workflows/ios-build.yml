@@ -1,0 +1,374 @@
+# Fork-only tooling: builds an unsigned, sideloadable iOS IPA for testing.
+# This workflow must never be included in PRs to the upstream repo.
+name: iOS build (unsigned)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: iOS (aarch64, unsigned IPA)
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      # Single source for the MPVKit release: the download URL and the cache key
+      # both read it, so bumping the version cannot leave the cache pointing at
+      # the old archive. Moves in lockstep with the pins in the plugin's
+      # ios/Package.swift and src-tauri/ios-template/project.yml.
+      MPVKIT_VERSION: "1.0.0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Select Xcode 16.4
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.app
+          xcodebuild -version
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ios
+          workspaces: |
+            harbor-core
+            src-tauri
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The bundle.resources fonts are gitignored .otf files fetched at setup time.
+      #
+      # Cached because they were re-downloaded on every run, and the host started
+      # answering 429 to the runners: a build died on the font step before a line
+      # was compiled, and retries did not help because the limit was sustained.
+      # The files are pinned by URL and sha256 inside the script, so the script
+      # hash is the right key, and the fetcher verifies checksums and skips any
+      # file already on disk, which makes a cache hit a no-op rather than a
+      # source of stale fonts.
+      - name: Cache bundled fonts
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/fonts
+          key: harbor-fonts-${{ hashFiles('scripts/fetch-fonts.mjs') }}
+
+      - name: Fetch bundled fonts
+        run: pnpm run setup:fonts
+
+      # MPVKit ships static xcframeworks; the plugin's Swift package needs the
+      # Libmpv slice on disk because swift-rs compiles it with `swift build`,
+      # which cannot process SPM binary targets (the Package.swift feeds the
+      # slice in via -F). The checksum asset is the SwiftPM checksum, which is
+      # the plain SHA-256 of the zip. This must run before cargo check: build
+      # scripts execute under check too, so the Swift compile happens there.
+      # Version moves in lockstep with the pins in the plugin ios/Package.swift
+      # and src-tauri/ios-template/project.yml.
+      # Cached on the pinned version: this is a large zip and it was refetched on
+      # every run. The version lives in one place now so the key cannot drift
+      # away from the URL when MPVKit is bumped.
+      #
+      # The ZIP is what is cached, not the extracted framework, so the sha256
+      # below runs on EVERY build. Caching the extracted directory would have
+      # skipped that check on a hit, which quietly trades a supply-chain
+      # guarantee for a download: a poisoned or truncated cache entry would have
+      # been built against unverified. Extraction is cheap; the verification is
+      # the part worth keeping.
+      - name: Cache Libmpv archive
+        uses: actions/cache@v4
+        with:
+          path: .cache/libmpv
+          key: harbor-libmpv-${{ env.MPVKIT_VERSION }}
+
+      - name: Fetch and verify Libmpv xcframework
+        run: |
+          set -euo pipefail
+          DIR=src-tauri/plugins/tauri-plugin-harbor-player/ios/.frameworks
+          CACHE=.cache/libmpv
+          mkdir -p "$DIR" "$CACHE"
+          BASE=https://github.com/mpvkit/MPVKit/releases/download/${MPVKIT_VERSION}
+          # Download only what the cache did not supply.
+          for ASSET in Libmpv.xcframework.zip Libmpv.xcframework.checksum.txt; do
+            test -f "$CACHE/$ASSET" || curl -fsSL --retry 3 -o "$CACHE/$ASSET" "$BASE/$ASSET"
+          done
+          # Always verified, cache hit or miss.
+          EXPECTED=$(tr -d '[:space:]' < "$CACHE/Libmpv.xcframework.checksum.txt")
+          ACTUAL=$(shasum -a 256 "$CACHE/Libmpv.xcframework.zip" | awk '{print $1}')
+          echo "expected: $EXPECTED"
+          echo "actual:   $ACTUAL"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            # A bad cache entry must not be able to wedge the build forever.
+            echo "checksum mismatch, discarding cached archive and refetching"
+            for ASSET in Libmpv.xcframework.zip Libmpv.xcframework.checksum.txt; do
+              rm -f "$CACHE/$ASSET"
+              curl -fsSL --retry 3 -o "$CACHE/$ASSET" "$BASE/$ASSET"
+            done
+            EXPECTED=$(tr -d '[:space:]' < "$CACHE/Libmpv.xcframework.checksum.txt")
+            ACTUAL=$(shasum -a 256 "$CACHE/Libmpv.xcframework.zip" | awk '{print $1}')
+            test "$EXPECTED" = "$ACTUAL"
+          fi
+          rm -rf "$DIR/Libmpv.xcframework"
+          unzip -q "$CACHE/Libmpv.xcframework.zip" -d "$DIR"
+          # The Package.swift -F path goes through this symlink so device and
+          # simulator builds can each select their slice (sim: point it at
+          # ios-arm64_x86_64-simulator instead).
+          ln -sfn Libmpv.xcframework/ios-arm64 "$DIR/active"
+          test -d "$DIR/Libmpv.xcframework/ios-arm64/Libmpv.framework"
+
+      # Fast-fail diagnostic: surfaces Rust compile errors for the iOS target
+      # before the Xcode machinery can obscure them. The deployment target must
+      # match the build step below; swift-rs falls back to ios13.0 without it,
+      # which breaks unguarded iOS 15 API use in the plugin.
+      - name: cargo check (aarch64-apple-ios)
+        env:
+          IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        run: cargo check --manifest-path src-tauri/Cargo.toml --target aarch64-apple-ios
+
+      - name: Generate Xcode project
+        run: pnpm tauri ios init --ci --skip-targets-install -v
+
+      # The tauri CLI merges src-tauri/Info.ios.plist during `tauri ios build`,
+      # but this lane archives with raw xcodebuild (the CLI has no unsigned
+      # export method), so that merge never runs here. Verify the keys the app
+      # needs (background audio, librqbit loopback cleartext, ATS media
+      # exemptions for plain-http streams) and add any that are missing, then
+      # print the final plist for the log.
+      - name: Ensure Info.plist keys
+        run: |
+          set -euo pipefail
+          APP_DIR=$(find src-tauri/gen/apple -maxdepth 1 -type d -name '*_iOS' | head -1)
+          test -n "$APP_DIR"
+          PLIST="$APP_DIR/Info.plist"
+          echo "Generated plist: $PLIST"
+          PB=/usr/libexec/PlistBuddy
+          if $PB -c "Print :UIBackgroundModes" "$PLIST" >/dev/null 2>&1; then
+            $PB -c "Print :UIBackgroundModes" "$PLIST" | grep -qw audio || \
+              $PB -c "Add :UIBackgroundModes: string audio" "$PLIST"
+          else
+            $PB -c "Add :UIBackgroundModes array" "$PLIST"
+            $PB -c "Add :UIBackgroundModes:0 string audio" "$PLIST"
+          fi
+          $PB -c "Add :NSAppTransportSecurity dict" "$PLIST" 2>/dev/null || true
+          for ATS_KEY in NSAllowsLocalNetworking NSAllowsArbitraryLoadsForMedia NSAllowsArbitraryLoadsInWebContent; do
+            if $PB -c "Print :NSAppTransportSecurity:$ATS_KEY" "$PLIST" >/dev/null 2>&1; then
+              $PB -c "Set :NSAppTransportSecurity:$ATS_KEY true" "$PLIST"
+            else
+              $PB -c "Add :NSAppTransportSecurity:$ATS_KEY bool true" "$PLIST"
+            fi
+          done
+          $PB -c "Print" "$PLIST"
+
+      # `tauri ios init` regenerates the Xcode project every build, so the app
+      # target's AppDelegate is recreated from the cargo-mobile2 template and any
+      # orientation override is lost. Re-inject it here (mirrors "Ensure Info.plist
+      # keys"): a file in the app target's Sources adds
+      # application(_:supportedInterfaceOrientationsFor:) via an extension on the
+      # generated AppDelegate. It returns the mask the harbor-player plugin writes
+      # to UserDefaults when playback forces landscape, which is what stops iOS
+      # from rotating back to portrait while the plist still permits it. The plugin
+      # compiles into the Rust staticlib (a separate Swift module), so UserDefaults
+      # is the shared channel rather than a direct symbol reference.
+      - name: Inject orientation AppDelegate
+        run: |
+          set -euo pipefail
+          # Find whichever generated Swift file actually declares the AppDelegate
+          # (cargo-mobile2's layout is not guaranteed to be Sources/main.swift).
+          # If none is found the landscape requestGeometryUpdate path still works;
+          # this override is only the enforcement layer, so warn and continue rather
+          # than failing the whole build.
+          APPDELEGATE_FILE=$(grep -rl "class AppDelegate" src-tauri/gen/apple 2>/dev/null | head -1 || true)
+          if [ -z "$APPDELEGATE_FILE" ]; then
+            echo "::warning::AppDelegate not found in gen/apple; skipping orientation-mask override (rotation still works via requestGeometryUpdate)"
+            exit 0
+          fi
+          DEST_DIR=$(dirname "$APPDELEGATE_FILE")
+          echo "Found AppDelegate in $APPDELEGATE_FILE"
+          cat > "$DEST_DIR/HarborOrientation.swift" <<'SWIFT'
+          // Injected by .github/workflows/ios-build.yml. Locks the app's supported
+          // orientations to the mask the harbor-player plugin writes into
+          // UserDefaults when playback forces landscape, and restores free rotation
+          // on exit. Kept out of the plugin package because the plugin compiles into
+          // the Rust staticlib, a separate Swift module from this app target.
+          import UIKit
+
+          extension AppDelegate {
+            @objc func application(
+              _ application: UIApplication,
+              supportedInterfaceOrientationsFor window: UIWindow?
+            ) -> UIInterfaceOrientationMask {
+              let raw = UInt(UserDefaults.standard.integer(forKey: "harbor.player.orientationMask"))
+              guard raw != 0 else { return .allButUpsideDown }
+              return UIInterfaceOrientationMask(rawValue: raw)
+            }
+          }
+          SWIFT
+          echo "Wrote $DEST_DIR/HarborOrientation.swift"
+          cat "$DEST_DIR/HarborOrientation.swift"
+
+      # Raw xcodebuild does not run beforeBuildCommand, so build the frontend
+      # here; the Rust build embeds ../dist at compile time.
+      - name: Build frontend
+        run: pnpm build
+
+      # The generated project's "Build Rust Code" phase runs tauri ios
+      # xcode-script, which requires a live parent tauri CLI process (its
+      # options server) and aborts under raw xcodebuild. Build the staticlib
+      # directly instead; this also compiles the plugin's Swift package via
+      # swift-rs, so Swift errors surface here with readable diagnostics.
+      # cargo rustc --crate-type staticlib: the crate also declares cdylib,
+      # and building that forces a full link that cannot resolve mpv_* symbols
+      # (MPVKit's static frameworks are linked by Xcode via SPM, not by cargo).
+      # A staticlib legitimately carries undefined symbols for the final link.
+      - name: Build Rust static library (iOS)
+        env:
+          IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        run: |
+          set -euo pipefail
+          cargo rustc --manifest-path src-tauri/Cargo.toml --lib --release \
+            --target aarch64-apple-ios --features tauri/custom-protocol \
+            --crate-type staticlib
+
+      # Stage the lib where the project links it (Externals/arm64/<config>)
+      # and no-op the xcode-script phase so the archive just compiles Swift
+      # sources and links.
+      - name: Stage libapp.a and bypass the xcode-script phase
+        run: |
+          set -euo pipefail
+          mkdir -p src-tauri/gen/apple/Externals/arm64/release
+          cp src-tauri/target/aarch64-apple-ios/release/libharbor_lib.a \
+            src-tauri/gen/apple/Externals/arm64/release/libapp.a
+          PBXPROJ=$(find src-tauri/gen/apple -name project.pbxproj | head -1)
+          sed -i '' 's|shellScript = "pnpm tauri ios xcode-script.*|shellScript = "exit 0";|' "$PBXPROJ"
+          grep -c 'shellScript = "exit 0";' "$PBXPROJ"
+
+      # The plain -list output includes the configuration names; cargo-mobile2
+      # projects use lowercase debug/release, so a case mismatch against the
+      # -configuration flag below is diagnosable from this listing.
+      - name: Discover Xcode project and scheme
+        id: xc
+        run: |
+          set -euo pipefail
+          XCODEPROJ=$(find src-tauri/gen/apple -maxdepth 1 -name '*.xcodeproj' | head -1)
+          test -n "$XCODEPROJ"
+          xcodebuild -list -project "$XCODEPROJ"
+          SCHEME=$(xcodebuild -list -project "$XCODEPROJ" -json | \
+            python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(s for s in d["project"]["schemes"] if s.endswith("_iOS")))')
+          echo "project=$XCODEPROJ" >> "$GITHUB_OUTPUT"
+          echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
+
+      # Resolve the MPVKit package graph up front so SPM failures surface in
+      # their own log instead of dying inside the archive output.
+      - name: Resolve Swift package dependencies
+        run: |
+          set -euo pipefail
+          xcodebuild -resolvePackageDependencies \
+            -project "${{ steps.xc.outputs.project }}" \
+            -scheme "${{ steps.xc.outputs.scheme }}" \
+            2>&1 | tee spm-resolve.log
+
+      # Unsigned archive for the sideload flow (AltStore or Sideloadly re-sign
+      # on install). The Rust staticlib is prebuilt and staged above; the
+      # archive compiles the thin Xcode Sources and links.
+      - name: xcodebuild archive (unsigned)
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project "${{ steps.xc.outputs.project }}" \
+            -scheme "${{ steps.xc.outputs.scheme }}" \
+            -configuration release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/harbor-unsigned.xcarchive \
+            -skipPackagePluginValidation -skipMacroValidation \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            archive 2>&1 | tee xcodebuild-archive.log
+
+      # MPVKit 1.0.0 xcframeworks are static archives, so all mpv/ffmpeg code
+      # must land inside the single app binary. A Frameworks/ directory in the
+      # .app means a dynamic slice slipped in (bloat, and AltStore/Sideloadly
+      # would have to re-sign nested binaries); missing mpv_ symbols mean
+      # Libmpv never linked.
+      # Xcode's SPM integration copies the MPVKit static framework bundles
+      # into the .app even though their code is already statically linked into
+      # the binary (the archive link would have failed otherwise). Prove no
+      # framework is dynamically referenced, then strip the redundant bundles
+      # so the IPA does not carry ~100MB of dead weight. A framework that IS
+      # referenced by a load command must never be stripped: hard-fail so the
+      # embed problem surfaces instead of shipping a broken bundle.
+      - name: Verify static link and strip redundant framework bundles
+        run: |
+          set -euo pipefail
+          APP=$(find build/harbor-unsigned.xcarchive/Products/Applications -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          BIN="$APP/$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Info.plist")"
+          test -f "$BIN"
+          echo "--- linked dylibs ---"
+          otool -L "$BIN"
+          nm -gU "$BIN" 2>/dev/null | grep -c ' _mpv_' \
+            && echo "(exported mpv_ symbols present)" \
+            || echo "(no exported mpv_ symbols; expected when the release binary is stripped)"
+          if [ -d "$APP/Frameworks" ]; then
+            for FW in "$APP/Frameworks"/*.framework; do
+              [ -e "$FW" ] || continue
+              NAME=$(basename "$FW" .framework)
+              if otool -L "$BIN" | grep -q "$NAME.framework/"; then
+                echo "ERROR: $NAME.framework is dynamically referenced; cannot strip" >&2
+                exit 1
+              fi
+              echo "stripping statically linked bundle: $NAME.framework"
+              rm -rf "$FW"
+            done
+            rmdir "$APP/Frameworks" 2>/dev/null || true
+          fi
+          du -sh "$APP"
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          APP=$(find build/harbor-unsigned.xcarchive/Products/Applications -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          mkdir -p build/Payload
+          cp -R "$APP" build/Payload/
+          (cd build && zip -qry Harbor-ios-unsigned.ipa Payload)
+          ls -la build/
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v7
+        with:
+          name: harbor-ios-unsigned
+          path: build/Harbor-ios-unsigned.ipa
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-build-diagnostics
+          path: |
+            xcodebuild-archive.log
+            spm-resolve.log
+            src-tauri/gen/apple/project.yml
+            src-tauri/gen/apple/*.xcodeproj/project.pbxproj
+            src-tauri/gen/apple/*_iOS/Info.plist
+          retention-days: 7
+          if-no-files-found: warn

@@ -1845,7 +1845,7 @@ export function HarborReader({
           <article
             ref={article}
             dir={effectiveDirection}
-            className="relative mx-auto min-h-[calc(100vh-8rem)] select-text rounded-[2px] px-7 py-14 shadow-[0_28px_90px_rgba(0,0,0,.42)] transition-[width,background-color] duration-300 sm:px-14"
+            className="relative mx-auto min-h-[calc(100dvh-8rem)] select-text rounded-[2px] px-7 py-14 shadow-[0_28px_90px_rgba(0,0,0,.42)] transition-[width,background-color] duration-300 sm:px-14"
             style={
               {
                 width: `min(100%, ${prefs.width}px)`,

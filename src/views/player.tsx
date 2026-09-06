@@ -74,6 +74,7 @@ import { usePlaybackControls } from "./player/hooks/use-playback-controls";
 import { useRemotePlaybackBinding } from "@/lib/remote/use-remote-playback-binding";
 import { usePlaybackPresence } from "./player/hooks/use-playback-presence";
 import { usePlayerExit } from "./player/hooks/use-player-exit";
+import { useNativeClose } from "./player/hooks/use-native-close";
 import { usePendingSeekApply } from "./player/hooks/use-pending-seek-apply";
 import { usePlayerHotkeys } from "./player/hooks/use-player-hotkeys";
 import { clearMediaControls, updateMediaControls } from "@/lib/media-session";
@@ -506,6 +507,12 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     clearInvite,
     exitPlayback,
     openPicker,
+  });
+  useNativeClose({
+    engine,
+    nativeClosed: snap.nativeClosed,
+    srcUrl: src.url,
+    closePlayer,
   });
   closePlayerRef.current = () => void closePlayer();
   useEffect(() => {

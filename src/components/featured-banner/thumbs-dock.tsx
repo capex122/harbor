@@ -41,7 +41,7 @@ export function ThumbsDock({ meta }: { meta: Meta }) {
   };
   return (
     <div
-      className="absolute bottom-6 end-6 flex items-center gap-1.5"
+      className="absolute bottom-3 end-3 flex items-center gap-1 lg:bottom-6 lg:end-6 lg:gap-1.5"
       onClick={(e) => e.stopPropagation()}
     >
       <Tooltip label={t("Show me less like this")}>
@@ -80,7 +80,7 @@ export function ThumbsDock({ meta }: { meta: Meta }) {
 function ThumbsHint({ onDismiss }: { onDismiss: () => void }) {
   const t = useT();
   return (
-    <div className="pointer-events-none absolute bottom-full end-0 z-30 mb-3 flex w-[300px] justify-end">
+    <div className="pointer-events-none absolute bottom-full end-0 z-30 mb-3 hidden w-[300px] justify-end sm:flex">
       <div className="pointer-events-auto animate-nudge-in relative flex w-full items-start gap-3 rounded-2xl border border-edge-soft bg-elevated/95 px-4 py-3.5 backdrop-blur-md shadow-[0_18px_50px_-20px_rgba(0,0,0,0.65)]">
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <p className="text-[13px] font-semibold text-ink">{t("Tune your recommendations")}</p>

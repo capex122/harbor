@@ -231,7 +231,7 @@ function PlayOnPanel({ request, themeId }: { request: PlayOnRequest; themeId: st
         ref={panelRef}
         tabIndex={-1}
         onMouseDown={(e) => e.stopPropagation()}
-        className="flex max-h-[min(600px,calc(100vh-3rem))] w-full max-w-[440px] flex-col overflow-hidden rounded-2xl bg-surface shadow-[0_28px_90px_-30px_rgba(0,0,0,0.9)] ring-1 ring-edge-soft outline-none animate-popover-in motion-reduce:animate-none"
+        className="flex max-h-[min(600px,calc(100dvh-3rem))] w-full max-w-[440px] flex-col overflow-hidden rounded-2xl bg-surface shadow-[0_28px_90px_-30px_rgba(0,0,0,0.9)] ring-1 ring-edge-soft outline-none animate-popover-in motion-reduce:animate-none"
         style={{ transformOrigin: "center" }}
       >
         <header className="flex items-start gap-3 border-b border-edge-soft px-5 py-4">

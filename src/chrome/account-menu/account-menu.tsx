@@ -140,12 +140,7 @@ export function AccountMenu({
             onUnlock: () => {
               const target = pendingSwitch;
               setPendingSwitch(null);
-              // The parent PIN clears the kid lock on the profile being LEFT. It proves
-              // nothing about the target, so a target with its own PIN still has to
-              // unlock itself: selectProfile refuses otherwise and the press does
-              // nothing at all.
-              if (target.passwordHash) ctrl.openPicker({ kind: "unlock", profileId: target.id });
-              else selectProfile(target.id);
+              selectProfile(target.id);
             },
             onCancel: () => setPendingSwitch(null),
           }}

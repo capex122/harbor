@@ -8,7 +8,6 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { useT } from "@/lib/i18n";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 
 const PAD = 176;
@@ -68,7 +67,6 @@ export function ZoomJoystick({
   bottomOffset?: string;
 }) {
   const reduce = useReducedMotion();
-  const t = useT();
   const [engaged, setEngaged] = useState(false);
   const [show, setShow] = useState(false);
   const [active, setActive] = useState(false);
@@ -297,7 +295,7 @@ export function ZoomJoystick({
       {!engaged && (
         <button
           type="button"
-          aria-label={t("Zoom controls, {percent} percent", { percent: pct })}
+          aria-label={`Zoom controls, ${pct} percent`}
           onClick={engage}
           className="flex h-14 w-14 touch-none select-none flex-col items-center justify-center rounded-full bg-elevated/80 text-ink shadow-[0_10px_28px_-14px_rgba(0,0,0,0.65)] ring-1 ring-edge-soft/50 backdrop-blur-xl transition-transform duration-100 active:scale-90"
         >
@@ -316,7 +314,7 @@ export function ZoomJoystick({
         >
           <button
             type="button"
-            aria-label={t("Close zoom controls")}
+            aria-label="Close zoom controls"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={disengage}
             className="absolute -right-1 -top-1 z-10 grid h-11 w-11 place-items-center rounded-full text-ink-subtle transition-transform active:scale-90"
@@ -327,7 +325,7 @@ export function ZoomJoystick({
           <div className="absolute -left-3 top-1/2 flex -translate-x-full -translate-y-1/2 flex-col gap-2">
             <button
               type="button"
-              aria-label={t("Zoom in")}
+              aria-label="Zoom in"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => stepZoom(1)}
               className="grid h-12 w-12 place-items-center rounded-full bg-surface/85 text-ink shadow-[0_10px_28px_-14px_rgba(0,0,0,0.65)] ring-1 ring-edge-soft/50 backdrop-blur-xl transition-transform active:scale-90"
@@ -336,7 +334,7 @@ export function ZoomJoystick({
             </button>
             <button
               type="button"
-              aria-label={t("Zoom out")}
+              aria-label="Zoom out"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => stepZoom(-1)}
               className="grid h-12 w-12 place-items-center rounded-full bg-surface/85 text-ink shadow-[0_10px_28px_-14px_rgba(0,0,0,0.65)] ring-1 ring-edge-soft/50 backdrop-blur-xl transition-transform active:scale-90"
@@ -348,7 +346,7 @@ export function ZoomJoystick({
           <div
             ref={padRef}
             role="group"
-            aria-label={t("Zoom and pan joystick")}
+            aria-label="Zoom and pan joystick"
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={(e) => release(e, false)}

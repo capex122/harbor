@@ -90,7 +90,7 @@ export function UserRatings({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="animate-modal-in relative m-6 flex max-h-[calc(100vh-3rem)] w-full max-w-[900px] flex-col overflow-hidden rounded-3xl border border-edge-soft bg-surface shadow-[0_30px_120px_-30px_rgba(0,0,0,0.85)]"
+        className="animate-modal-in relative m-6 flex max-h-[calc(100dvh-3rem)] w-full max-w-[900px] flex-col overflow-hidden rounded-3xl border border-edge-soft bg-surface shadow-[0_30px_120px_-30px_rgba(0,0,0,0.85)]"
       >
         <header className="flex items-center justify-between gap-4 border-b border-edge-soft px-7 py-5">
           <h2 className="font-display text-[24px] font-medium leading-tight tracking-tight text-ink">

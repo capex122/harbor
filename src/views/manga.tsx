@@ -160,7 +160,7 @@ export function MangaView() {
 
   if (mode.screen === "sources") {
     return (
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
+      <main data-source-page="manga" className="flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
         <MangaSourcesView
           onBack={() => setMode({ screen: "browse" })}
           onOpenManga={(id) => setMode({ screen: "detail", mangaId: id })}
@@ -172,7 +172,7 @@ export function MangaView() {
   if (mode.screen === "downloads") {
     const from = mode.from;
     return (
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
+      <main data-source-page="manga-setup" className="flex-1 overflow-y-auto overflow-x-hidden px-12 pb-16 pt-24">
         <MangaDownloadsView
           onBack={() => setMode(from ? { screen: "detail", mangaId: from } : { screen: "browse" })}
           onOpenManga={(id) => setMode({ screen: "detail", mangaId: id })}

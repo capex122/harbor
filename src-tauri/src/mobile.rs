@@ -67,6 +67,9 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_deep_link::init())
+        // Media3/ExoPlayer on Android and AVPlayer/MPVKit on iOS.
+        .plugin(tauri_plugin_harbor_player::init())
+        .plugin(tauri_plugin_barcode_scanner::init())
         .manage(proxy_state)
         .manage(download::DownloadState::new())
         .setup(|app| {

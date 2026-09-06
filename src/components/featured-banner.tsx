@@ -40,8 +40,8 @@ export function FeaturedBanner({ items }: { items: Meta[] }) {
   if (items.length === 0) {
     if (hasLoadedRef.current) return null;
     return (
-      <section className="flex flex-col gap-5">
-        <h2 className="font-display text-[28px] font-medium leading-tight tracking-tight text-ink">
+      <section className="flex flex-col gap-3 lg:gap-5">
+        <h2 className="font-display text-[22px] font-medium leading-tight tracking-tight text-ink lg:text-[28px]">
           {t("Recommended")}
         </h2>
         <BannerSkeleton />
@@ -58,22 +58,24 @@ export function FeaturedBanner({ items }: { items: Meta[] }) {
   return (
     <section
       ref={ref}
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-3 lg:gap-5"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <h2 className="font-display text-[28px] font-medium leading-tight tracking-tight text-ink">
+      <h2 className="font-display text-[22px] font-medium leading-tight tracking-tight text-ink lg:text-[28px]">
         {t("Recommended")}
       </h2>
 
-      <div className="harbor-step grid grid-cols-[minmax(0,1fr)_320px] gap-4 motion-reduce:animate-none">
+      <div className="harbor-step grid grid-cols-1 gap-3 motion-reduce:animate-none lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-4">
         <BigCardStack items={items} active={safeActive} onPrev={goPrev} onNext={goNext} />
-        <SidePanel
-          meta={current}
-          activeIndex={safeActive}
-          total={items.length}
-          onOpenLightbox={setLightbox}
-        />
+        <div className="hidden lg:block">
+          <SidePanel
+            meta={current}
+            activeIndex={safeActive}
+            total={items.length}
+            onOpenLightbox={setLightbox}
+          />
+        </div>
       </div>
 
       <div className="harbor-step motion-reduce:animate-none">
@@ -94,9 +96,9 @@ export function FeaturedBanner({ items }: { items: Meta[] }) {
 
 function BannerSkeleton() {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-4">
-      <div className="aspect-[16/9] animate-pulse rounded-2xl bg-elevated/30" />
-      <div className="animate-pulse rounded-2xl bg-elevated/25" />
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-4">
+      <div className="aspect-[16/10] animate-pulse rounded-[24px] bg-elevated/30 lg:aspect-[16/9] lg:rounded-2xl" />
+      <div className="hidden animate-pulse rounded-2xl bg-elevated/25 lg:block" />
     </div>
   );
 }

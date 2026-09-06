@@ -63,6 +63,7 @@ import {
 } from "@/lib/ebook/translation";
 import { LANGUAGES as UI_LANGUAGES, useT } from "@/lib/i18n";
 import { openUrl } from "@/lib/window";
+import { useMediaQuery } from "@/lib/use-media-query";
 
 const CASE_SHELVES: Array<{
   base: number;
@@ -1021,6 +1022,7 @@ function WorkspaceSection({
 
 export function EBookSourcesView({ onBack }: { onBack: () => void }) {
   const t = useT();
+  const mobile = useMediaQuery("(max-width: 900px)");
   const [tick, setTick] = useState(0);
   useEffect(() => {
     void loadEBookExtensions();
@@ -1078,8 +1080,99 @@ export function EBookSourcesView({ onBack }: { onBack: () => void }) {
       sub: t("{count} repositories", { count: ebookRepoUrls().length }),
     },
   ];
+
+  if (mobile) {
+    return (
+      <div
+        data-source-studio="ebook-mobile"
+        className="ebook-mobile-sources mx-auto flex w-full max-w-2xl flex-col"
+        style={{ animation: "harbor-view-in 0.32s cubic-bezier(0.32,0.72,0.24,1) both" }}
+      >
+        <header className="ebook-mobile-toolbar">
+          <button type="button" onClick={onBack} className="ebook-mobile-nav-button">
+            <ChevronLeft size={20} />
+            <span>{t("Back")}</span>
+          </button>
+          <div className="min-w-0 text-center">
+            <span>{t("eBook")}</span>
+            <strong>{t("Sources")}</strong>
+          </div>
+          <button type="button" onClick={onBack} className="ebook-mobile-done">
+            {t("Done")}
+          </button>
+        </header>
+
+        <section className="ebook-mobile-overview">
+          <span className="ebook-mobile-overview-icon"><BookOpen size={22} /></span>
+          <div className="min-w-0 flex-1">
+            <span>{t("Your reading shelf")}</span>
+            <strong>{t("Build your own library")}</strong>
+            <p>{t("Your books, sources, and extensions stay under your control.")}</p>
+          </div>
+          <div className="ebook-mobile-count"><strong>{total}</strong><span>{t("active")}</span></div>
+        </section>
+
+        <nav className="ebook-mobile-tabs" aria-label={t("eBook source settings")}>
+          {contents.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={activeSection === item.id}
+              onClick={() => setActiveSection(item.id)}
+              className={activeSection === item.id ? "is-active" : ""}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="ebook-mobile-panel" key={activeSection}>
+          {activeSection === "ebook-source-library" && (
+            <>
+              <MobileSectionHead title={t("Library sources")} description={t("Choose where Harbor reads your books from.")} />
+              {installed.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <SectionLabel>{t("Installed")}</SectionLabel>
+                  <div className={`${CARD} divide-y divide-edge-soft overflow-hidden`}>
+                    {installed.map((source) => <InstalledSourceRow key={source.id} item={source} />)}
+                  </div>
+                </div>
+              )}
+              {sources.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <SectionLabel>{t("Connected")}</SectionLabel>
+                  {sources.map((source) => <SourceRow key={source.id} source={source} />)}
+                </div>
+              )}
+              <div className="flex flex-col gap-2">
+                <SectionLabel>{t("Add a source")}</SectionLabel>
+                <GutenbergQuickAdd />
+                <LocalFolder />
+              </div>
+            </>
+          )}
+          {activeSection === "ebook-source-intelligence" && (
+            <>
+              <MobileSectionHead title={t("Book intelligence")} description={t("Metadata and chapter translation settings.")} />
+              <MetadataProviders />
+              <Translation />
+            </>
+          )}
+          {activeSection === "ebook-source-extensions" && (
+            <>
+              <MobileSectionHead title={t("Extensions")} description={t("Install trusted source packages for more libraries.")} />
+              <Extensions />
+              <PluginGuide kind="ebook" />
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
+      data-source-studio="ebook"
       className="ebook-sources-shell mx-auto flex w-full max-w-[1180px] flex-col gap-7"
       style={{ animation: "harbor-view-in 0.4s cubic-bezier(0.32,0.72,0.24,1) both" }}
     >
@@ -1221,5 +1314,14 @@ export function EBookSourcesView({ onBack }: { onBack: () => void }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function MobileSectionHead({ title, description }: { title: string; description: string }) {
+  return (
+    <header className="ebook-mobile-section-head">
+      <h1>{title}</h1>
+      <p>{description}</p>
+    </header>
   );
 }

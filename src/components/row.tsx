@@ -21,6 +21,9 @@ import { scrollDeltaToRevealCard } from "@/lib/poster-backdrop-expansion";
 import { RowCardExpansionProvider } from "@/components/row-card-expansion";
 
 const GAP = 20;
+const MOBILE_GAP = 12;
+const MOBILE_BREAKPOINT = 768;
+const MOBILE_CARD_SCALE = 0.72;
 
 function columnSpan(value?: string): number {
   const span = value?.match(/span\s+(\d+)/)?.[1];
@@ -241,6 +244,10 @@ export function Row({
     setTrackEl(el);
   }, []);
   const [cellWidth, setCellWidth] = useState<number | null>(null);
+  const [compactMobile, setCompactMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT,
+  );
+  const gap = compactMobile ? MOBILE_GAP : GAP;
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
   const [expandedCard, setExpandedCard] = useState<{
@@ -259,6 +266,12 @@ export function Row({
     rtlRef.current = getComputedStyle(container).direction === "rtl";
     const available = container.getBoundingClientRect().width;
     if (available <= 0) return;
+    const mobile = available < MOBILE_BREAKPOINT;
+    setCompactMobile(mobile);
+    if (mobile) {
+      setCellWidth(Math.max(84, Math.round(effMin * MOBILE_CARD_SCALE)));
+      return;
+    }
     const fits = Math.max(1, Math.floor((available + GAP) / (effMin + GAP)));
     const raw = (available - (fits - 1) * GAP) / fits;
     setCellWidth((Math.ceil(raw * 64) + 1) / 64);
@@ -317,7 +330,7 @@ export function Row({
     const delta = scrollDeltaToRevealCard(
       cell.getBoundingClientRect(),
       track.getBoundingClientRect(),
-      GAP,
+      gap,
     );
     if (Math.abs(delta) > 0.5) track.scrollLeft += delta;
   };
@@ -497,8 +510,8 @@ export function Row({
   };
 
   const rafId = useRef<number | null>(null);
-  const strideRef = useRef(effMin + GAP);
-  strideRef.current = (cellWidth ?? effMin) + GAP;
+  const strideRef = useRef(effMin + gap);
+  strideRef.current = (cellWidth ?? effMin) + gap;
 
   const dockFrameRef = useRef<number | null>(null);
   const dockPointerXRef = useRef<number | null>(null);
@@ -519,7 +532,7 @@ export function Row({
       track,
       pointerX,
       cellWidth: cellWidth ?? effMin,
-      gap: GAP,
+      gap,
       scrollPosition: rtl ? -track.scrollLeft : track.scrollLeft,
       rtl,
       transitionMs: settings.posterDockTransitionMs,
@@ -652,7 +665,7 @@ export function Row({
     const projection = -((v * Math.abs(v)) / (2 * friction));
     const projectedRaw = el.scrollLeft + projection;
     const projected = rtlRef.current ? -projectedRaw : projectedRaw;
-    const stride = (cellWidth ?? effMin) + GAP;
+    const stride = (cellWidth ?? effMin) + gap;
     const max = el.scrollWidth - el.clientWidth;
     const targetIdx = Math.round(projected / stride);
     const target = Math.max(0, Math.min(targetIdx * stride, max));
@@ -729,7 +742,7 @@ export function Row({
             }}
             onClickCapture={onClickCapture}
             onDragStart={(e) => e.preventDefault()}
-            className={`harbor-row-track items-start gap-5 overflow-x-auto overflow-y-hidden ${trackPad} [scroll-snap-type:x_mandatory] [&>*]:[scroll-snap-align:start] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [overflow-anchor:none] [overscroll-behavior-x:contain] [&_img]:select-none [&_img]:[-webkit-user-drag:none] ${
+            className={`harbor-row-track items-start overflow-x-auto overflow-y-hidden ${compactMobile ? "gap-3" : "gap-5"} ${trackPad} [scroll-snap-type:x_mandatory] [&>*]:[scroll-snap-align:start] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [overflow-anchor:none] [overscroll-behavior-x:contain] [&_img]:select-none [&_img]:[-webkit-user-drag:none] ${
               expandingCards
                 ? "harbor-expanding-card-scope harbor-expanding-row flex flex-nowrap"
                 : "grid grid-flow-col"
@@ -750,7 +763,7 @@ export function Row({
                 ? (child.props as { style?: { gridColumn?: string } }).style?.gridColumn
                 : undefined;
               const spanCount = columnSpan(span);
-              const baseWidth = (cellWidth ?? effMin) * spanCount + GAP * (spanCount - 1);
+              const baseWidth = (cellWidth ?? effMin) * spanCount + gap * (spanCount - 1);
               const expanded = expandedCard?.index === i;
               const desiredExpandedWidth =
                 expanded && expandedCard
@@ -758,7 +771,7 @@ export function Row({
                   : undefined;
               const viewportLimit = Math.max(
                 baseWidth,
-                (trackEl?.clientWidth ?? desiredExpandedWidth ?? baseWidth) - GAP * 2,
+                (trackEl?.clientWidth ?? desiredExpandedWidth ?? baseWidth) - gap * 2,
               );
               const expandedWidth =
                 desiredExpandedWidth === undefined

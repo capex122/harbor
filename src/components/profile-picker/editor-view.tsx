@@ -1397,7 +1397,7 @@ function TabsView({
   const toggle = (key: LockableTab) => setTabs((prev) => ({ ...prev, [key]: !prev[key] }));
   const count = Object.values(tabs).filter(Boolean).length;
   return (
-    <div className="flex h-full max-h-[calc(100vh-7rem)] w-full max-w-[560px] flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+    <div className="flex h-full max-h-[calc(100dvh-7rem)] w-full max-w-[560px] flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"

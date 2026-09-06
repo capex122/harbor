@@ -181,14 +181,23 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const scale = settings.uiScale > 0 ? settings.uiScale : 1;
     const root = document.getElementById("root") as (HTMLElement & { style: CSSStyleDeclaration & { zoom?: string } }) | null;
-    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
-      void import("@tauri-apps/api/webview")
-        .then(({ getCurrentWebview }) => getCurrentWebview().setZoom(scale))
-        .catch(() => {});
-      if (root) root.style.zoom = scale !== 1 ? "1" : "";
-    } else if (root) {
-      root.style.zoom = scale !== 1 ? String(scale) : "";
-    }
+    const viewport = window.matchMedia("(max-width: 1023px)");
+    const applyScale = () => {
+      // CSS zoom shrinks the painted root without shrinking its layout height,
+      // which leaves an unreachable blank strip below every mobile page.
+      const effectiveScale = viewport.matches ? 1 : scale;
+      if ("__TAURI_INTERNALS__" in window) {
+        void import("@tauri-apps/api/webview")
+          .then(({ getCurrentWebview }) => getCurrentWebview().setZoom(effectiveScale))
+          .catch(() => {});
+        if (root) root.style.zoom = "";
+      } else if (root) {
+        root.style.zoom = effectiveScale !== 1 ? String(effectiveScale) : "";
+      }
+    };
+    applyScale();
+    viewport.addEventListener("change", applyScale);
+    return () => viewport.removeEventListener("change", applyScale);
   }, [settings.uiScale]);
 
   useEffect(() => {

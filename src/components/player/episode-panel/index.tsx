@@ -50,7 +50,7 @@ export function EpisodePanel({
   nextEp,
   onRestart,
 }: {
-  engine: "html5" | "mpv";
+  engine: "html5" | "mpv" | "native";
   open: boolean;
   onClose: () => void;
   meta: Meta;

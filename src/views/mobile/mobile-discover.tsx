@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Meta } from "@/lib/cinemeta";
 import { useSettings } from "@/lib/settings";
-import { useT } from "@/lib/i18n";
 import { useHideAnimeMetas, useHideAnimeRows } from "@/lib/anime-hide";
 import { getStore } from "@/lib/discover/store";
 import { fetchCriticsPickList, selectDailyRows } from "@/lib/feed";
@@ -43,7 +42,6 @@ function dedupeRows(rows: Row[], featured: Meta[]): Row[] {
 }
 
 export function MobileDiscover() {
-  const t = useT();
   const { settings } = useSettings();
   const [featured, setFeatured] = useState<Meta[]>([]);
   const [rawRows, setRawRows] = useState<Row[]>([]);
@@ -107,16 +105,7 @@ export function MobileDiscover() {
     return () => {
       alive = false;
     };
-  }, [
-    key,
-    settings.region,
-    settings.streaming,
-    settings.preferredLanguages,
-    settings.tmdbLanguage,
-    settings.feedLocaleBias,
-    settings.uiLanguage,
-    reloadKey,
-  ]);
+  }, [key, settings.region, settings.tmdbLanguage, reloadKey]);
 
   const rows = useMemo(() => dedupeRows(rawRows, featured), [rawRows, featured]);
   const shownRows = useHideAnimeRows(rows);
@@ -129,18 +118,16 @@ export function MobileDiscover() {
   if (failed && rawRows.length === 0 && featured.length === 0) {
     return (
       <div className="flex h-[70vh] flex-col items-center justify-center gap-4 px-8 text-center">
-        <h2 className="font-display text-[20px] font-medium text-ink">
-          {t("Couldn't load Discover")}
-        </h2>
+        <h2 className="font-display text-[20px] font-medium text-ink">Couldn't load Discover</h2>
         <p className="max-w-xs text-[13.5px] leading-relaxed text-ink-muted">
-          {t("Harbor couldn't reach the catalog servers. Check your connection and try again.")}
+          Harbor couldn't reach the catalog servers. Check your connection and try again.
         </p>
         <button
           type="button"
           onClick={() => setReloadKey((k) => k + 1)}
           className="flex h-11 items-center rounded-full bg-ink px-6 text-[14px] font-semibold text-canvas transition-transform active:scale-95"
         >
-          {t("Try again")}
+          Try again
         </button>
       </div>
     );
@@ -151,14 +138,9 @@ export function MobileDiscover() {
       <MobileFeatured items={shownFeatured} onOpen={setDetailMeta} />
       {shownRows.map((r, i) =>
         i === 0 && r.id.split(":")[0] === ANCHOR_TRENDING && r.metas.length >= 6 ? (
-          <MobileRankRail
-            key={r.id}
-            title={t(r.title)}
-            metas={r.metas}
-            onOpenDetail={setDetailMeta}
-          />
+          <MobileRankRail key={r.id} title={r.title} metas={r.metas} onOpenDetail={setDetailMeta} />
         ) : (
-          <MobileRail key={r.id} title={t(r.title)} metas={r.metas} onOpenDetail={setDetailMeta} />
+          <MobileRail key={r.id} title={r.title} metas={r.metas} onOpenDetail={setDetailMeta} />
         ),
       )}
       <div className="h-4" />
@@ -211,8 +193,8 @@ function RailSkeleton({ titleW }: { titleW: string }) {
       </div>
       <div className="flex gap-3 overflow-hidden px-4 pb-1">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="w-[124px] shrink-0">
-            <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-elevated/40">
+          <div key={i} className="w-[112px] shrink-0">
+            <div className="relative aspect-[2/3] overflow-hidden rounded-[14px] bg-elevated/40">
               <Shimmer />
             </div>
             <div className="mt-1.5 h-2.5 w-4/5 rounded bg-elevated/35" />

@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Monitor } from "lucide-react";
-import { Search } from "@/components/icons/search-icon";
+import { Search } from "lucide-react";
 import { HarborMark } from "@/components/icons/harbor-mark";
 import { NotificationCenter } from "@/components/notification-center/notification-center";
 import { RecordingPill } from "@/chrome/recording-pill";
@@ -16,7 +15,6 @@ import { ParentalPinModal } from "@/components/parental-pin-modal";
 import { close, minimize, toggleMaximize, useMaximized } from "@/lib/window";
 import { OverflowNav, type NavEntry } from "@/chrome/nav-overflow";
 import { NAV_ITEMS, applyNavCustomization, type NavItem } from "@/chrome/nav-items";
-import { useBigPictureEntry } from "@/chrome/use-big-picture-entry";
 
 const IS_TAURI = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
@@ -28,7 +26,6 @@ export function TopDock() {
   const t = useT();
   const [pinFor, setPinFor] = useState<View | null>(null);
   const maxed = useMaximized();
-  const bigPicture = useBigPictureEntry();
 
   const themePreset =
     settings.theme.preset !== "custom" ? getThemeById(settings.theme.preset) : null;
@@ -63,10 +60,7 @@ export function TopDock() {
           <button
             type="button"
             onClick={() => navigate(item)}
-            aria-label={label}
-            data-harbor-nav={item.id}
-            data-active={active ? "" : undefined}
-            className={`relative flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12.5px] font-medium transition-colors ${
+            className={`relative h-9 whitespace-nowrap rounded-full px-3 text-[12.5px] font-medium transition-colors ${
               active ? "text-ink" : "text-ink-muted hover:text-ink"
             }`}
           >
@@ -76,10 +70,7 @@ export function TopDock() {
                 className="absolute inset-0 -z-10 rounded-full bg-white/15 ring-1 ring-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_12px_-2px_rgba(0,0,0,0.3)] backdrop-blur-md"
               />
             )}
-            <span data-topdock-icon aria-hidden className="hidden">
-              {item.render(active)}
-            </span>
-            <span data-topdock-label>{label}</span>
+            {label}
           </button>
         ),
       };
@@ -128,11 +119,6 @@ export function TopDock() {
             <RecordingPill />
             <NotificationCenter />
             {view !== "live" && <TogetherButton variant="ghost" connectStyle="tab" />}
-            {bigPicture.offer && (
-              <IconBtn onClick={bigPicture.open} label={bigPicture.label} active={false}>
-                <Monitor size={15} strokeWidth={2.2} />
-              </IconBtn>
-            )}
             <IconBtn
               onClick={() => setSearchOpen(true)}
               label={t("common.search")}

@@ -1,6 +1,4 @@
-import { ArrowLeft } from "lucide-react";
-import { Search } from "@/components/icons/search-icon";
-import { UiIcon } from "@/components/ui-icon";
+import { ArrowLeft, Search, Users } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BackChrome } from "@/chrome/back-chrome";
@@ -10,7 +8,6 @@ import { DownloadsButton } from "@/components/downloads-popover";
 import { BookmarksButton } from "@/components/bookmarks-popover";
 import { NotificationCenter } from "@/components/notification-center/notification-center";
 import { ThreeLiquidGlassSurface } from "@/components/ThreeLiquidGlassSurface";
-import { ProfileButton } from "@/chrome/profile-button";
 import { RecordingPill } from "@/chrome/recording-pill";
 import { SleepTimerButton } from "@/chrome/sleep-timer-button";
 import {
@@ -32,42 +29,6 @@ import { useWindowFullscreen } from "@/lib/use-window-fullscreen";
 import { close, minimize, toggleMaximize, useMaximized } from "@/lib/window";
 
 const IS_TAURI = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-
-function PresenceAvatar({ name, src, color }: { name: string; src: string | null; color: string }) {
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    setFailed(false);
-  }, [src]);
-
-  if (src && !failed) {
-    return (
-      <span
-        title={name}
-        className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full ring-2 ring-elevated"
-        style={{ boxShadow: `inset 0 0 0 1.5px ${color}` }}
-      >
-        <img
-          src={src}
-          alt=""
-          draggable={false}
-          className="h-full w-full object-cover"
-          onError={() => setFailed(true)}
-        />
-      </span>
-    );
-  }
-
-  return (
-    <span
-      title={name}
-      className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-canvas ring-2 ring-elevated"
-      style={{ backgroundColor: color }}
-    >
-      {(name.trim()[0] || "?").toUpperCase()}
-    </span>
-  );
-}
 
 export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
   const { chromeHidden, canGoBack, view, setView, topKind } = useView();
@@ -97,14 +58,13 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
   const layout = kid ? "sidebar" : preview ? preview.layout : activeLayout(settings.theme);
   const onLiveRoot = topKind === "live";
   const sidebarHidden = connecting || view === "settings" || onLiveRoot || topKind === "picker";
-  const inSettings = view === "settings";
-  const hideSearch = view === "addons" || connecting || topKind === "picker" || inSettings;
+  const hideSearch = view === "addons" || view === "settings" || connecting || topKind === "picker";
   const sidebarOffset =
     layout === "stremio"
       ? "ps-[80px]"
       : settings.sidebarCollapsed
-        ? "ps-[84px]"
-        : "ps-[84px] lg:ps-[260px]";
+        ? "sm:ps-[84px]"
+        : "sm:ps-[84px] lg:ps-[260px]";
   const searchWidth = canGoBack
     ? "w-[14rem] sm:w-[18rem] lg:w-[22rem] xl:w-[24rem]"
     : "w-[14rem] sm:w-[20rem] lg:w-[24rem] xl:w-[28rem] hover:w-[18rem] sm:hover:w-[24rem] lg:hover:w-[28rem] xl:hover:w-[34rem] focus-within:w-[18rem] sm:focus-within:w-[24rem] lg:focus-within:w-[28rem] xl:focus-within:w-[34rem]";
@@ -114,7 +74,7 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
   return (
     <header
       data-cleannav={settings.topbarAppearance === "transparent" ? "on" : undefined}
-      className={`pointer-events-none fixed inset-x-0 top-0 ${topKind === "picker" || connecting ? "z-[130]" : "z-[55]"} h-20`}
+      className={`harbor-topbar pointer-events-none fixed inset-x-0 top-0 ${topKind === "picker" || connecting ? "z-[130]" : "z-[55]"} h-20 max-lg:h-14`}
     >
       {settings.topbarScrollBlur && settings.topbarAppearance !== "transparent" && (
         <div
@@ -132,7 +92,7 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
       )}
       <div
           {...dragProps}
-          className={`relative z-10 grid h-full grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-8 ${
+          className={`relative z-10 grid h-full grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 lg:px-8 ${
             hybridBar ? "pt-11" : ""
           }`}
         >
@@ -140,15 +100,15 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
             {...dragProps}
             className={
               sidebarHidden
-                ? "pointer-events-auto flex h-full min-w-0 items-center justify-start gap-3"
-                : `pointer-events-auto flex h-full min-w-0 items-center justify-start ${sidebarOffset}`
+                ? `pointer-events-auto flex h-full min-w-0 items-center justify-start gap-3 ${hideSearch && !onLiveRoot ? "max-lg:pointer-events-none" : ""}`
+                : `pointer-events-auto flex h-full min-w-0 items-center justify-start ${sidebarOffset} ${hideSearch ? "max-lg:pointer-events-none" : ""}`
             }
           >
           {onLiveRoot && (
             <button
               onClick={() => setView("home")}
               aria-label={t("common.back")}
-              className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-edge-soft/60 bg-canvas/85 ps-3 pe-4 text-[13.5px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink"
+              className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-edge-soft/60 bg-canvas/85 ps-3 pe-4 text-[13.5px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink max-lg:hidden"
             >
               <ArrowLeft size={15} strokeWidth={2.2} className="dir-icon" />
               {t("common.back")}
@@ -162,31 +122,28 @@ export function Topbar({ connecting = false }: { connecting?: boolean } = {}) {
               </span>
             </div>
           )}
-            {!onLiveRoot && !connecting && <BackChrome />}
+            {!onLiveRoot && !connecting && <div className="max-lg:hidden"><BackChrome /></div>}
           </div>
           <div
             {...dragProps}
-            className={`pointer-events-auto min-w-0 max-w-full transition-[width] duration-200 ease-out ${searchWidth}`}
+            className={`pointer-events-auto min-w-0 max-w-full transition-[width] duration-200 ease-out ${searchWidth} ${onLiveRoot ? "max-lg:w-0" : ""}`}
           >
-            {!hideSearch && !kid && !hybridBar && <SearchPill />}
+            {!hideSearch && !kid && !hybridBar && <div className={onLiveRoot ? "max-lg:hidden" : ""}><SearchPill /></div>}
           </div>
           <div
             {...dragProps}
             className="pointer-events-auto flex h-full items-center justify-end gap-2"
           >
-          {!inSettings && (
-            <div className="hidden items-center gap-2 min-[900px]:flex">
-              <RecordingPill />
-              {settings.navbarSleepTimer && <SleepTimerButton />}
-              <DownloadsButton />
-              {!kid && <NotificationCenter />}
-              {!kid && <BookmarksButton />}
-              {!onLiveRoot && !kid && <TogetherButton />}
-              {!kid && <ProfileButton />}
-            </div>
-          )}
+          <div className="hidden items-center gap-2 min-[900px]:flex">
+          <RecordingPill />
+          {settings.navbarSleepTimer && <SleepTimerButton />}
+          <DownloadsButton />
+          {!kid && <NotificationCenter />}
+          {!kid && <BookmarksButton />}
+          {!onLiveRoot && !kid && <TogetherButton />}
+          </div>
             {IS_TAURI && !settings.useNativeTitleBar && !settings.hybridTitleBar && (
-            <div className="ms-1 flex shrink-0 items-center gap-2">
+            <div className="ms-1 flex shrink-0 items-center gap-2 max-lg:hidden">
               <Control label={t("chrome.minimize")} onClick={minimize}>
                 <svg width="18" height="18" viewBox="0 0 13 13" fill="none">
                   <path d="M3 6.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -229,7 +186,7 @@ function CloseConfirmKids({ onConfirm, onCancel }: { onConfirm: () => void; onCa
         if (e.target === e.currentTarget) onCancel();
       }}
     >
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-gradient-to-b from-[#3aa6c4] via-[#1c789f] to-[#0c4a6e] p-8 text-center text-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)]">
+      <div className="relative w-full max-w-md overflow-hidden rounded-[28px] bg-gradient-to-b from-[#3aa6c4] via-[#1c789f] to-[#0c4a6e] p-8 text-center text-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)]">
         <img
           src="/kids/doodles/lilbluewhale.png"
           alt=""
@@ -351,13 +308,29 @@ export function TogetherButton({
             {visible.map((p) => {
               const self = p.id === clientId;
               const fallbackColor = `oklch(0.78 0.13 ${nameHue(p.name)})`;
+              const avatarSrc = self ? selfAvatar : p.avatar ?? null;
+              const color = self ? selfColor ?? fallbackColor : p.color ?? fallbackColor;
+              if (avatarSrc) {
+                return (
+                  <span
+                    key={p.id}
+                    title={p.name}
+                    className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full ring-2 ring-elevated"
+                    style={{ boxShadow: `inset 0 0 0 1.5px ${color}` }}
+                  >
+                    <img src={avatarSrc} alt="" draggable={false} className="h-full w-full object-cover" />
+                  </span>
+                );
+              }
               return (
-                <PresenceAvatar
+                <span
                   key={p.id}
-                  name={p.name}
-                  src={self ? selfAvatar : p.avatar ?? null}
-                  color={self ? selfColor ?? fallbackColor : p.color ?? fallbackColor}
-                />
+                  title={p.name}
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-canvas ring-2 ring-elevated"
+                  style={{ backgroundColor: color }}
+                >
+                  {(p.name.trim()[0] || "?").toUpperCase()}
+                </span>
               );
             })}
             {overflow > 0 && (
@@ -368,7 +341,7 @@ export function TogetherButton({
           </div>
         </>
       ) : (
-        <UiIcon name="watch-together" className="h-[17px] w-[17px]" />
+        <Users size={17} strokeWidth={1.9} />
       )}
     </button>
   );
@@ -438,10 +411,7 @@ function SearchPill() {
     >
       <Search size={16} strokeWidth={1.75} className="shrink-0 text-ink-subtle" />
       <span className="flex-1 truncate text-[14px] text-ink-subtle">{t("search.placeholder")}</span>
-      <kbd
-        aria-hidden
-        className="hidden h-[22px] min-w-[22px] shrink-0 items-center justify-center rounded-md border border-edge-soft/70 bg-canvas/60 px-1.5 font-mono text-[11px] font-medium leading-none text-ink-subtle sm:inline-flex"
-      >
+      <kbd className="hidden shrink-0 rounded-md border border-white/[0.10] bg-transparent px-1.5 py-0.5 font-mono text-[10.5px] font-medium text-ink-subtle sm:inline">
         {formatBindingForDisplay(binding)}
       </kbd>
     </button>

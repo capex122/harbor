@@ -2,6 +2,7 @@ import type { ComponentType, ReactNode } from "react";
 import type { Meta } from "@/lib/cinemeta";
 import type { PlayerCapabilities, PlayerSnapshot } from "@/lib/player/bridge";
 import type { SubtitleAddHandler } from "@/lib/player/subtitle-load";
+import type { SkipSegment } from "@/lib/skip-intro/types";
 
 export type PlayerShellProps = {
   snap: PlayerSnapshot;
@@ -57,7 +58,8 @@ export type PlayerShellProps = {
   tmdbKey?: string | null;
   season?: number | null;
   episode?: number | null;
-  engine: "html5" | "mpv";
+  engine: "html5" | "mpv" | "native";
+  skipSegments?: SkipSegment[];
   useOverlayPopups?: boolean;
   onMenuOpenChange?: (open: boolean) => void;
   download?: import("@/views/player/hooks/use-video-download").DownloadStatus;

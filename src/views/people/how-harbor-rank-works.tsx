@@ -46,7 +46,7 @@ export function HowHarborRankWorks({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative flex w-full max-h-[calc(100vh-2rem)] flex-col overflow-y-auto rounded-t-3xl bg-surface p-7 pt-6 shadow-[0_30px_120px_-30px_rgba(0,0,0,0.85)] ring-1 ring-edge-soft animate-in fade-in slide-in-from-bottom-4 duration-200 motion-reduce:animate-none sm:m-6 sm:w-[min(92vw,460px)] sm:rounded-lg sm:slide-in-from-bottom-0 sm:zoom-in-95"
+        className="relative flex w-full max-h-[calc(100dvh-2rem)] flex-col overflow-y-auto rounded-t-3xl bg-surface p-7 pt-6 shadow-[0_30px_120px_-30px_rgba(0,0,0,0.85)] ring-1 ring-edge-soft animate-in fade-in slide-in-from-bottom-4 duration-200 motion-reduce:animate-none sm:m-6 sm:w-[min(92vw,460px)] sm:rounded-lg sm:slide-in-from-bottom-0 sm:zoom-in-95"
       >
         <button
           onClick={onClose}

@@ -5,7 +5,6 @@ import { ServiceLogo } from "@/components/service-logo";
 import { SERVICES, providerIdsFor } from "@/lib/providers/streaming";
 import { tmdbDiscover } from "@/lib/providers/tmdb";
 import { useSettings, type StreamingService } from "@/lib/settings";
-import { useT } from "@/lib/i18n";
 import { MobileDetail } from "./mobile-detail";
 import {
   GENRES,
@@ -124,15 +123,12 @@ function ServiceHero({
   tint: string;
   onBack: () => void;
 }) {
-  const t = useT();
   return (
     <div className="relative overflow-hidden">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-64"
-        style={{
-          background: `radial-gradient(125% 85% at 50% -8%, ${tint}33 0%, transparent 60%)`,
-        }}
+        style={{ background: `radial-gradient(125% 85% at 50% -8%, ${tint}33 0%, transparent 60%)` }}
       />
       <div
         className="relative flex flex-col gap-4 px-4"
@@ -141,20 +137,20 @@ function ServiceHero({
         <button
           type="button"
           onClick={onBack}
-          aria-label={t("Back")}
+          aria-label="Back"
           className="-ms-2 flex h-10 w-10 items-center justify-center rounded-full text-ink-muted transition-transform active:scale-[0.96]"
         >
           <ChevronLeft size={24} strokeWidth={2.4} />
         </button>
         <div className="flex flex-col gap-2.5 pb-1">
           <span className="text-[11.5px] font-medium uppercase tracking-[0.2em] text-ink-subtle">
-            {t("Popular on")}
+            Popular on
           </span>
           <div className="flex h-11 items-center">
             <ServiceLogo service={service} height={44} />
           </div>
           <p className="max-w-md text-[13.5px] leading-relaxed text-ink-muted">
-            {t("The most-watched movies and series on {service} right now.", { service: name })}
+            The most-watched movies and series on {name} right now.
           </p>
         </div>
       </div>
@@ -163,22 +159,16 @@ function ServiceHero({
 }
 
 function EmptyState({ name, hasKey }: { name: string; hasKey: boolean }) {
-  const t = useT();
   const message = hasKey
-    ? t(
-        "Nothing from {service} is available in your region right now. Try another genre or switch between Movies and Shows.",
-        { service: name },
-      )
-    : t("Add a TMDB key in Settings to browse service catalogs.");
+    ? `Nothing from ${name} is available in your region right now. Try another genre or switch between Movies and Shows.`
+    : "Add a TMDB key in Settings to browse service catalogs.";
   return (
     <div className="flex min-h-[42vh] flex-col items-center justify-center gap-4 px-8 text-center">
       <span className="flex h-16 w-16 items-center justify-center rounded-full bg-elevated/60 text-ink-subtle ring-1 ring-edge-soft/60">
         <Film size={26} strokeWidth={1.8} />
       </span>
       <div className="flex flex-col gap-1.5">
-        <h2 className="font-display text-[19px] font-medium text-ink">
-          {t("Nothing to show yet")}
-        </h2>
+        <h2 className="font-display text-[19px] font-medium text-ink">Nothing to show yet</h2>
         <p className="max-w-xs text-[13.5px] leading-relaxed text-ink-muted">{message}</p>
       </div>
     </div>

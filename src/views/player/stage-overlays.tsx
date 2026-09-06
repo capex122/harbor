@@ -40,7 +40,7 @@ export const StageOverlays = memo(function StageOverlays({
   chromeVisible,
 }: {
   snap: PlayerSnapshot;
-  engine: "html5" | "mpv";
+  engine: "html5" | "mpv" | "native";
   pipMode: boolean;
   subShowInPip: boolean;
   subAssNative: boolean;

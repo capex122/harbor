@@ -72,11 +72,7 @@ export function AccountMenuFloating() {
             onUnlock: () => {
               const target = pendingSwitch;
               setPendingSwitch(null);
-              // The parent PIN clears the kid lock on the profile being LEFT, not the
-              // target's own lock. Without this branch selectProfile refuses and the
-              // press silently does nothing.
-              if (target.passwordHash) ctrl.openPicker({ kind: "unlock", profileId: target.id });
-              else selectProfile(target.id);
+              selectProfile(target.id);
             },
             onCancel: () => setPendingSwitch(null),
           }}

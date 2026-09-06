@@ -82,6 +82,8 @@ export type PlayerSnapshot = {
   errorMessage: string | null;
   errorCode: "decode" | "codec" | "network" | "source" | "unknown" | null;
   noAudio?: boolean;
+  /** Native mobile surface was permanently dismissed. */
+  nativeClosed?: boolean;
 };
 
 export type PlayerSource = {
@@ -153,13 +155,36 @@ export type PlayerBridge = {
 };
 
 export type PlayerCapabilities = {
-  engine: "html5" | "mpv";
+  engine: "html5" | "mpv" | "native";
   pictureInPicture: boolean;
   airplay: boolean;
   chromecast: boolean;
   hdrPassthrough: boolean;
   hardwareDecode: boolean;
+  rate?: boolean;
+  volume?: boolean;
+  subDelay?: boolean;
+  audioDelay?: boolean;
+  addSubtitle?: boolean;
+  subStyle?: boolean;
+  subSync?: boolean;
 };
+
+export type PlayerCapabilityFlags = Required<
+  Pick<PlayerCapabilities, "rate" | "volume" | "subDelay" | "audioDelay" | "addSubtitle" | "subStyle" | "subSync">
+>;
+
+export function capabilityFlags(caps?: PlayerCapabilities): PlayerCapabilityFlags {
+  return {
+    rate: caps?.rate ?? true,
+    volume: caps?.volume ?? true,
+    subDelay: caps?.subDelay ?? true,
+    audioDelay: caps?.audioDelay ?? true,
+    addSubtitle: caps?.addSubtitle ?? true,
+    subStyle: caps?.subStyle ?? true,
+    subSync: caps?.subSync ?? true,
+  };
+}
 
 export const emptySnapshot: PlayerSnapshot = {
   status: "idle",

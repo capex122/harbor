@@ -39,7 +39,7 @@ export const BG_HEX: Record<ReaderBg, string> = {
 
 export function pageStyle(fit: ReaderFit, zoom: number): CSSProperties {
   if (fit === "height")
-    return { height: `${Math.round(94 * zoom)}vh`, width: "auto", maxWidth: "100%" };
+    return { height: `${Math.round(94 * zoom)}dvh`, width: "auto", maxWidth: "100%" };
   if (fit === "original") return { width: `${Math.round(zoom * 100)}%`, maxWidth: "none" };
   return { width: "100%", maxWidth: `${Math.round(880 * zoom)}px` };
 }
@@ -47,5 +47,5 @@ export function pageStyle(fit: ReaderFit, zoom: number): CSSProperties {
 export function doublePageStyle(fit: ReaderFit, zoom: number): CSSProperties {
   if (fit === "width") return { width: "100%", maxWidth: `${Math.round(440 * zoom)}px` };
   if (fit === "original") return { width: `${Math.round(zoom * 100)}%`, maxWidth: "none" };
-  return { maxHeight: `${Math.round(92 * zoom)}vh`, maxWidth: "100%", width: "auto" };
+  return { maxHeight: `${Math.round(92 * zoom)}dvh`, maxWidth: "100%", width: "auto" };
 }

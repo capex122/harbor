@@ -24,7 +24,7 @@ export function StudioShell({
         aria-modal="true"
         aria-label={t("Theme studio")}
         style={{ ...STABLE_CHROME, left: position.x, top: position.y, width: PANEL_W }}
-        className={`pointer-events-auto absolute flex max-h-[calc(100vh-48px)] flex-col overflow-hidden rounded-md bg-surface ring-1 ring-edge harbor-float harbor-studio-panel ${dragging ? "cursor-grabbing select-none" : ""}`}
+        className={`pointer-events-auto absolute flex max-h-[calc(100dvh-48px)] flex-col overflow-hidden rounded-md bg-surface ring-1 ring-edge harbor-float harbor-studio-panel ${dragging ? "cursor-grabbing select-none" : ""}`}
       >
         {children}
       </div>

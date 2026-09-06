@@ -2,7 +2,7 @@ import type { TrackInfo } from "@/lib/player/bridge";
 import type { SubtitleAddHandler } from "@/lib/player/subtitle-load";
 
 export type SubtitleMenuProps = {
-  engine?: "html5" | "mpv";
+  engine?: "html5" | "mpv" | "native";
   tracks: TrackInfo[];
   selectedId: string | null;
   delaySec: number;

@@ -37,7 +37,7 @@ export const PanelsLayer = memo(function PanelsLayer({
 }: {
   /** Big Picture renders its own resume fork and needs no hover-side tab. */
   tenFoot: boolean;
-  engine: "html5" | "mpv";
+  engine: "html5" | "mpv" | "native";
   isSeriesPlayback: boolean;
   meta: Meta;
   currentEpisode: PlayEpisode | undefined;

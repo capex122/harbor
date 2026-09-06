@@ -33,9 +33,9 @@ export function PlaylistEmpty({
 function Intro({ onContinue }: { onContinue: () => void }) {
   const t = useT();
   return (
-    <div className="relative flex min-h-full flex-col px-12 py-20">
+    <div data-source-studio="live" className="live-source-intro relative flex min-h-full flex-col px-12 py-20">
       <div className="mx-auto flex w-full max-w-[820px] flex-1 flex-col justify-center gap-14">
-        <header className="flex flex-col gap-6">
+        <header className="live-source-hero flex flex-col gap-6">
           <span className="text-[11px] font-bold uppercase tracking-[0.42em] text-ink-subtle">
             {t("Live TV")}
           </span>
@@ -65,7 +65,7 @@ function Intro({ onContinue }: { onContinue: () => void }) {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 gap-x-12 gap-y-7 border-t border-edge-soft/40 pt-10 md:grid-cols-2">
+        <div className="live-source-features grid grid-cols-1 gap-x-12 gap-y-7 border-t border-edge-soft/40 pt-10 md:grid-cols-2">
           <Feature
             icon={<Grid2x2 size={17} strokeWidth={1.9} />}
             title={t("Multi-view")}
@@ -201,7 +201,7 @@ function Form({
   };
 
   return (
-    <div className="relative flex min-h-full flex-col px-12 py-20">
+    <div data-source-studio="live-form" className="live-source-form relative flex min-h-full flex-col px-12 py-20">
       <div className="mx-auto flex w-full max-w-[640px] flex-1 flex-col justify-center gap-8">
         <button
           onClick={onBack}

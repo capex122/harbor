@@ -4,7 +4,6 @@ import { HarborMark } from "@/components/icons/harbor-mark";
 import { NotificationCenter } from "@/components/notification-center/notification-center";
 import { AccountMenu } from "@/chrome/account-menu/account-menu";
 import { CollapseToggle } from "@/chrome/sidebar/collapse-toggle";
-import { SidebarBigPictureEntry } from "@/chrome/sidebar/big-picture-entry";
 import { RecordingPill } from "@/chrome/recording-pill";
 import { TogetherButton } from "@/chrome/topbar";
 import { NAV_ITEMS, applyNavCustomization, type NavItem } from "@/chrome/nav-items";
@@ -18,7 +17,7 @@ import { close, minimize, toggleMaximize } from "@/lib/window";
 
 const IS_TAURI = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
-const PRIMARY_IDS = new Set(["home", "discover", "movies", "shows", "kids", "anime", "live", "sports", "vod"]);
+const PRIMARY_IDS = new Set(["home", "discover", "movies", "shows", "kids", "anime", "live", "vod"]);
 
 export function SideRail() {
   const { view, setView, chromeHidden } = useView();
@@ -134,8 +133,7 @@ export function SideRail() {
             {!collapsed && <NotificationCenter />}
             {!collapsed && view !== "live" && <TogetherButton variant="ghost" popoverPlacement="above-left" />}
           </div>
-          <div className={`flex flex-col gap-1 ${collapsed ? "items-center" : ""}`}>
-            <SidebarBigPictureEntry collapsed={collapsed} />
+          <div className={`flex ${collapsed ? "justify-center" : ""}`}>
             <CollapseToggle collapsed={collapsed} />
           </div>
           {!collapsed && <AccountMenu trigger="row" placement="up" align="stretch" showSettings onOpenSettings={() => setView("settings")} settingsActive={view === "settings"} />}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Keep playback alive when the screen locks or the app backgrounds. Required
+	     for AVAudioSession .playback and Picture in Picture. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+	<!-- librqbit serves torrent data over http://127.0.0.1. NSAllowsLocalNetworking
+	     permits loopback cleartext without weakening ATS for remote HTTPS, and
+	     loopback does not trigger the iOS 14+ Local Network privacy prompt. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<!-- Addon and debrid stream URLs can be plain http. These are Apple's
+		     targeted exemptions for media (AVPlayer) and in-webview playback;
+		     non-media app traffic keeps full ATS. Fine for sideload distribution. -->
+		<key>NSAllowsArbitraryLoadsForMedia</key>
+		<true/>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<true/>
+	</dict>
+	<!-- Required by iOS 14+ before any local-network access (LAN peers over TCP,
+	     and mDNS browse). Without this string the Local Network privacy prompt
+	     cannot show and access is silently denied. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Harbor uses your local network to find and control other Harbor apps on your Wi-Fi, such as your computer or TV.</string>
+	<!-- Service types this app browses for over mDNS. iOS 14+ requires every
+	     Bonjour service type to be declared here; _harbor._tcp is Harbor's own
+	     remote-control service advertised by desktop and TV hosts. -->
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_harbor._tcp</string>
+	</array>
+	<!-- Required before the camera can open. Used only for scanning a pairing or
+	     setup QR code to connect to another Harbor device or import settings;
+	     Harbor never records or uploads camera frames. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Harbor uses the camera to scan a pairing or setup QR code from another Harbor device.</string>
+</dict>
+</plist>

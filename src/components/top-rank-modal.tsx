@@ -91,7 +91,7 @@ export function TopRankModal() {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="animate-dialog-in relative m-6 flex max-h-[calc(100vh-3rem)] w-full max-w-[1240px] flex-col overflow-hidden rounded-lg bg-elevated ring-1 ring-edge-soft shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]"
+        className="animate-dialog-in relative m-6 flex max-h-[calc(100dvh-3rem)] w-full max-w-[1240px] flex-col overflow-hidden rounded-lg bg-elevated ring-1 ring-edge-soft shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]"
       >
         <header className="flex items-center justify-between gap-4 border-b border-edge-soft/45 px-7 py-5">
           <div>

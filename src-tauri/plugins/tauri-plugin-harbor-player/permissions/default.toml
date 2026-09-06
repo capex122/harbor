@@ -1,0 +1,25 @@
+"$schema" = "schemas/schema.json"
+
+[default]
+description = "Allows the Harbor native player commands."
+permissions = [
+    "allow-load",
+    "allow-play",
+    "allow-pause",
+    "allow-seek",
+    "allow-stop",
+    "allow-set-audio-track",
+    "allow-set-subtitle-track",
+    "allow-enter-pip",
+    "allow-set-orientation",
+    "allow-set-zoom",
+    "allow-set-rate",
+    "allow-set-volume",
+    "allow-set-sub-delay",
+    "allow-set-audio-delay",
+    "allow-show-route-picker",
+    "allow-haptic",
+    "allow-registerListener",
+    "allow-removeListener",
+    "allow-remove-listener",
+]

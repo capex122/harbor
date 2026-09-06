@@ -75,7 +75,7 @@ export function ProfilePickerModal() {
         exiting ? "opacity-0" : "animate-in fade-in duration-500"
       }`}
     >
-      <div className="relative flex max-h-[calc(100vh-3rem)] w-full max-w-[860px] flex-col animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
+      <div className="relative flex max-h-[calc(100dvh-3rem)] w-full max-w-[860px] flex-col animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
         <KawaiiBunny />
         {showClose && (
           <button

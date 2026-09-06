@@ -38,7 +38,7 @@ export const ToolsLayer = memo(function ToolsLayer({
 }: {
   /** Big Picture renders its own skip pill through BpTenFoot. */
   tenFoot: boolean;
-  engine: "html5" | "mpv";
+  engine: "html5" | "mpv" | "native";
   pipMode: boolean;
   drawMode: boolean;
   showWaiting: boolean;

@@ -65,7 +65,7 @@ export function RankModalShell({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative m-6 flex max-h-[calc(100vh-3rem)] w-full max-w-[1240px] flex-col overflow-hidden rounded-3xl bg-surface shadow-[0_30px_120px_-30px_rgba(0,0,0,0.85)] ring-1 ring-edge-soft animate-popover-in motion-reduce:animate-none"
+        className="relative m-6 flex max-h-[calc(100dvh-3rem)] w-full max-w-[1240px] flex-col overflow-hidden rounded-3xl bg-surface shadow-[0_30px_120px_-30px_rgba(0,0,0,0.85)] ring-1 ring-edge-soft animate-popover-in motion-reduce:animate-none"
       >
         <header className="flex items-start justify-between gap-4 border-b border-edge-soft px-7 py-5">
           <div className="min-w-0 flex-1">{header}</div>

@@ -4,14 +4,13 @@ import { HarborMark } from "@/components/icons/harbor-mark";
 import { NAV_ITEMS, applyNavCustomization, type NavItem } from "@/chrome/nav-items";
 import { ProfileChip } from "@/chrome/sidebar/profile-chip";
 import { CollapseToggle } from "@/chrome/sidebar/collapse-toggle";
-import { SidebarBigPictureEntry } from "@/chrome/sidebar/big-picture-entry";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
 import { useT } from "@/lib/i18n";
 import { useParental } from "@/lib/parental";
 import { useSettings } from "@/lib/settings";
 import { useView, type View } from "@/lib/view";
 
-const PRIMARY_IDS = new Set(["home", "discover", "movies", "shows", "kids", "anime", "live", "sports", "vod"]);
+const PRIMARY_IDS = new Set(["home", "discover", "movies", "shows", "kids", "anime", "live", "vod"]);
 
 export function DraculaSidebar() {
   const { view, setView, chromeHidden } = useView();
@@ -118,9 +117,8 @@ export function DraculaSidebar() {
               aria-hidden
               className="pointer-events-none mb-2 h-px bg-gradient-to-r from-transparent via-edge-soft to-transparent"
             />
-            <div className={`mb-1 flex flex-col gap-1 ${collapsed ? "items-center" : ""}`}>
-              <SidebarBigPictureEntry collapsed={collapsed} />
-            <CollapseToggle collapsed={collapsed} />
+            <div className={`mb-1 flex ${collapsed ? "justify-center" : ""}`}>
+              <CollapseToggle collapsed={collapsed} />
             </div>
             {locked ? (
               <div
@@ -205,7 +203,7 @@ function NavPill({
         />
       )}
       <span className={`relative ${gated ? "opacity-70" : ""}`}>
-        {item.render(active)}
+        {item.render(false)}
         {gated && (
           <span className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-canvas text-ink-subtle ring-1 ring-edge">
             <Lock size={9} strokeWidth={2.4} />

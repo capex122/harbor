@@ -23,6 +23,14 @@ export type RemoteTarget =
   | { kind: "local"; label: string }
   | { kind: "cast"; deviceId: string; label: string; castKind: RemoteCastDevice["kind"] };
 
+export type DiscoveredHost = {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  version: string | null;
+};
+
 export type RemoteSourceInfo = {
   label: string | null;
   resolution: string | null;

@@ -25,7 +25,7 @@ export function SubtitleFpsControl({
   track,
   hasSecondary,
 }: {
-  engine: "html5" | "mpv";
+  engine: "html5" | "mpv" | "native";
   track: TrackInfo | null;
   hasSecondary: boolean;
 }) {

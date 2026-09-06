@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Info, Plus, TrendingUp } from "lucide-react";
-import { Play } from "@/components/icons/play-filled";
+import { Check, Info, Play, Plus, TrendingUp } from "lucide-react";
 import type { Meta } from "@/lib/cinemeta";
 import { useSettings } from "@/lib/settings";
-import { useT } from "@/lib/i18n";
 import { useHeroLogos } from "@/components/anime-hero/use-hero-logos";
 import { toggleWatchlist, useInWatchlist } from "@/lib/watchlist";
 import { ImdbIcon } from "@/components/icons/imdb-icon";
@@ -16,8 +14,7 @@ import { MobileDetail } from "./mobile-detail";
 import { useMobileRemote } from "./mobile-remote";
 
 const REDUCED =
-  typeof window !== "undefined" &&
-  !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 function nameKey(name?: string): string {
   return name ? name.toLowerCase().replace(/[^a-z0-9]+/g, "") : "";
@@ -47,7 +44,6 @@ function initRows(): Record<string, RowState> {
 }
 
 export function MobileAnime() {
-  const t = useT();
   const { settings } = useSettings();
   const [rowsByKey, setRowsByKey] = useState<Record<string, RowState>>(initRows);
   const [anilistTrending, setAnilistTrending] = useState<Meta[]>([]);
@@ -73,14 +69,9 @@ export function MobileAnime() {
           SPECS.slice(i, i + BATCH).map(async (s) => {
             try {
               const metas = await s.fetcher(1);
-              if (!cancelled)
-                setRowsByKey((p) => ({
-                  ...p,
-                  [s.key]: { metas, page: 1, hasMore: false, ready: true },
-                }));
+              if (!cancelled) setRowsByKey((p) => ({ ...p, [s.key]: { metas, page: 1, hasMore: false, ready: true } }));
             } catch {
-              if (!cancelled)
-                setRowsByKey((p) => ({ ...p, [s.key]: { ...EMPTY_ROW, ready: true } }));
+              if (!cancelled) setRowsByKey((p) => ({ ...p, [s.key]: { ...EMPTY_ROW, ready: true } }));
             }
           }),
         );
@@ -108,10 +99,7 @@ export function MobileAnime() {
   }, [reloadKey]);
 
   const filterOpts = useMemo<AnimeFilterOpts>(
-    () => ({
-      excludeOrigins: settings.animeExcludeOrigins,
-      hideWatched: settings.animeHideWatchedPicks,
-    }),
+    () => ({ excludeOrigins: settings.animeExcludeOrigins, hideWatched: settings.animeHideWatchedPicks }),
     [settings.animeExcludeOrigins, settings.animeHideWatchedPicks],
   );
 
@@ -140,11 +128,7 @@ export function MobileAnime() {
     for (const m of top10) base.add(nameKey(m.name));
     const general = new Set(base);
     for (const m of trend) general.add(nameKey(m.name));
-    const pools: Record<string, Set<string>> = {
-      general,
-      era: new Set(base),
-      genre: new Set(base),
-    };
+    const pools: Record<string, Set<string>> = { general, era: new Set(base), genre: new Set(base) };
     const rows: Array<{ key: string; title: string; metas: Meta[]; rank: boolean }> = [];
     for (const spec of SPECS) {
       if (spec.key === TOP_PICKS_KEY) continue;
@@ -160,20 +144,12 @@ export function MobileAnime() {
       }
       if (metas.length === 0) continue;
       const rank = !!spec.rank && metas.length >= 10;
-      rows.push({
-        key: spec.key,
-        title: rank ? rankTitle(spec.title) : spec.title,
-        metas: rank ? metas : metas.slice(0, 18),
-        rank,
-      });
+      rows.push({ key: spec.key, title: rank ? rankTitle(spec.title) : spec.title, metas: rank ? metas : metas.slice(0, 18), rank });
     }
     return { top10, trend, rows };
   }, [rowsByKey, hero.metas, anilistTrending]);
 
-  const anyRowData = useMemo(
-    () => SPECS.some((s) => (rowsByKey[s.key]?.metas.length ?? 0) > 0),
-    [rowsByKey],
-  );
+  const anyRowData = useMemo(() => SPECS.some((s) => (rowsByKey[s.key]?.metas.length ?? 0) > 0), [rowsByKey]);
 
   if (loading && !anyRowData && hero.metas.length === 0) return <AnimeSkeleton />;
   if (!loading && !anyRowData && anilistTrending.length === 0 && hero.metas.length === 0) {
@@ -185,38 +161,21 @@ export function MobileAnime() {
   return (
     <div className="flex flex-col gap-7 motion-safe:[animation:harbor-step-in_420ms_var(--ease-out)_both]">
       {hero.metas.length > 0 ? (
-        <AnimeHeroMobile
-          slides={hero.metas}
-          trending={hero.trending}
-          onOpenDetail={setDetailMeta}
-        />
+        <AnimeHeroMobile slides={hero.metas} trending={hero.trending} onOpenDetail={setDetailMeta} />
       ) : (
         <HeroSkeleton />
       )}
       {composed.top10.length >= 6 && (
-        <MobileRankRail
-          title={t(rankTitle(topSpec?.title ?? "Airing"))}
-          metas={composed.top10}
-          onOpenDetail={setDetailMeta}
-        />
+        <MobileRankRail title={rankTitle(topSpec?.title ?? "Airing")} metas={composed.top10} onOpenDetail={setDetailMeta} />
       )}
       {composed.trend.length > 0 && (
-        <MobileRail
-          title={t("Trending Anime")}
-          metas={composed.trend.slice(0, 18)}
-          onOpenDetail={setDetailMeta}
-        />
+        <MobileRail title="Trending Anime" metas={composed.trend.slice(0, 18)} onOpenDetail={setDetailMeta} />
       )}
       {composed.rows.map((r) =>
         r.rank ? (
-          <MobileRankRail
-            key={r.key}
-            title={t(r.title)}
-            metas={r.metas}
-            onOpenDetail={setDetailMeta}
-          />
+          <MobileRankRail key={r.key} title={r.title} metas={r.metas} onOpenDetail={setDetailMeta} />
         ) : (
-          <MobileRail key={r.key} title={t(r.title)} metas={r.metas} onOpenDetail={setDetailMeta} />
+          <MobileRail key={r.key} title={r.title} metas={r.metas} onOpenDetail={setDetailMeta} />
         ),
       )}
       <div className="h-4" />
@@ -234,7 +193,6 @@ function AnimeHeroMobile({
   trending: Record<string, string>;
   onOpenDetail: (m: Meta) => void;
 }) {
-  const t = useT();
   const { settings } = useSettings();
   const { playOnHost } = useMobileRemote();
   const [active, setActive] = useState(0);
@@ -263,7 +221,7 @@ function AnimeHeroMobile({
     <section className="flex flex-col gap-3.5">
       <button
         type="button"
-        aria-label={t("Open {title}", { title: current.name })}
+        aria-label={`Open ${current.name}`}
         onClick={() => onOpenDetail(current)}
         className="relative block aspect-[4/5] w-full overflow-hidden bg-surface text-start"
       >
@@ -274,12 +232,7 @@ function AnimeHeroMobile({
             className="absolute inset-0 motion-safe:transition-opacity motion-safe:duration-700 motion-safe:ease-out"
             style={{ opacity: i === active ? 1 : 0 }}
           >
-            <HeroArt
-              meta={m}
-              logo={logos[m.id] ?? m.logo}
-              source={trending[m.id]}
-              priority={i === 0}
-            />
+            <HeroArt meta={m} logo={logos[m.id] ?? m.logo} source={trending[m.id]} priority={i === 0} />
           </div>
         ))}
       </button>
@@ -291,32 +244,19 @@ function AnimeHeroMobile({
             className="flex h-[52px] flex-1 items-center justify-center gap-2.5 rounded-full bg-ink text-[16px] font-semibold text-canvas shadow-[0_6px_20px_-6px_rgba(0,0,0,0.4)] transition-transform duration-150 active:scale-[0.97]"
           >
             <Play size={19} strokeWidth={0} fill="currentColor" />
-            {t("Play")}
+            Play
           </button>
           <button
             type="button"
-            aria-label={inWl ? t("In My List") : t("Add to My List")}
-            onClick={() =>
-              toggleWatchlist({
-                id: current.id,
-                type: current.type,
-                name: current.name,
-                poster: current.poster,
-                addonOrigin: current.addonOrigin,
-                videos: current.videos,
-              })
-            }
+            aria-label={inWl ? "In My List" : "Add to My List"}
+            onClick={() => toggleWatchlist({ id: current.id, type: current.type, name: current.name, poster: current.poster })}
             className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-edge bg-canvas/55 text-ink transition-transform duration-150 active:scale-[0.94]"
           >
-            {inWl ? (
-              <Check size={20} strokeWidth={2.6} className="text-accent" />
-            ) : (
-              <Plus size={21} strokeWidth={2.2} />
-            )}
+            {inWl ? <Check size={20} strokeWidth={2.6} className="text-accent" /> : <Plus size={21} strokeWidth={2.2} />}
           </button>
           <button
             type="button"
-            aria-label={t("More info")}
+            aria-label="More info"
             onClick={() => onOpenDetail(current)}
             className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-edge bg-canvas/55 text-ink transition-transform duration-150 active:scale-[0.94]"
           >
@@ -329,7 +269,7 @@ function AnimeHeroMobile({
               <button
                 key={m.id}
                 type="button"
-                aria-label={t("Slide {number}", { number: i + 1 })}
+                aria-label={`Slide ${i + 1}`}
                 onClick={() => {
                   setActive(i);
                   pausedUntil.current = Date.now() + 12000;
@@ -344,18 +284,7 @@ function AnimeHeroMobile({
   );
 }
 
-function HeroArt({
-  meta,
-  logo,
-  source,
-  priority,
-}: {
-  meta: Meta;
-  logo?: string;
-  source?: string;
-  priority?: boolean;
-}) {
-  const t = useT();
+function HeroArt({ meta, logo, source, priority }: { meta: Meta; logo?: string; source?: string; priority?: boolean }) {
   const bg = meta.background || meta.poster;
   const year = (meta.releaseInfo ?? "").slice(0, 4);
   return (
@@ -370,10 +299,7 @@ function HeroArt({
           style={{ objectPosition: "50% 18%" }}
         />
       )}
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/45 to-transparent"
-      />
+      <div aria-hidden className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/45 to-transparent" />
       <div
         aria-hidden
         className="absolute inset-0"
@@ -386,7 +312,7 @@ function HeroArt({
         {source && (
           <span className="inline-flex items-center gap-1.5 self-start rounded-md bg-black/45 px-2.5 py-1 text-[11.5px] font-semibold text-white backdrop-blur-md">
             <TrendingUp size={12} strokeWidth={2.6} className="text-accent" />
-            {t("Trending on {source}", { source })}
+            Trending on {source}
           </span>
         )}
         {logo ? (
@@ -426,10 +352,7 @@ function HeroSkeleton() {
     <section className="flex flex-col gap-3.5" aria-hidden>
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-surface">
         <Shimmer />
-        <div
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(to top, var(--color-canvas) 2%, transparent 60%)" }}
-        />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, var(--color-canvas) 2%, transparent 60%)" }} />
         <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 px-5 pb-5">
           <div className="h-5 w-28 rounded-md bg-elevated/50" />
           <div className="h-8 w-2/3 rounded-lg bg-elevated/55" />
@@ -451,10 +374,7 @@ function RailSkeleton({ titleW }: { titleW: string }) {
       <div className={`mx-4 h-[18px] ${titleW} rounded-md bg-elevated/45`} />
       <div className="flex gap-3 overflow-hidden px-4 pb-1">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className="relative aspect-[2/3] w-[124px] shrink-0 overflow-hidden rounded-lg bg-elevated/40"
-          >
+          <div key={i} className="relative aspect-[2/3] w-[112px] shrink-0 overflow-hidden rounded-[14px] bg-elevated/40">
             <Shimmer />
           </div>
         ))}
@@ -475,19 +395,18 @@ function AnimeSkeleton() {
 }
 
 function FailedState({ onRetry }: { onRetry: () => void }) {
-  const t = useT();
   return (
     <div className="flex h-[70vh] flex-col items-center justify-center gap-4 px-8 text-center">
-      <h2 className="font-display text-[20px] font-medium text-ink">{t("Couldn't load anime")}</h2>
+      <h2 className="font-display text-[20px] font-medium text-ink">Couldn't load anime</h2>
       <p className="max-w-xs text-[13.5px] leading-relaxed text-ink-muted">
-        {t("Harbor couldn't reach MyAnimeList or AniList. Check your connection and try again.")}
+        Harbor couldn't reach MyAnimeList or AniList. Check your connection and try again.
       </p>
       <button
         type="button"
         onClick={onRetry}
         className="flex h-11 items-center rounded-full bg-ink px-6 text-[14px] font-semibold text-canvas transition-transform active:scale-95"
       >
-        {t("Try again")}
+        Try again
       </button>
     </div>
   );

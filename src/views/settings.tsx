@@ -1,4 +1,14 @@
-import { lazy, startTransition, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  lazy,
+  startTransition,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type WheelEvent as ReactWheelEvent,
+} from "react";
 import type { LibraryKey } from "./settings/library-panel";
 import type { RelayMode } from "./settings/relay-section";
 import type { DebridKey } from "./settings/streaming-sources-panel";
@@ -7,6 +17,7 @@ import { groupForSection, TOP_GROUPS } from "./settings/groups";
 import { requestTracker } from "./settings/tracker-request";
 import { SubTabsProvider, type SubTabReg } from "./settings/sub-tabs";
 import { SettingsSidebar } from "./settings/settings-sidebar";
+import { SubTabBar } from "./settings/sub-tab-bar";
 import { tabsFor } from "./settings/tab-registry";
 import { PageActionsProvider, type PageActionReg } from "./settings/page-actions";
 import { SettingsFooter } from "./settings/settings-footer";
@@ -21,6 +32,7 @@ import { resetOmdbBudget } from "@/lib/providers/omdb";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
 import { useT } from "@/lib/i18n";
+import { ChevronLeft } from "lucide-react";
 
 const IS_WEB = typeof window !== "undefined" && !("__TAURI_INTERNALS__" in window);
 
@@ -307,6 +319,7 @@ export function Settings({ visible = true }: { visible?: boolean }) {
     return id as SectionId;
   };
   const [landing, setLanding] = useState<string | null>(null);
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const [active, setActive] = useState<SectionId>(
     resolveSection(settingsSectionRequest.section),
   );
@@ -315,6 +328,50 @@ export function Settings({ visible = true }: { visible?: boolean }) {
   const [query, setQuery] = useState("");
   const scrollRef = useRef<HTMLElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
+  const subTabsScrollRef = useRef<HTMLDivElement>(null);
+  const subTabsDragRef = useRef({ pointerId: -1, startX: 0, startScroll: 0, moved: false });
+
+  const startSubTabsDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const el = event.currentTarget;
+    subTabsDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScroll: el.scrollLeft,
+      moved: false,
+    };
+  };
+
+  const moveSubTabsDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = subTabsDragRef.current;
+    if (drag.pointerId !== event.pointerId) return;
+    const delta = event.clientX - drag.startX;
+    if (Math.abs(delta) > 4 && !drag.moved) {
+      drag.moved = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+    event.currentTarget.scrollLeft = drag.startScroll - delta;
+    if (drag.moved) event.preventDefault();
+  };
+
+  const endSubTabsDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = subTabsDragRef.current;
+    if (drag.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    subTabsDragRef.current.pointerId = -1;
+  };
+
+  const wheelSubTabs = (event: ReactWheelEvent<HTMLDivElement>) => {
+    const el = event.currentTarget;
+    if (el.scrollWidth <= el.clientWidth) return;
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (delta === 0) return;
+    el.scrollLeft += delta;
+    event.preventDefault();
+    event.stopPropagation();
+  };
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
@@ -357,6 +414,7 @@ export function Settings({ visible = true }: { visible?: boolean }) {
 
   const handleNav = (id: SectionId, anchor?: string) => {
     setLanding(null);
+    setMobilePanelOpen(true);
     startTransition(() => {
       setActive(id);
       setPendingAnchor(anchor ?? null);
@@ -369,6 +427,7 @@ export function Settings({ visible = true }: { visible?: boolean }) {
     if (id === active) {
       if (tab) subRegRef.current?.onChange(tab);
       pendingTab.current = null;
+      setMobilePanelOpen(true);
       return;
     }
     handleNav(id);
@@ -377,6 +436,7 @@ export function Settings({ visible = true }: { visible?: boolean }) {
   useEffect(() => {
     if (!settingsSectionRequest.section) return;
     setLanding(null);
+    setMobilePanelOpen(true);
     setActive(resolveSection(settingsSectionRequest.section));
   }, [settingsSectionRequest]);
 
@@ -435,6 +495,7 @@ export function Settings({ visible = true }: { visible?: boolean }) {
   useEffect(() => {
     if (visible && !wasVisible.current && !pendingAnchorRef.current) {
       scrollRef.current?.scrollTo({ top: 0 });
+      setMobilePanelOpen(false);
     }
     wasVisible.current = visible;
   }, [visible]);
@@ -541,7 +602,11 @@ export function Settings({ visible = true }: { visible?: boolean }) {
     <SettingsActiveContext.Provider value={{ setActive }}>
     <PageActionsProvider value={{ reg: pageActions, setReg: setPageActions }}>
     <SubTabsProvider value={{ reg: subReg, setReg: setSubReg }}>
-    <div ref={shellRef} className="harbor-settings-shell flex h-full flex-col bg-canvas">
+    <div
+      ref={shellRef}
+      className="harbor-settings-shell flex h-full flex-col bg-canvas"
+      data-mobile-panel={mobilePanelOpen ? "open" : "index"}
+    >
       <div
         data-tauri-drag-region
         className="shrink-0"
@@ -551,9 +616,23 @@ export function Settings({ visible = true }: { visible?: boolean }) {
         <SettingsTools query={query} setQuery={setQuery} onSubmit={handleNav} />
         <div className="hset-heading">
           <div className="hset-content">
-            <h1 className="hset-title">
-              {landingGroup ? t(landingGroup.label) : t(SECTION_META[active].label)}
-            </h1>
+            <div className="flex min-w-0 items-center gap-2.5">
+              <button
+                type="button"
+                className="hset-mobile-back"
+                aria-label={t("Back to settings")}
+                onClick={() => setMobilePanelOpen(false)}
+              >
+                <ChevronLeft size={20} strokeWidth={2.2} />
+              </button>
+              <h1 className="hset-title">
+                {mobilePanelOpen
+                  ? t(SECTION_META[active].label)
+                  : landingGroup
+                    ? t(landingGroup.label)
+                    : t("Settings")}
+              </h1>
+            </div>
           </div>
         </div>
         <SettingsSidebar
@@ -566,6 +645,29 @@ export function Settings({ visible = true }: { visible?: boolean }) {
         />
         <main ref={scrollRef} className="hset-main" data-hset-wide={wide ? "" : undefined}>
         <div className="hset-content">
+          {subReg && (
+            <div
+              ref={subTabsScrollRef}
+              className="hset-mobile-subtabs"
+              onPointerDown={startSubTabsDrag}
+              onPointerMove={moveSubTabsDrag}
+              onPointerUp={endSubTabsDrag}
+              onPointerCancel={endSubTabsDrag}
+              onWheel={wheelSubTabs}
+              onClickCapture={(event) => {
+                if (!subTabsDragRef.current.moved) return;
+                event.preventDefault();
+                event.stopPropagation();
+                subTabsDragRef.current.moved = false;
+              }}
+            >
+              <SubTabBar
+                tabs={subReg.tabs}
+                value={subReg.value}
+                onChange={subReg.onChange}
+              />
+            </div>
+          )}
           {caption && !chromeHidden && (
             <p className="hset-caption">{t(caption)}</p>
           )}

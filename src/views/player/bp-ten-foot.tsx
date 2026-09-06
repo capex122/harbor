@@ -33,7 +33,7 @@ const RESUME_PANEL = "resume";
 export type BpTenFootProps = {
   src: PlayerSrc;
   snap: PlayerSnapshot;
-  engine: "html5" | "mpv";
+  engine: "html5" | "mpv" | "native";
   bridgeRef: RefObject<PlayerBridge | null>;
   snapRef: RefObject<PlayerSnapshot>;
   rememberSubChoice: (t: SubChoiceInput | null | undefined) => void;

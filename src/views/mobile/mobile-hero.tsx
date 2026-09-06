@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Info, Plus, TrendingUp } from "lucide-react";
-import { Play } from "@/components/icons/play-filled";
+import { Check, Info, Play, Plus, TrendingUp } from "lucide-react";
 import type { Meta } from "@/lib/cinemeta";
 import { useSettings } from "@/lib/settings";
-import { useT } from "@/lib/i18n";
 import { useHeroLogos } from "@/components/anime-hero/use-hero-logos";
 import { toggleWatchlist, useInWatchlist } from "@/lib/watchlist";
 import { ImdbIcon } from "@/components/icons/imdb-icon";
@@ -19,18 +17,17 @@ function upsize(url?: string): string | undefined {
   return url.replace(/\/t\/p\/w\d+\//, "/t/p/w1280/");
 }
 
+function kindLabel(t: Meta["type"]): string {
+  if (t === "series") return "Series";
+  if (t === "anime") return "Anime";
+  return "Movies";
+}
+
 function prefersReduced(): boolean {
   return !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
 
-export function MobileHero({
-  slides,
-  onOpenDetail,
-}: {
-  slides: Meta[];
-  onOpenDetail?: (m: Meta) => void;
-}) {
-  const t = useT();
+export function MobileHero({ slides, onOpenDetail }: { slides: Meta[]; onOpenDetail?: (m: Meta) => void }) {
   const { settings } = useSettings();
   const { openOnHost, playOnHost } = useMobileRemote();
   const shown = useMemo(() => slides.slice(0, 6), [slides]);
@@ -122,13 +119,13 @@ export function MobileHero({
 
   const bgOf = (i: number): string | undefined => {
     const m = shown[i];
-    return m ? (upsize(m.background) ?? m.poster) : undefined;
+    return m ? upsize(m.background) ?? m.poster : undefined;
   };
 
   const safeActive = active < shown.length ? active : 0;
   const current = shown[safeActive];
   const target = slots[front] < shown.length ? slots[front] : 0;
-  const logo = current ? (logos[current.id] ?? current.logo) : undefined;
+  const logo = current ? logos[current.id] ?? current.logo : undefined;
   const year = (current?.releaseInfo ?? "").slice(0, 4);
   const inWl = useInWatchlist(current?.id);
 
@@ -138,20 +135,14 @@ export function MobileHero({
   const src0 = bgOf(slots[0]);
   const src1 = bgOf(slots[1]);
   const layerTransition = reduce ? "none" : `opacity ${DISSOLVE_MS}ms ease-in-out`;
-  const badge =
-    current.type === "series"
-      ? t("#{rank} in Series Today", { rank: safeActive + 1 })
-      : current.type === "anime"
-        ? t("#{rank} in Anime Today", { rank: safeActive + 1 })
-        : t("#{rank} in Movies Today", { rank: safeActive + 1 });
 
   return (
     <section className="flex flex-col gap-3">
       <div className="px-4">
-        <div className="relative aspect-[16/13] w-full overflow-hidden rounded-3xl bg-surface ring-1 ring-edge-soft/50">
+        <div className="relative aspect-[16/13] w-full overflow-hidden rounded-[24px] bg-surface ring-1 ring-edge-soft/50">
           <button
             type="button"
-            aria-label={t("Open {name}", { name: current.name })}
+            aria-label={`Open ${current.name}`}
             onClick={open}
             className="absolute inset-0 z-0 block h-full w-full text-start"
           >
@@ -182,14 +173,12 @@ export function MobileHero({
             style={{
               opacity: textOn ? 1 : 0,
               transform: textOn ? "translateY(0)" : "translateY(8px)",
-              transition: reduce
-                ? "none"
-                : `opacity ${TEXT_MS}ms ease, transform ${TEXT_MS}ms ease`,
+              transition: reduce ? "none" : `opacity ${TEXT_MS}ms ease, transform ${TEXT_MS}ms ease`,
             }}
           >
             <span className="inline-flex items-center gap-1.5 self-start rounded-md bg-black/45 px-2.5 py-1 text-[11.5px] font-semibold text-white backdrop-blur-md">
               <TrendingUp size={12} strokeWidth={2.6} className="text-accent" />
-              {badge}
+              #{safeActive + 1} in {kindLabel(current.type)} Today
             </span>
             {logo ? (
               <img
@@ -212,41 +201,28 @@ export function MobileHero({
               )}
               {current.genres?.[0] && <span className="text-white/70">{current.genres[0]}</span>}
             </div>
-            <div
-              className={`mt-1 flex items-center gap-2.5 ${textOn ? "pointer-events-auto" : "pointer-events-none"}`}
-            >
+            <div className={`mt-1 flex items-center gap-2.5 ${textOn ? "pointer-events-auto" : "pointer-events-none"}`}>
               <button
                 type="button"
                 onClick={() => playOnHost(current)}
                 className="flex h-[52px] items-center gap-2.5 rounded-full bg-white px-8 text-[16px] font-semibold text-black shadow-[0_6px_20px_-6px_rgba(0,0,0,0.5)] transition-transform duration-150 active:scale-[0.97]"
               >
                 <Play size={19} strokeWidth={0} fill="currentColor" />
-                {t("Play")}
+                Play
               </button>
               <button
                 type="button"
-                aria-label={inWl ? t("In My List") : t("Add to My List")}
+                aria-label={inWl ? "In My List" : "Add to My List"}
                 onClick={() =>
-                  toggleWatchlist({
-                    id: current.id,
-                    type: current.type,
-                    name: current.name,
-                    poster: current.poster,
-                    addonOrigin: current.addonOrigin,
-                    videos: current.videos,
-                  })
+                  toggleWatchlist({ id: current.id, type: current.type, name: current.name, poster: current.poster })
                 }
                 className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-white/25 bg-black/35 text-white backdrop-blur-sm transition-transform duration-150 active:scale-[0.94]"
               >
-                {inWl ? (
-                  <Check size={20} strokeWidth={2.6} className="text-accent" />
-                ) : (
-                  <Plus size={21} strokeWidth={2.2} />
-                )}
+                {inWl ? <Check size={20} strokeWidth={2.6} className="text-accent" /> : <Plus size={21} strokeWidth={2.2} />}
               </button>
               <button
                 type="button"
-                aria-label={t("More info")}
+                aria-label="More info"
                 onClick={open}
                 className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-white/25 bg-black/35 text-white backdrop-blur-sm transition-transform duration-150 active:scale-[0.94]"
               >
@@ -262,7 +238,7 @@ export function MobileHero({
             <button
               key={m.id}
               type="button"
-              aria-label={t("Show {name}", { name: m.name })}
+              aria-label={`Show ${m.name}`}
               onClick={() => {
                 pausedUntil.current = Date.now() + PILL_PAUSE_MS;
                 goTo(i);

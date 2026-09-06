@@ -4,11 +4,7 @@ import { Poster, usePosterChain } from "@/components/poster";
 import { ImdbIcon } from "@/components/icons/imdb-icon";
 import { HeroAwardsCorner } from "@/views/detail/hero-awards";
 import { useSettings } from "@/lib/settings";
-import { useT } from "@/lib/i18n";
 import type { TmdbDetail } from "@/lib/providers/tmdb";
-import { LocalLibraryBrand } from "@/components/local-library-brand";
-import { MediaServerBrand, mediaServerProviderName } from "@/components/media-server-brand";
-import type { MediaServerProvider } from "@/lib/media-server/types";
 import { Pill } from "./ui";
 
 type HeroSummary = { type: string; wins: number; nominations: number }[];
@@ -25,7 +21,6 @@ export function Hero({
   runtime,
   genres,
   awardSummary,
-  availability,
   onBack,
 }: {
   meta: Meta;
@@ -39,10 +34,8 @@ export function Hero({
   runtime?: string;
   genres: string[];
   awardSummary: HeroSummary;
-  availability: { local: boolean; providers: MediaServerProvider[] };
   onBack: () => void;
 }) {
-  const t = useT();
   return (
     <div className="relative">
       <div className="relative aspect-[3/4] max-h-[62vh] w-full overflow-hidden bg-surface">
@@ -62,7 +55,7 @@ export function Hero({
       <button
         type="button"
         onClick={onBack}
-        aria-label={t("Back")}
+        aria-label="Back"
         className="absolute start-4 grid h-10 w-10 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-transform active:scale-95 motion-reduce:transition-none"
         style={{ top: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
       >
@@ -74,12 +67,7 @@ export function Hero({
           className="absolute end-3 z-10"
           style={{ top: "calc(env(safe-area-inset-top, 0px) + 10px)" }}
         >
-          <HeroAwardsCorner
-            summary={awardSummary}
-            inline
-            onDark
-            className="max-w-[58vw] text-end"
-          />
+          <HeroAwardsCorner summary={awardSummary} inline onDark className="max-w-[58vw] text-end" />
         </div>
       )}
 
@@ -97,14 +85,7 @@ export function Hero({
               {title}
             </h1>
           )}
-          <MetaPills
-            year={year}
-            rating={rating}
-            isImdb={isImdb}
-            runtime={runtime}
-            genres={genres}
-            availability={availability}
-          />
+          <MetaPills year={year} rating={rating} isImdb={isImdb} runtime={runtime} genres={genres} />
         </div>
       </div>
     </div>
@@ -138,36 +119,16 @@ function MetaPills({
   isImdb,
   runtime,
   genres,
-  availability,
 }: {
   year: string;
   rating?: string;
   isImdb: boolean;
   runtime?: string;
   genres: string[];
-  availability: { local: boolean; providers: MediaServerProvider[] };
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
       {year && <Pill>{year}</Pill>}
-      {availability.local && (
-        <Pill>
-          <span aria-label="In your local library">
-            <LocalLibraryBrand className="h-[18px] w-[18px]" />
-          </span>
-        </Pill>
-      )}
-      {availability.providers.map((provider) => (
-        <Pill key={provider}>
-          <span aria-label={`Available in ${mediaServerProviderName(provider)}`}>
-            <MediaServerBrand
-              provider={provider}
-              name={mediaServerProviderName(provider)}
-              compact
-            />
-          </span>
-        </Pill>
-      ))}
       {rating && (
         <Pill>
           <span className="flex items-center gap-1.5">

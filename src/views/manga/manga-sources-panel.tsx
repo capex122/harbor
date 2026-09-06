@@ -242,7 +242,8 @@ export function MangaSourcesView({
 
   return (
     <div
-      className="mx-auto flex w-full max-w-2xl flex-col gap-6"
+      data-source-studio="manga"
+      className="source-studio mx-auto flex w-full max-w-2xl flex-col gap-6"
       style={{ animation: "harbor-view-in 0.4s cubic-bezier(0.32,0.72,0.24,1) both" }}
     >
       <div className="flex items-center justify-between gap-3">
@@ -266,13 +267,18 @@ export function MangaSourcesView({
         )}
       </div>
 
-      <div className="flex flex-col gap-2.5">
+      <div className="source-studio-hero flex flex-col gap-2.5">
+        <span className="source-studio-kicker">{t("Manga · Sources")}</span>
         <h1 className="font-display text-[34px] font-medium tracking-tight text-ink">{t("Manga sources")}</h1>
         <p className="max-w-xl text-[15.5px] leading-relaxed text-ink-muted">
           {t(
             "Harbor does not host any manga or any sources. Connect your own server or open a folder you already have, and mix as many as you like.",
           )}
         </p>
+        <div className="source-studio-status">
+          <strong>{total}</strong>
+          <span>{total === 1 ? t("source connected") : t("sources connected")}</span>
+        </div>
       </div>
 
       {customs.length > 0 && (

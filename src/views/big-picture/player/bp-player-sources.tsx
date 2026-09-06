@@ -56,7 +56,7 @@ export type BpPlayerAudioProps = {
   tracks: TrackInfo[];
   selectedId: string | null;
   delaySec: number;
-  engine: "html5" | "mpv";
+  engine: "html5" | "mpv" | "native";
   title?: string;
   onSelect: (id: string) => void;
   onDelay: (sec: number) => void;

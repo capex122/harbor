@@ -571,7 +571,7 @@ export function ContextMenu() {
         ref={ref}
         role="menu"
         aria-label={subtitleDetails ? t("Subtitle details") : undefined}
-        style={{ left, top, width: menuWidth, maxHeight: "calc(100vh - 16px)" }}
+        style={{ left, top, width: menuWidth, maxHeight: "calc(100dvh - 16px)" }}
         className="fixed z-[145] flex flex-col overflow-y-auto rounded-xl border border-edge bg-elevated p-1 shadow-[0_18px_50px_-15px_rgba(0,0,0,0.7)] animate-popover-in"
       >
         {items}

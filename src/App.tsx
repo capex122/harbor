@@ -1392,9 +1392,16 @@ function Shell({ onReady }: { onReady?: () => void }) {
   const peopleAlive = useIdleEvict(peopleTop);
 
   return (
-    <div data-kids={kidsTop || kid ? "on" : undefined} className="relative flex h-full">
+    <div
+      data-kids={kidsTop || kid ? "on" : undefined}
+      data-mobile-dock-shell={!playerActive && !immersive ? "" : undefined}
+      className="relative flex h-full"
+    >
       {!settingsTop && !playerActive && !liveTop && !pickerTop && layout === "sidebar" && (
         <Sidebar />
+      )}
+      {!playerActive && !immersive && (settingsTop || liveTop || pickerTop) && (
+        <Sidebar mobileOnly />
       )}
       {!settingsTop && !playerActive && !liveTop && !pickerTop && layout === "dracula" && (
         <DraculaSidebar />

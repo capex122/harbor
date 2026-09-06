@@ -1,5 +1,4 @@
 import { ChevronUp } from "lucide-react";
-import { useT } from "@/lib/i18n";
 
 export function ScrollToTop({
   scrollRef,
@@ -8,7 +7,6 @@ export function ScrollToTop({
   scrollRef: React.RefObject<HTMLDivElement | null>;
   visible: boolean;
 }) {
-  const t = useT();
   const toTop = () => {
     const el = scrollRef.current;
     if (!el) return;
@@ -19,7 +17,7 @@ export function ScrollToTop({
   return (
     <button
       type="button"
-      aria-label={t("Scroll to top")}
+      aria-label="Scroll to top"
       aria-hidden={visible ? undefined : true}
       tabIndex={visible ? 0 : -1}
       onClick={toTop}

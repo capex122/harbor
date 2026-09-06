@@ -16,7 +16,7 @@ export function Anime4kIndicator({
   chromeVisible,
   suppressed = false,
 }: {
-  engine: "html5" | "mpv";
+  engine: "html5" | "mpv" | "native";
   chromeVisible: boolean;
   suppressed?: boolean;
 }) {

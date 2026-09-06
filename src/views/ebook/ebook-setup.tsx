@@ -26,7 +26,8 @@ export function EBookSetup({ onSetup }: { onSetup: () => void }) {
   return (
     <main
       data-ebook-page
-      className="bg-canvas mx-auto flex w-full max-w-2xl flex-1 flex-col items-center gap-5 overflow-y-auto overflow-x-hidden px-12 pb-20 pt-24 text-center"
+      data-source-studio="ebook-setup"
+      className="ebook-setup-page bg-canvas mx-auto flex w-full max-w-2xl flex-1 flex-col items-center gap-5 overflow-y-auto overflow-x-hidden px-12 pb-20 pt-24 text-center"
     >
       <div className="ebook-shelf" aria-hidden="true">
         <span className="ebook-shelf-slot" />

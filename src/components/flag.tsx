@@ -137,18 +137,20 @@ export function countryFlagSrc(code: string): string | null {
   return regionFlagSrc(code);
 }
 
-export type FlagSize = "sm" | "md" | "lg";
+export type FlagSize = "sm" | "md" | "lg" | "xl";
 
 const FLAG_HEIGHT: Record<FlagSize, number> = {
   sm: 12,
   md: 16,
   lg: 22,
+  xl: 28,
 };
 
 const LABEL_SIZE: Record<FlagSize, number> = {
   sm: 11,
   md: 13,
   lg: 15,
+  xl: 17,
 };
 
 export function languageHasFlag(language: string): boolean {
@@ -165,10 +167,12 @@ const SPLIT_FLAG: Record<string, [string, string]> = {
 
 export function Flag({
   language,
+  code,
   size = "md",
   showLabel = true,
 }: {
   language: string;
+  code?: string;
   size?: FlagSize;
   showLabel?: boolean;
 }) {
@@ -185,7 +189,7 @@ export function Flag({
 
   const split = SPLIT_FLAG[language];
   const src = FLAG[language];
-  const cc = src ? undefined : LANG_COUNTRY[language];
+  const cc = src ? undefined : code || LANG_COUNTRY[language];
   const h = FLAG_HEIGHT[size];
 
   if (split) {
