@@ -278,6 +278,50 @@ html[data-os="ios"] body {
     justify-content: center;
   }
 
+  [data-mobile-dock-shell] [data-detail-hero] {
+    height: min(72svh, 620px) !important;
+    min-height: 520px !important;
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero-content] {
+    padding-inline: 16px !important;
+    padding-block-end: 24px !important;
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero-content] > div > p {
+    margin-block-end: 8px;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero-content] [class*="min-h-[120px]"] {
+    min-height: 76px;
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero-content] h1 {
+    overflow-wrap: anywhere;
+    font-size: clamp(42px, 13vw, 58px);
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero-content] img.absolute {
+    max-width: calc(100vw - 32px);
+    max-height: 80px;
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero-content] [class*="mt-6"] {
+    margin-block-start: 12px;
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero-actions] {
+    width: 100%;
+    margin-block-start: 18px;
+    gap: 8px;
+  }
+
+  [data-mobile-dock-shell] [data-detail-hero-actions] button {
+    height: 44px;
+  }
+
   [data-mobile-dock-shell] .harbor-layer-active > main[class*="px-"],
   [data-mobile-dock-shell] .harbor-layer-active > main > div[class*="px-"] {
     padding-inline: 14px !important;

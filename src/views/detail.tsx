@@ -1567,6 +1567,7 @@ export function DetailView({
         <div
           data-tauri-drag-region
           data-tv-hero-zone
+          data-detail-hero
           className="harbor-bleed-stremio relative h-[78vh] min-h-[640px] overflow-hidden"
         >
           {carouselOn ? (
@@ -1592,7 +1593,7 @@ export function DetailView({
           <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/55 via-45% to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r rtl:bg-gradient-to-l from-canvas/85 via-canvas/35 to-transparent" />
 
-          <div className="absolute inset-x-0 bottom-0 px-12 pb-14">
+          <div data-detail-hero-content className="absolute inset-x-0 bottom-0 px-12 pb-14">
             <div className={awardsInDescription ? "max-w-3xl" : undefined}>
               {tagline && !loading && !detectingAnime && (
                 <p
@@ -1629,6 +1630,7 @@ export function DetailView({
               )}
               <div
                 ref={actionRowRef}
+                data-detail-hero-actions
                 className={`mt-9 flex ${awardsInDescription ? "" : "w-fit max-w-full "}items-center gap-3 [&>*]:shrink-0`}
               >
                 {upcoming ? (
