@@ -78,54 +78,54 @@ html[data-os="ios"] body {
 }
 
 @media (max-width: 767px) {
-  html[data-os="ios"] [data-home-hero] .harbor-hero-stage {
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-stage {
     height: min(64svh, 450px) !important;
     min-height: 410px !important;
     border-radius: 20px;
   }
 
-  html[data-os="ios"] [data-home-hero] .harbor-hero-content {
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-content {
     justify-content: flex-end;
     padding: 20px 20px 30px !important;
   }
 
-  html[data-os="ios"] [data-home-hero] .harbor-hero-rank {
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-rank {
     margin-bottom: 8px;
   }
 
-  html[data-os="ios"] [data-home-hero] .harbor-hero-title-plate {
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-title-plate {
     min-height: 58px;
   }
 
-  html[data-os="ios"] [data-home-hero] .harbor-hero-logo {
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-logo {
     max-height: 68px;
     max-width: min(72vw, 280px);
   }
 
-  html[data-os="ios"] [data-home-hero] .harbor-hero-title {
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-title {
     font-size: clamp(34px, 10vw, 44px);
   }
 
-  html[data-os="ios"] [data-home-hero] .harbor-hero-description {
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-description {
     margin-top: 10px;
     -webkit-line-clamp: 2;
     font-size: 13px;
     line-height: 1.45;
   }
 
-  html[data-os="ios"] [data-home-hero] .harbor-hero-meta {
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-meta {
     margin-top: 12px;
     column-gap: 16px;
     row-gap: 4px;
     font-size: 12px;
   }
 
-  html[data-os="ios"] [data-home-hero] .harbor-hero-actions {
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-actions {
     margin-top: 16px;
     gap: 8px;
   }
 
-  html[data-os="ios"] [data-home-hero] .harbor-hero-actions button {
+  [data-mobile-dock-shell] [data-home-hero] .harbor-hero-actions button {
     height: 42px;
     padding-inline: 18px;
     font-size: 13px;
