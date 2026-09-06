@@ -857,6 +857,11 @@ export function PlayPicker({
 
   const noSourcesConfigured = addons !== null && addons.length === 0 && debrids.length === 0;
 
+  // The native iOS video surface is mounted behind the WKWebView. A fixed
+  // picker transition can otherwise keep painting above a player that has
+  // already started, even while its navigation layer is being parked.
+  if (playerActive) return null;
+
   if (pendingPreselect) {
     return (
       <SubtitleSelectStep
