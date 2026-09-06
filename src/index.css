@@ -157,7 +157,7 @@ body,
 /* Keep native iPhone/iPad navigation responsive without Safari's double-tap zoom. */
 html[data-os="ios"],
 html[data-os="ios"] body {
-  touch-action: manipulation;
+  touch-action: pan-x pan-y;
 }
 
 @media (max-width: 767px) {

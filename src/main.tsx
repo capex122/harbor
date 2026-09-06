@@ -73,6 +73,20 @@ const isHdrOverlay = detectHdrOverlay();
 const isCaptions = detectCaptions();
 const isRemote = detectRemoteMode();
 applyOsDataset();
+
+// WKWebView can still magnify the page after navigation even when its native
+// pinch recognizer was disabled during plugin setup. Prevent only the browser's
+// default multi-touch gesture; Harbor's own gesture handlers still receive it.
+if (document.documentElement.dataset.os === "ios") {
+  const preventPagePinch = (event: Event) => event.preventDefault();
+  const preventMultiTouchZoom = (event: TouchEvent) => {
+    if (event.touches.length > 1) event.preventDefault();
+  };
+  document.addEventListener("gesturestart", preventPagePinch, { passive: false });
+  document.addEventListener("gesturechange", preventPagePinch, { passive: false });
+  document.addEventListener("gestureend", preventPagePinch, { passive: false });
+  document.addEventListener("touchmove", preventMultiTouchZoom, { passive: false, capture: true });
+}
 if (isRemote) {
   document.documentElement.style.overflow = "auto";
   document.body.style.overflow = "auto";

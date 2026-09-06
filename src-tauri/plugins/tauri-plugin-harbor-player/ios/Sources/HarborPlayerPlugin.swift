@@ -146,6 +146,9 @@ class HarborPlayerPlugin: Plugin {
     webview.scrollView.contentInsetAdjustmentBehavior = .never
     webview.scrollView.contentInset = .zero
     webview.scrollView.scrollIndicatorInsets = .zero
+    webview.scrollView.minimumZoomScale = 1
+    webview.scrollView.maximumZoomScale = 1
+    webview.scrollView.setZoomScale(1, animated: false)
     webview.scrollView.pinchGestureRecognizer?.isEnabled = false
   }
 
