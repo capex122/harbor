@@ -158,8 +158,11 @@ jobs:
           set -euo pipefail
           APPICON_DIR=$(find src-tauri/gen/apple -type d -name AppIcon.appiconset | head -1)
           test -n "$APPICON_DIR"
-          cp src-tauri/icons/ios/*.png "$APPICON_DIR/"
+          rm -f "$APPICON_DIR"/*
+          cp src-tauri/icons/ios/* "$APPICON_DIR/"
           cmp src-tauri/icons/ios/AppIcon-512@2x.png "$APPICON_DIR/AppIcon-512@2x.png"
+          jq -e '.images[] | select(.idiom == "iphone" and .size == "60x60" and .scale == "2x") | .filename == "AppIcon-60x60@2x.png"' "$APPICON_DIR/Contents.json"
+          jq -e '.images[] | select(.idiom == "iphone" and .size == "60x60" and .scale == "3x") | .filename == "AppIcon-60x60@3x.png"' "$APPICON_DIR/Contents.json"
           echo "Verified Harbor AppIcon catalog: $APPICON_DIR"
 
       # The tauri CLI merges src-tauri/Info.ios.plist during `tauri ios build`,
