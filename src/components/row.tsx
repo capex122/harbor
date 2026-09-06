@@ -736,8 +736,9 @@ export function Row({
             }`}
             style={
               {
+                "--row-poster-height": `${(cellWidth ?? effMin) * (effShape === "landscape" ? 9 / 16 : 1.5)}px`,
                 ...(expandingCards
-                  ? { "--row-poster-height": `${(cellWidth ?? effMin) * 1.5}px` }
+                  ? {}
                   : { gridAutoColumns: cellWidth != null ? `${cellWidth}px` : `${effMin}px` }),
                 transform: "translateZ(0)",
                 contain: expandingCards ? "style" : "layout style",

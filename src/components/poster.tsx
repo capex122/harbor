@@ -268,14 +268,20 @@ function PosterBody({
     if (!inView || qMult === 0) return;
     const el = rootRef.current;
     if (!el) return;
-    const box = el.getBoundingClientRect();
-    if (box.width <= 0) return;
-    const need = Math.max(box.width, box.height * RATIO_AR[ratio]);
-    // Capped at 2. An Android TV WebView reports devicePixelRatio 4 because it is
-    // describing the 4K panel, while the window it rasterises is 1920x1080, so the
-    // raw value asks for a bucket twice as wide and four times the pixels.
-    const t = Math.ceil(need * Math.min(2, window.devicePixelRatio || 1) * qMult);
-    setTargetPx((prev) => (t > prev ? t : prev));
+    const measure = () => {
+      const box = el.getBoundingClientRect();
+      if (box.width <= 0) return;
+      const need = Math.max(box.width, box.height * RATIO_AR[ratio]);
+      // Capped at 2. An Android TV WebView reports devicePixelRatio 4 because it is
+      // describing the 4K panel, while the window it rasterises is 1920x1080, so the
+      // raw value asks for a bucket twice as wide and four times the pixels.
+      const t = Math.ceil(need * Math.min(2, window.devicePixelRatio || 1) * qMult);
+      setTargetPx((prev) => (t > prev ? t : prev));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [inView, qMult, ratio]);
   const rawCandidates = [src, ...(fallbacks ?? [])].filter((u): u is string => !!u);
   const candidates =

@@ -25,10 +25,27 @@ export function parseAudio(text: string, ptt: DefaultParserResult): AudioInfo {
     }
   }
   const channelsMatch = text.match(CHANNELS_RX);
-  const channels = channelsMatch ? mapChannels(channelsMatch[1]) : ptt.channels ?? 2;
+  const channels = channelsMatch ? mapChannels(channelsMatch[1]) : normalizeChannels(ptt.channels);
   const bitDepthMatch = text.match(BIT_DEPTH_RX);
-  const bitDepth = bitDepthMatch ? Number(bitDepthMatch[1]) : ptt.bitdepth;
+  const bitDepth = bitDepthMatch ? Number(bitDepthMatch[1]) : normalizeBitDepth(ptt.bitdepth);
   return { codec, channels, bitDepth };
+}
+
+function normalizeChannels(raw: unknown): number {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const text = typeof value === "number" || typeof value === "string" ? String(value).trim() : "";
+  if (!text) return 2;
+  const layout = text.match(CHANNELS_RX);
+  if (layout) return mapChannels(layout[1]);
+  const count = Number.parseInt(text, 10);
+  return Number.isInteger(count) && count > 0 && count <= 32 ? count : 2;
+}
+
+function normalizeBitDepth(raw: unknown): number | undefined {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const text = typeof value === "number" || typeof value === "string" ? String(value).trim() : "";
+  const depth = Number.parseInt(text, 10);
+  return Number.isInteger(depth) && depth > 0 && depth <= 64 ? depth : undefined;
 }
 
 function mapChannels(label: string): number {

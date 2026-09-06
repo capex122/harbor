@@ -117,6 +117,8 @@ export function HeroCarousel({
       e.target instanceof Element &&
       e.target.closest("button, a, input, select, textarea, [role='button']")
     ) {
+      downRef.current = false;
+      moved.current = false;
       return;
     }
     widthRef.current = viewportRef.current?.clientWidth ?? 1000;
@@ -177,9 +179,18 @@ export function HeroCarousel({
     if (wantNext) setActive(active + 1);
     else if (wantPrev) setActive(active - 1);
     setOffset(0);
+    setTimeout(() => {
+      moved.current = false;
+    }, 0);
   };
 
   const onClickCapture = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (
+      e.target instanceof Element &&
+      e.target.closest("button, a, input, select, textarea, [role='button']")
+    ) {
+      return;
+    }
     if (moved.current) {
       e.stopPropagation();
       e.preventDefault();

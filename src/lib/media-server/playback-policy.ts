@@ -13,10 +13,11 @@ export function decidePlaybackSource(
   serverCopies: PlayableCopy[],
 ): PlaybackSourceDecision {
   const preference = settings.playbackSourcePreference;
+  if (preference === "online") return { kind: "online" };
+  if (localCount === 0 && serverCopies.length === 0) return { kind: "online" };
   if (preference === "ask") return { kind: "chooser", reason: "ask" };
   if (preference === "local")
     return localCount > 0 ? { kind: "local" } : { kind: "chooser", reason: "missing" };
-  if (preference === "online") return { kind: "online" };
   const copies = settings.preferredMediaServerId
     ? serverCopies.filter((copy) => copy.connectionId === settings.preferredMediaServerId)
     : serverCopies;

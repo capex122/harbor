@@ -1,6 +1,7 @@
 import { Check, Plus, TrendingUp } from "lucide-react";
 import { Play } from "@/components/icons/play-filled";
 import { useEffect, useMemo, useState } from "react";
+import { useArtFallback } from "./anime-hero-art-fallback";
 import { NavArrow } from "@/components/nav-arrow";
 import { PopIcon } from "@/components/pop-icon";
 import { HeroPips } from "./anime-hero/hero-pips";
@@ -95,8 +96,7 @@ export function AnimeHero({
       <div className="absolute inset-0 z-0 overflow-hidden">
         {slides.map((m, i) => {
           if (!windowIdx.has(i)) return null;
-          const src = m.background || m.poster;
-          if (!src) return null;
+          if (!m.background && !m.poster) return null;
           return (
             <div
               key={m.id}
@@ -107,13 +107,7 @@ export function AnimeHero({
                 transition: `opacity ${FADE_MS}ms cubic-bezier(0.32, 0.72, 0.24, 1)`,
               }}
             >
-              <img
-                src={src}
-                alt=""
-                decoding="async"
-                className="absolute inset-0 h-full w-full object-cover"
-                style={{ objectPosition: "75% center" }}
-              />
+              <HeroBackdrop meta={m} />
             </div>
           );
         })}
@@ -281,27 +275,12 @@ export function AnimeHeroSkeleton() {
 }
 
 function HeroLogo({ title, logo }: { title: string; logo?: string }) {
-  const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
-    setLoaded(false);
     setFailed(false);
   }, [logo]);
   if (logo && !failed) {
-    return (
-      <img
-        src={logo}
-        alt={title}
-        decoding="async"
-        onLoad={() => setLoaded(true)}
-        onError={() => setFailed(true)}
-        className="max-h-[120px] w-auto max-w-[420px] object-contain object-left rtl:object-right drop-shadow-[0_6px_24px_rgba(0,0,0,0.55)]"
-        style={{
-          opacity: loaded ? 1 : 0,
-          transition: "opacity 420ms cubic-bezier(0.32, 0.72, 0.24, 1)",
-        }}
-      />
-    );
+    return <HeroLogoImage logo={logo} title={title} onFail={() => setFailed(true)} />;
   }
   return (
     <h1 className="font-display text-[56px] font-medium leading-[0.98] tracking-tight text-ink drop-shadow-[0_2px_22px_rgba(0,0,0,0.6)]">
@@ -392,5 +371,55 @@ function HeroTags({ meta }: { meta: Meta }) {
         </span>
       ))}
     </div>
+  );
+}
+
+function HeroBackdrop({ meta }: { meta: Meta }) {
+  const art = useArtFallback([meta.background, meta.poster]);
+  if (!art.src) return null;
+  return (
+    <img
+      src={art.src}
+      alt=""
+      decoding="async"
+      onLoad={art.onLoad}
+      onError={art.onError}
+      className="absolute inset-0 h-full w-full object-cover"
+      style={{ objectPosition: "75% center" }}
+    />
+  );
+}
+
+function HeroLogoImage({
+  logo,
+  title,
+  onFail,
+}: {
+  logo: string;
+  title: string;
+  onFail: () => void;
+}) {
+  const art = useArtFallback([logo]);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    if (art.exhausted) onFail();
+  }, [art.exhausted, onFail]);
+  if (!art.src) return null;
+  return (
+    <img
+      src={art.src}
+      alt={title}
+      decoding="async"
+      onLoad={() => {
+        art.onLoad();
+        setShown(true);
+      }}
+      onError={art.onError}
+      className="max-h-[120px] w-auto max-w-[420px] object-contain object-left rtl:object-right drop-shadow-[0_6px_24px_rgba(0,0,0,0.55)]"
+      style={{
+        opacity: shown ? 1 : 0,
+        transition: "opacity 420ms cubic-bezier(0.32, 0.72, 0.24, 1)",
+      }}
+    />
   );
 }

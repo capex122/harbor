@@ -159,6 +159,10 @@ export function flagSrc(language: string): string | null {
   return FLAG[language] ?? null;
 }
 
+const SPLIT_FLAG: Record<string, [string, string]> = {
+  "Portuguese (Brazil)": [flagPrt, flagBra],
+};
+
 export function Flag({
   language,
   size = "md",
@@ -179,9 +183,74 @@ export function Flag({
     );
   }
 
+  const split = SPLIT_FLAG[language];
   const src = FLAG[language];
   const cc = src ? undefined : LANG_COUNTRY[language];
   const h = FLAG_HEIGHT[size];
+
+  if (split) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span
+          aria-label={language}
+          role="img"
+          style={{
+            position: "relative",
+            display: "block",
+            height: h,
+            width: h * 1.5,
+            overflow: "hidden",
+            borderRadius: 2,
+            boxShadow: "0 0 0 1px rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
+          }}
+        >
+          <img
+            src={split[0]}
+            alt=""
+            draggable={false}
+            style={{
+              position: "absolute",
+              inset: 0,
+              height: "100%",
+              width: "100%",
+              objectFit: "cover",
+              clipPath: "polygon(0 0, 0 100%, 100% 100%)",
+            }}
+          />
+          <img
+            src={split[1]}
+            alt=""
+            draggable={false}
+            style={{
+              position: "absolute",
+              inset: 0,
+              height: "100%",
+              width: "100%",
+              objectFit: "cover",
+              clipPath: "polygon(0 0, 100% 0, 100% 100%)",
+            }}
+          />
+          <span
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(to top right, transparent calc(50% - 0.5px), rgba(255,255,255,0.55) calc(50% - 0.5px), rgba(255,255,255,0.55) calc(50% + 0.5px), transparent calc(50% + 0.5px))",
+            }}
+          />
+        </span>
+        {showLabel && (
+          <span
+            className="font-semibold tracking-[0.01em] text-ink-muted"
+            style={{ fontSize: LABEL_SIZE[size] }}
+          >
+            {language}
+          </span>
+        )}
+      </span>
+    );
+  }
 
   if (!src && !cc) {
     return showLabel ? (

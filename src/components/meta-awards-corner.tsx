@@ -84,7 +84,7 @@ function AnimeCorner({ name, year }: { name: string; year?: number }) {
   return (
     <div
       ref={ref}
-      className="pointer-events-none absolute bottom-10 end-10 z-10 flex max-w-[44%] items-center justify-end gap-3 text-end"
+      className="harbor-awards-corner pointer-events-none absolute bottom-10 end-10 z-10 flex max-w-[44%] items-center justify-end gap-3 text-end"
       title={wins.map((w) => `${awardSourceMeta(w.source).shortName} ${w.year} ${w.categoryName}`).join("\n")}
     >
       <div className="flex min-w-0 flex-col gap-0.5">
@@ -154,7 +154,7 @@ function ClassicCorner({
   return (
     <div
       ref={ref}
-      className="pointer-events-none absolute bottom-10 end-10 z-10 flex max-w-[44%] items-center justify-end gap-3 text-end"
+      className="harbor-awards-corner pointer-events-none absolute bottom-10 end-10 z-10 flex max-w-[44%] items-center justify-end gap-3 text-end"
       title={lines.join(" · ")}
     >
       <div className="flex min-w-0 flex-col gap-0.5">

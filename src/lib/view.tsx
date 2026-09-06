@@ -22,6 +22,7 @@ import { useTogether } from "./together/provider";
 import type { SportsGame } from "./sports/espn";
 import { beginMarathonAdvance } from "./fullscreen-state";
 import { consumeBack } from "./back-intercept";
+import type { SubtitleLoadMetadata } from "./subtitles/types";
 
 export type View =
   | "home"
@@ -38,6 +39,7 @@ export type View =
   | "collections-hub"
   | "live"
   | "vod"
+  | "sports"
   | "downloads"
   | "wrapped"
   | "manga"
@@ -79,8 +81,20 @@ export type PlayerSrc = {
   subtitle?: string;
   notWebReady?: boolean;
   isAnime?: boolean;
-  subtitles?: Array<{ url: string; lang?: string; id?: string }>;
-  subtitlePreselect?: { off: boolean; url?: string; lang?: string; title?: string };
+  subtitles?: Array<{
+    url: string;
+    lang?: string;
+    id?: string;
+    /** The path came from the user's local library or a configured home server, not an addon. */
+    trustedSource?: boolean;
+  }>;
+  subtitlePreselect?: {
+    off: boolean;
+    url?: string;
+    lang?: string;
+    title?: string;
+    metadata?: SubtitleLoadMetadata;
+  };
   attempt?: number;
   autoFired?: boolean;
   resume?: boolean;
@@ -101,6 +115,8 @@ export type PlayerSrc = {
 };
 
 export type PlayerStreamRef = {
+  /** Exact media filename selected after local/torrent/debrid resolution. */
+  resolvedFilename?: string | null;
   infoHash?: string | null;
   fileIdx?: number | null;
   addonId?: string | null;
@@ -148,6 +164,7 @@ export type Frame =
   | { kind: "library" }
   | { kind: "live" }
   | { kind: "vod" }
+  | { kind: "sports" }
   | { kind: "downloads" }
   | { kind: "manga"; mangaId?: string }
   | { kind: "ebook"; ebookId?: string }
@@ -200,6 +217,7 @@ export type SettingsSection =
   | "trakt"
   | "anilist"
   | "simkl"
+  | "letterboxd"
   | "parental"
   | "relay"
   | "streaming"
@@ -365,6 +383,8 @@ function frameKey(f: Frame): string {
       return "live";
     case "vod":
       return "vod";
+    case "sports":
+      return "sports";
     case "downloads":
       return "downloads";
     case "manga":
@@ -502,6 +522,7 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       if (f.kind === "collections-hub") return "collections-hub";
       if (f.kind === "live") return "live";
       if (f.kind === "vod") return "vod";
+      if (f.kind === "sports") return "sports";
       if (f.kind === "downloads") return "downloads";
       if (f.kind === "manga") return "manga";
       if (f.kind === "ebook") return "ebook";
@@ -764,6 +785,11 @@ export function ViewProvider({ children }: { children: ReactNode }) {
           scrollMem.current.clear();
           rowScrollMem.current.clear();
           return [{ kind: "vod" }];
+        }
+        if (v === "sports") {
+          scrollMem.current.clear();
+          rowScrollMem.current.clear();
+          return [{ kind: "sports" }];
         }
         if (v === "manga") {
           scrollMem.current.clear();

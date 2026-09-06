@@ -23,6 +23,7 @@ mod settings_store;
 mod stream_proxy;
 mod streams;
 mod stremio_auth;
+mod subtitle_credentials;
 mod temp_prune;
 mod torrent_engine;
 mod transcode;
@@ -36,6 +37,8 @@ mod web_server;
 mod airplay;
 #[cfg(desktop)]
 mod anime4k;
+#[cfg(desktop)]
+mod app_icon;
 #[cfg(desktop)]
 mod asr_model;
 #[cfg(desktop)]
@@ -96,6 +99,8 @@ mod sub_extract;
 mod subsync;
 #[cfg(desktop)]
 mod svp;
+#[cfg(windows)]
+mod win_graphics;
 #[cfg(desktop)]
 mod thumbs;
 #[cfg(desktop)]
@@ -123,11 +128,13 @@ mod p2p_android;
 
 #[cfg(desktop)]
 pub(crate) fn release_stremio_scheme(app: &tauri::AppHandle) {
+    use std::io::Write;
     use tauri_plugin_deep_link::DeepLinkExt;
-    match app.deep_link().unregister("stremio") {
-        Ok(()) => eprintln!("[harbor::deeplink] released stremio:// on shutdown"),
-        Err(e) => eprintln!("[harbor::deeplink] could not release stremio://: {}", e),
-    }
+    let msg = match app.deep_link().unregister("stremio") {
+        Ok(()) => "[harbor::deeplink] released stremio:// on shutdown".to_string(),
+        Err(e) => format!("[harbor::deeplink] could not release stremio://: {}", e),
+    };
+    let _ = writeln!(std::io::stderr(), "{}", msg);
 }
 
 #[cfg(desktop)]
@@ -593,6 +600,8 @@ pub fn run() {
     svp::prime_svp_env();
     #[cfg(target_os = "linux")]
     mpv_render_linux::configure_linux_graphics();
+    #[cfg(windows)]
+    win_graphics::configure_windows_graphics();
     let _ = rustls::crypto::ring::default_provider().install_default();
     trailer::sweep_cache();
     std::thread::spawn(temp_prune::sweep_temp);
@@ -817,6 +826,8 @@ pub fn run() {
             installer_handoff::handoff_probe,
             installer_handoff::handoff_stage,
             installer_handoff::handoff_launch,
+            installer_handoff::handoff_confirm,
+            installer_handoff::handoff_save_backup,
             power::power_inhibit,
             harbor_set_webview_memory_low,
             harbor_set_webview_visible,
@@ -827,6 +838,7 @@ pub fn run() {
             subsync::moviehash::compute_moviehash,
             subsync::sync_subtitle,
             subsync::scorer::subsync_score_transform,
+            subsync::scorer::subsync_preflight_candidates,
             subsync::torrent_sync::torrent_sync_availability,
             subsync::torrent_sync::torrent_sync_subtitle,
             subsync::torrent_sync::torrent_score_transform,
@@ -944,6 +956,8 @@ pub fn run() {
             multiview::multiview_stop_all,
             http_fetch::harbor_fetch,
             http_fetch::harbor_upload,
+            subtitle_credentials::subtitle_credential_bind,
+            subtitle_credentials::subtitle_credentials_clear,
             cf_solver::cf_report,
             discord_rp::discord_set_presence,
             discord_rp::discord_clear,
@@ -990,6 +1004,7 @@ pub fn run() {
             stremio_auth::stremio_auth_start,
             song_id::recognize_now_playing,
             song_id::recognize_now_playing_ai,
+            app_icon::set_app_icon,
             deeplink_set_stremio,
             deeplink_is_stremio_registered,
             harbor_take_pending_file,

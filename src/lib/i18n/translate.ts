@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import en from "./locales/en";
 import { getUiLanguage, useUiLanguage } from "./store";
 import { isRtl, LANGUAGES, type UiLanguage } from "./languages";
@@ -151,6 +152,7 @@ export function sourceTranslationKey(value: string): string {
 
 export function useT(): (key: string, vars?: Vars) => string {
   const lang = useUiLanguage();
+  useSyncExternalStore(subscribeUiCatalog, uiCatalogVersion, uiCatalogVersion);
   return (key: string, vars?: Vars) => interpolate(resolve(lang, key, vars), vars);
 }
 

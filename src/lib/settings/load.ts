@@ -18,6 +18,7 @@ import {
   sanitizeSubtitleOffsetPosition,
   sanitizeSubtitleOffsetSize,
 } from "@/lib/player/subtitle-offset";
+import { sanitizeBufferSize } from "@/lib/player/buffer-profile";
 import {
   sanitizeControllerCursor,
   sanitizeControllerCursorImage,
@@ -138,6 +139,7 @@ export function loadStoredSettings(rawKey: string = STORAGE_KEY): Settings {
       _mpvEmbedV2?: boolean;
       _mpvEmbedV3?: boolean;
       _mpvEmbedV4?: boolean;
+      _mpvBufferSizeV1?: boolean;
       _anime4kIndicatorOffV1?: boolean;
       _pickerLayoutStremio?: boolean;
       _pickerLayoutStremioV2?: boolean;
@@ -158,16 +160,19 @@ export function loadStoredSettings(rawKey: string = STORAGE_KEY): Settings {
       _smoothScrollOptIn?: boolean;
       _streamCacheCapV1?: boolean;
       _playbackSourcePreferenceV1?: boolean;
+      _playbackSourcePreferenceV2?: boolean;
     };
     if (!parsed._playbackSourcePreferenceV1) {
       parsed.playbackSourcePreference =
-        parsed.localPlaybackMode === "local"
-          ? "local"
-          : parsed.localPlaybackMode === "stream"
-            ? "online"
-            : "ask";
+        parsed.localPlaybackMode === "local" ? "local" : "online";
       parsed.preferredMediaServerId = null;
       parsed._playbackSourcePreferenceV1 = true;
+    }
+    if (!parsed._playbackSourcePreferenceV2) {
+      if (parsed.playbackSourcePreference === "ask") {
+        parsed.playbackSourcePreference = "online";
+      }
+      parsed._playbackSourcePreferenceV2 = true;
     }
     if (!parsed._animeRowsV1) {
       const prev = (parsed.animeRows ?? {}) as Partial<Settings["animeRows"]>;
@@ -251,6 +256,11 @@ export function loadStoredSettings(rawKey: string = STORAGE_KEY): Settings {
       parsed.playerMpvEmbed = true;
       parsed._mpvEmbedV4 = true;
     }
+    if (!parsed._mpvBufferSizeV1) {
+      if (parsed.mpvBufferBoost) parsed.mpvBufferSize = "large";
+      parsed._mpvBufferSizeV1 = true;
+    }
+    parsed.mpvBufferSize = sanitizeBufferSize(parsed.mpvBufferSize);
     if (!parsed._anime4kIndicatorOffV1) {
       parsed.playerAnime4kIndicator = false;
       parsed._anime4kIndicatorOffV1 = true;
@@ -301,6 +311,10 @@ export function loadStoredSettings(rawKey: string = STORAGE_KEY): Settings {
         parsed.navCustomization = { ...nav, hidden: [] } as Settings["navCustomization"];
       }
       parsed._navThemeRepairV1 = true;
+    }
+    if (parsed.cwSources == null) {
+      const ext = parsed.externalContinueWatching === true;
+      parsed.cwSources = { library: true, trakt: ext, simkl: ext, local: true };
     }
     const posterCards = normalizePosterCardSettings(parsed);
     return {
