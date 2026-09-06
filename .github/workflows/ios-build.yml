@@ -4,6 +4,9 @@ name: iOS build (unsigned)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - mobile-archi
 
 permissions:
   contents: read
