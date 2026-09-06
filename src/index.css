@@ -253,6 +253,31 @@ html[data-os="ios"] body {
     flex-wrap: nowrap;
   }
 
+  [data-mobile-dock-shell] .catalog-filter-bar {
+    overflow: visible;
+    touch-action: auto;
+  }
+
+  [data-mobile-dock-shell] .catalog-filter-bar > .mobile-local-scroll-track {
+    display: grid;
+    inline-size: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-mobile-dock-shell] .catalog-filter-bar > .mobile-local-scroll-track > :nth-child(2) {
+    grid-column: 1 / -1;
+  }
+
+  [data-mobile-dock-shell] .catalog-filter-bar > .mobile-local-scroll-track > *,
+  [data-mobile-dock-shell] .catalog-filter-bar > .mobile-local-scroll-track > * > button {
+    min-inline-size: 0;
+    inline-size: 100%;
+  }
+
+  [data-mobile-dock-shell] .catalog-filter-bar > .mobile-local-scroll-track > button {
+    justify-content: center;
+  }
+
   [data-mobile-dock-shell] .harbor-layer-active > main[class*="px-"],
   [data-mobile-dock-shell] .harbor-layer-active > main > div[class*="px-"] {
     padding-inline: 14px !important;
