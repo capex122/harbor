@@ -161,6 +161,41 @@ html[data-os="ios"] body {
 }
 
 @media (max-width: 767px) {
+  html,
+  body,
+  #root,
+  [data-mobile-dock-shell] {
+    max-inline-size: 100%;
+    overflow-x: clip;
+  }
+
+  [data-mobile-dock-shell] main {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+
+  [data-mobile-dock-shell] .mobile-local-scroll {
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-mobile-dock-shell] .mobile-local-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  [data-mobile-dock-shell] .mobile-local-scroll > .mobile-local-scroll-track {
+    inline-size: max-content;
+    min-inline-size: 100%;
+    flex-wrap: nowrap;
+  }
+
   [data-mobile-dock-shell] .harbor-layer-active > main[class*="px-"],
   [data-mobile-dock-shell] .harbor-layer-active > main > div[class*="px-"] {
     padding-inline: 14px !important;

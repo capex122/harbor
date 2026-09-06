@@ -1561,7 +1561,7 @@ export function DetailView({
   return (
     <main
       ref={scrollRef}
-      className="harbor-detail-enter absolute inset-0 z-30 overflow-y-auto bg-canvas"
+      className="harbor-detail-enter absolute inset-0 z-30 overflow-y-auto overflow-x-hidden bg-canvas"
     >
       <section className="relative">
         <div

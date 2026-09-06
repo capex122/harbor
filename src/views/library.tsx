@@ -137,7 +137,7 @@ export function LibraryView({ active }: { active: boolean }) {
   return (
     <main
       ref={scrollRef}
-      className="flex-1 overflow-y-auto px-5 pt-24 pb-14 sm:px-8 lg:px-12 lg:pt-28"
+      className="flex-1 overflow-y-auto overflow-x-hidden px-5 pt-24 pb-14 sm:px-8 lg:px-12 lg:pt-28"
     >
       <LibraryFeaturedProvider>
         <div {...contentDrag} className="flex flex-col gap-7">
@@ -248,7 +248,8 @@ function Header({
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1 border-b border-edge-soft">
+      <div className="mobile-local-scroll border-b border-edge-soft">
+        <div className="mobile-local-scroll-track flex items-center gap-1">
         <TabBtn active={tab === "library"} onClick={() => onTab("library")}>
           <Library size={14} strokeWidth={2.2} />
           {t("Library")}
@@ -307,6 +308,7 @@ function Header({
             Letterboxd
           </TabBtn>
         )}
+        </div>
       </div>
     </header>
   );
