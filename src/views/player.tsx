@@ -105,6 +105,8 @@ import { SUBTITLE_FPS_TRANSITION_FAILED_EVENT } from "@/lib/player/subtitle-fps"
 import { PlayerInteractionLockControls } from "@/components/player/player-interaction-lock";
 import { usePlayerInteractionLock } from "./player/hooks/use-player-interaction-lock";
 import { isNextAired } from "@/lib/cw-resurface";
+import { nativeWebChrome } from "@/lib/player/native-host";
+import { MobileGestureStage } from "./player/mobile-gesture-stage";
 
 let hdrFallbackNoticeShown = false;
 
@@ -1434,6 +1436,25 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
           if (resuming) hideForResume();
         }}
       />
+      {nativeWebChrome() && !hdrStageActive && !pipMode && (
+        <MobileGestureStage
+          durationSec={snap.durationSec}
+          volume={snap.volume}
+          rate={snap.rate}
+          onSeek={seekTo}
+          onPlayPause={playPauseToggle}
+          onDismiss={closePlayer}
+          onVolume={(volume) => {
+            bridgeRef.current?.setVolume(volume);
+            bridgeRef.current?.setMuted(false);
+            writePlayerVolume({ volume, muted: false });
+          }}
+          onHoldRate={(rate) => bridgeRef.current?.setRate(rate)}
+          onFill={(fill) => videoFill.setMode(fill ? "fill" : "fit")}
+          canVolume={bridgeRef.current?.capabilities().volume ?? true}
+          canRate={bridgeRef.current?.capabilities().rate ?? true}
+        />
+      )}
       {!hdrStageActive && <PlayerOverlayLayers {...overlayProps} />}
       {!hdrStageActive && (
         <PlayerInteractionLockControls

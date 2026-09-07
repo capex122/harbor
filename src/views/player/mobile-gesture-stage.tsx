@@ -1,7 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { getPlaybackPosition } from "@/lib/player/playback-clock";
-import { useSettings } from "@/lib/settings";
 import {
   MOBILE_CHROME_TOGGLE_EVENT,
   MOBILE_SEEK_COMMITTED_EVENT,
@@ -17,6 +16,7 @@ const DISMISS_VEL_WINDOW_MS = 90;
 
 const AXIS_LOCK_PX = 12;
 const DOUBLE_TAP_MS = 300;
+const DOUBLE_TAP_SEEK_SEC = 15;
 const LONG_PRESS_MS = 500;
 const TAP_HUD_HOLD_MS = 600;
 const TAP_HUD_FADE_MS = 320;
@@ -108,7 +108,6 @@ export function MobileGestureStage({
   canVolume?: boolean;
   canRate?: boolean;
 }) {
-  const { settings } = useSettings();
   const stageRef = useRef<HTMLDivElement>(null);
   const g = useRef<Gesture | null>(null);
   const rect = useRef<DOMRect | null>(null);
@@ -247,7 +246,7 @@ export function MobileGestureStage({
         pendingToggle.current = false;
       }
       if (undoTimer.current) window.clearTimeout(undoTimer.current);
-      const step = side === "R" ? settings.seekForwardStepSec : settings.seekBackStepSec;
+      const step = DOUBLE_TAP_SEEK_SEC;
       seekAccum.current += side === "R" ? step : -step;
       onSeek(clamp(seekBase.current + seekAccum.current, 0, duration));
       haptics.light();
