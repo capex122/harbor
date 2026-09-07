@@ -1268,6 +1268,47 @@ function Shell({ onReady }: { onReady?: () => void }) {
   }, [playerActive]);
 
   useEffect(() => {
+    let tracking = false;
+    let dragged = false;
+    let startX = 0;
+    let startY = 0;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== "touch" || !event.isPrimary) return;
+      tracking = true;
+      dragged = false;
+      startX = event.clientX;
+      startY = event.clientY;
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      if (!tracking || event.pointerType !== "touch") return;
+      if (Math.hypot(event.clientX - startX, event.clientY - startY) > 10) dragged = true;
+    };
+    const onPointerEnd = () => {
+      tracking = false;
+    };
+    const onClick = (event: MouseEvent) => {
+      if (!dragged) return;
+      dragged = false;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+
+    window.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("pointermove", onPointerMove, true);
+    window.addEventListener("pointerup", onPointerEnd, true);
+    window.addEventListener("pointercancel", onPointerEnd, true);
+    window.addEventListener("click", onClick, true);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("pointermove", onPointerMove, true);
+      window.removeEventListener("pointerup", onPointerEnd, true);
+      window.removeEventListener("pointercancel", onPointerEnd, true);
+      window.removeEventListener("click", onClick, true);
+    };
+  }, []);
+
+  useEffect(() => {
     if (playerActive || immersive) return;
 
     let tracking = false;
