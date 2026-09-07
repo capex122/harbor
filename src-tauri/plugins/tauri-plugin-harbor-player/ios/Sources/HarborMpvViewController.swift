@@ -349,6 +349,9 @@ final class HarborMpvViewController: UIViewController, HarborPlayerEngine {
     mpv_set_option_string(handle, "gpu-api", "vulkan")
     mpv_set_option_string(handle, "gpu-context", "moltenvk")
     mpv_set_option_string(handle, "hwdec", "videotoolbox")
+    // The Metal surface is square and the decoded picture letterboxes inside it.
+    // Keep captions on the picture instead of MPV's default black-margin placement.
+    mpv_set_option_string(handle, "sub-use-margins", "no")
     // avfoundation first: the audiounit AO goes silent on multichannel HDMI and
     // AirPlay routes (MPVKit issue #67, AO shipped fixed in MPVKit 1.0.0).
     mpv_set_option_string(handle, "ao", "avfoundation,audiounit")
