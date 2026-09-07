@@ -693,6 +693,7 @@ export function useTrackAutoload(params: {
 
     if (snap.subtitleTracks.length === 0) return;
     const want =
+      snap.subtitleTracks.find((t) => t.id === remembered.trackId) ??
       snap.subtitleTracks.find(
         (t) =>
           !t.external &&

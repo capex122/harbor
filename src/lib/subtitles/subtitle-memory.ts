@@ -10,6 +10,7 @@ export type SubtitleFormat = "srt" | "vtt" | "ass" | "ssa" | "sub";
 
 export type RememberedSub = {
   off?: boolean;
+  trackId?: string;
   source?: string;
   lang?: string;
   title?: string;
@@ -148,6 +149,7 @@ export function rememberedFromChoice(choice: SubChoiceInput): Omit<RememberedSub
       : undefined);
   const source = choice.external || choice.imported ? resolvedSource : undefined;
   return {
+    trackId: choice.id,
     source,
     lang: choice.lang ?? undefined,
     title: choice.title,

@@ -6,7 +6,6 @@ import {
   type MobileSeekCommittedDetail,
 } from "@/lib/player/mobile-events";
 import { haptics } from "@/lib/player/haptics";
-import { setNativeZoom } from "@/lib/player/android-native";
 import { useSettings } from "@/lib/settings";
 import { useT } from "@/lib/i18n";
 import { MobileActionRow } from "./mobile-action-row";
@@ -93,7 +92,7 @@ export function MobileShell(props: PlayerShellProps) {
   const rate = snap.rate;
   // Local, not persisted: filling is a per-title decision and carrying it into the
   // next thing you watch would crop a 16:9 show for no reason.
-  const [fillMode, setFillMode] = useState(false);
+  const fillMode = props.cropMode === "fill";
   // Bumped on each press so the glyph remounts and its animation runs again;
   // a CSS animation will not restart on an element that never changed.
   const [backTick, setBackTick] = useState(0);
@@ -180,10 +179,7 @@ export function MobileShell(props: PlayerShellProps) {
         fillMode={fillMode}
         onToggleFill={() => {
           haptics.medium();
-          setFillMode((v) => {
-            setNativeZoom(!v);
-            return !v;
-          });
+          props.onCropMode?.(fillMode ? "fit" : "fill");
         }}
         onCast={onCast}
         onTracks={() => setSheet({ kind: "tracks", tab: "subtitles" })}

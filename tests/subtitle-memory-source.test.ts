@@ -88,6 +88,12 @@ test("manual subtitle memory keeps provider identity and non-secret download aut
   assert.doesNotMatch(JSON.stringify(remembered), /test-secret/);
 });
 
+test("manual subtitle memory keeps the exact track among same-language choices", () => {
+  const remembered = rememberedFromChoice({ id: "s/12", lang: "en" });
+
+  assert.equal(remembered.trackId, "s/12");
+});
+
 test("saved Live Sync subtitles restore as trusted local files, including legacy memories", () => {
   const source = "C:\\Users\\viewer\\AppData\\Roaming\\Harbor\\synced.srt";
   const remembered = rememberedFromChoice({
@@ -123,6 +129,12 @@ test("remembered external subtitles remain authoritative until selection is obse
   const autoload = readFileSync(
     new URL("../src/views/player/hooks/use-track-autoload.ts", import.meta.url),
     "utf8",
+  );
+
+  assert.match(
+    autoload,
+    /find\(\(t\) => t\.id === remembered\.trackId\) \?\?[\s\S]*sameLang/,
+    "same-language embedded subtitles must restore by exact track before language fallback",
   );
 
   assert.match(
