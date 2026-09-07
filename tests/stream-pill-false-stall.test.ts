@@ -67,6 +67,14 @@ test("every stream pill variant can be dismissed", () => {
   );
 });
 
+test("the stream confirmation fits phones and expands for tablets", () => {
+  const pill = read("src/components/player/stream-check-pill.tsx");
+  assert.match(pill, /w-\[calc\(100%-2rem\)\]/);
+  assert.match(pill, /grid-cols-\[auto_minmax\(0,1fr\)\]/);
+  assert.match(pill, /col-span-2 grid grid-cols-2/);
+  assert.match(pill, /sm:flex sm:w-auto/);
+});
+
 test("dismissal resets when the source changes", () => {
   const hook = read("src/views/player/hooks/use-stream-pill.ts");
   const effect = hook.slice(hook.indexOf("useEffect(() => {"), hook.indexOf("}, [srcUrl]);"));
