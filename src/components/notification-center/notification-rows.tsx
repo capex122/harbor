@@ -115,9 +115,9 @@ export function RequestRow({
   const from = request.from;
   const t = useT();
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-edge-soft bg-canvas/40 p-2.5">
+    <div className="flex items-center gap-3 rounded-2xl border border-edge-soft bg-canvas/40 p-3">
       <button type="button" onClick={() => onOpen(from.handle)} className="shrink-0">
-        <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-elevated">
+        <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-elevated">
           {from.avatarUrl ? (
             <img src={from.avatarUrl} alt="" className="h-full w-full object-cover" draggable={false} />
           ) : (
@@ -136,7 +136,7 @@ export function RequestRow({
           type="button"
           onClick={onAccept}
           disabled={busy}
-          className="harbor-press-pop flex h-8 items-center gap-1 rounded-full bg-ink px-3 text-[12px] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="harbor-press-pop flex h-10 items-center gap-1 rounded-full bg-ink px-3.5 text-[12.5px] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           <Check size={13} strokeWidth={2.6} /> {t("Accept")}
         </button>
@@ -144,7 +144,7 @@ export function RequestRow({
           type="button"
           onClick={onDecline}
           disabled={busy}
-          className="grid h-8 w-8 place-items-center rounded-full border border-edge-soft text-ink-muted transition-colors hover:border-danger/40 hover:text-danger disabled:opacity-40"
+          className="grid h-10 w-10 place-items-center rounded-full border border-edge-soft text-ink-muted transition-colors hover:border-danger/40 hover:text-danger disabled:opacity-40"
           aria-label={t("Decline")}
         >
           <X size={14} strokeWidth={2.4} />
@@ -180,7 +180,7 @@ export function FeedRow({
       } motion-reduce:transition-none`}
     >
       <div
-        className={`group relative flex items-start gap-3 rounded-xl px-2.5 py-2.5 transition-colors ${
+        className={`group relative flex min-h-16 items-start gap-3 rounded-2xl px-3 py-3 transition-colors ${
           notif.read
             ? `hover:bg-white/[0.045] ${index % 2 === 1 ? "bg-white/[0.02]" : ""}`
             : "bg-accent/[0.055] hover:bg-accent/[0.09]"
@@ -194,7 +194,7 @@ export function FeedRow({
           onClick={() => onOpen(notif)}
           className="flex min-w-0 flex-1 items-start gap-3 text-start outline-none"
         >
-          <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-elevated/80 ring-1 ring-inset ring-white/[0.06]">
+          <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-elevated/80 ring-1 ring-inset ring-white/[0.06]">
             {notif.cover ? (
               <CoverImg src={notif.cover} alt="" className="h-full w-full object-cover" draggable={false} />
             ) : (
@@ -202,12 +202,12 @@ export function FeedRow({
             )}
           </span>
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-[13px] leading-snug text-ink group-hover:underline">{notifTitle(notif, t)}</span>
-            {notif.body && <span className="truncate text-[11.5px] text-ink-subtle">{notif.body}</span>}
-            <span className="mt-0.5 text-[10.5px] text-ink-subtle">{timeAgo(notif.createdAt, t)}</span>
+            <span className="truncate text-[14px] font-semibold leading-snug text-ink group-hover:underline">{notifTitle(notif, t)}</span>
+            {notif.body && <span className="line-clamp-2 text-[12.5px] leading-snug text-ink-subtle">{notif.body}</span>}
+            <span className="mt-1 text-[11px] text-ink-subtle">{timeAgo(notif.createdAt, t)}</span>
           </span>
         </button>
-        <div className="relative mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center">
+        <div className="relative -me-1 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center">
           {!notif.read && (
             <span className="h-2 w-2 rounded-full bg-accent transition-opacity duration-150 group-hover:opacity-0" />
           )}
@@ -215,7 +215,7 @@ export function FeedRow({
             type="button"
             onClick={dismiss}
             aria-label={t("Dismiss notification")}
-            className="absolute inset-0 grid place-items-center rounded-full text-ink-subtle opacity-0 outline-none transition-all duration-150 hover:bg-elevated hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
+            className="absolute inset-0 grid place-items-center rounded-full text-ink-subtle opacity-100 outline-none transition-all duration-150 hover:bg-elevated hover:text-ink lg:opacity-0 lg:focus-visible:opacity-100 lg:group-hover:opacity-100"
           >
             <X size={14} strokeWidth={2.4} />
           </button>

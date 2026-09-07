@@ -92,7 +92,7 @@ export function NotificationCenter({ trigger = true }: { trigger?: boolean } = {
       {open &&
         createPortal(
           <div
-            className="fixed inset-0 z-[210] bg-canvas/40"
+            className="fixed inset-0 z-[210] bg-canvas/55 backdrop-blur-[2px]"
             style={{ animation: "nc-scrim-in 160ms ease both" }}
             onClick={() => setOpen(false)}
           >
@@ -100,29 +100,30 @@ export function NotificationCenter({ trigger = true }: { trigger?: boolean } = {
               role="dialog"
               aria-modal="true"
               onClick={(e) => e.stopPropagation()}
-              className="harbor-together-surface animate-panel-in absolute end-4 top-[88px] flex max-h-[74vh] w-[min(400px,calc(100vw-2rem))] flex-col overflow-hidden rounded-md shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]"
+              className="harbor-together-surface animate-panel-in absolute inset-x-3 bottom-[max(var(--harbor-safe-bottom),0.75rem)] flex max-h-[min(78dvh,680px)] flex-col overflow-hidden rounded-[28px] border border-white/15 shadow-[0_30px_90px_-24px_rgba(0,0,0,0.9)] md:start-auto md:end-5 md:w-[420px] lg:bottom-auto lg:end-4 lg:top-[88px] lg:max-h-[74vh] lg:rounded-2xl"
             >
-              <div className="flex items-center justify-between px-4 py-3">
+              <div aria-hidden className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-ink/20 lg:hidden" />
+              <div className="flex min-h-14 items-center justify-between px-4 py-2">
                 {detail ? (
                   <button
                     type="button"
                     onClick={() => setDetail(null)}
-                    className="-ms-1.5 flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
+                    className="-ms-1.5 flex h-11 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink lg:h-8 lg:text-[13px]"
                   >
                     <ArrowLeft size={16} strokeWidth={2.2} /> {t("Back")}
                   </button>
                 ) : (
-                  <span className="text-[14px] font-semibold tracking-tight text-ink">{t("Notifications")}</span>
+                  <span className="font-display text-[20px] font-medium tracking-tight text-ink lg:text-[16px]">{t("Notifications")}</span>
                 )}
                 <div className="flex items-center gap-1">
                   {nc.loading && !detail && <Loader2 size={14} className="animate-spin text-ink-subtle" />}
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="grid h-7 w-7 place-items-center rounded-full text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
+                    className="grid h-11 w-11 place-items-center rounded-full text-ink-subtle transition-colors hover:bg-elevated hover:text-ink lg:h-8 lg:w-8"
                     aria-label={t("Close")}
                   >
-                    <X size={15} />
+                    <X size={18} />
                   </button>
                 </div>
               </div>
@@ -137,26 +138,26 @@ export function NotificationCenter({ trigger = true }: { trigger?: boolean } = {
               ) : (
                 <>
               {nc.items.length > 0 && (
-                <div className="flex items-center gap-2 px-4 py-2">
+                <div className="flex min-h-11 items-center gap-2 border-y border-edge-soft/60 px-4 py-1.5">
                   <button
                     type="button"
                     onClick={() => void nc.markRead()}
                     disabled={nc.unread === 0}
-                    className="rounded-md px-1.5 py-0.5 text-[12px] font-medium text-ink-muted transition-colors hover:text-ink disabled:cursor-default disabled:opacity-40"
+                    className="flex h-9 items-center rounded-full px-3 text-[12.5px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink disabled:cursor-default disabled:opacity-40"
                   >
                     {t("Mark all read")}
                   </button>
                   <button
                     type="button"
                     onClick={() => void nc.clearAll()}
-                    className="ms-auto rounded-md px-1.5 py-0.5 text-[12px] font-medium text-ink-subtle transition-colors hover:text-danger"
+                    className="ms-auto flex h-9 items-center rounded-full px-3 text-[12.5px] font-semibold text-ink-subtle transition-colors hover:bg-danger/10 hover:text-danger"
                   >
                     {t("Clear all")}
                   </button>
                 </div>
               )}
 
-              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-3 pb-[max(0.75rem,var(--harbor-safe-bottom))] [-webkit-overflow-scrolling:touch]">
                 {nc.pending.length > 0 && (
                   <div className="flex flex-col gap-2">
                     <span className="px-1 text-[10.5px] font-bold uppercase tracking-[0.16em] text-ink-subtle">
