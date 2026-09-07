@@ -1276,10 +1276,32 @@ function Shell({ onReady }: { onReady?: () => void }) {
     let startY = 0;
     let latestX = 0;
     let latestY = 0;
+    let lastTime = 0;
+    let lastDistance = 0;
+    let velocity = 0;
 
     const isNarrow = () => window.matchMedia("(max-width: 1023px)").matches;
     const backDistance = (x: number) =>
       document.documentElement.dir === "rtl" ? startX - x : x - startX;
+    const surface = () => document.querySelector<HTMLElement>("[data-back-swipe-surface]");
+    const render = (distance: number, animate = false) => {
+      const el = surface();
+      if (!el) return;
+      const x = Math.max(0, Math.min(window.innerWidth, distance));
+      el.style.transition = animate ? "transform 180ms cubic-bezier(.2,.8,.2,1)" : "none";
+      el.style.transform = `translate3d(${document.documentElement.dir === "rtl" ? -x : x}px,0,0)`;
+      el.style.willChange = x ? "transform" : "";
+    };
+    const reset = () => {
+      render(0, true);
+      window.setTimeout(() => {
+        const el = surface();
+        if (!el) return;
+        el.style.transition = "";
+        el.style.transform = "";
+        el.style.willChange = "";
+      }, 190);
+    };
 
     const onTouchStart = (event: TouchEvent) => {
       if (!isNarrow() || event.touches.length !== 1) return;
@@ -1294,6 +1316,9 @@ function Shell({ onReady }: { onReady?: () => void }) {
       claimed = false;
       startX = latestX = touch.clientX;
       startY = latestY = touch.clientY;
+      lastTime = performance.now();
+      lastDistance = 0;
+      velocity = 0;
     };
 
     const onTouchMove = (event: TouchEvent) => {
@@ -1304,7 +1329,15 @@ function Shell({ onReady }: { onReady?: () => void }) {
       const horizontal = backDistance(latestX);
       const vertical = Math.abs(latestY - startY);
       if (!claimed && horizontal > 12 && horizontal > vertical * 1.25) claimed = true;
-      if (claimed) event.preventDefault();
+      if (claimed) {
+        event.preventDefault();
+        const now = performance.now();
+        const dt = now - lastTime;
+        if (dt > 0) velocity = (horizontal - lastDistance) / dt;
+        lastTime = now;
+        lastDistance = horizontal;
+        render(horizontal);
+      }
     };
 
     const finish = () => {
@@ -1312,15 +1345,24 @@ function Shell({ onReady }: { onReady?: () => void }) {
       const horizontal = backDistance(latestX);
       const vertical = Math.abs(latestY - startY);
       tracking = false;
-      if (!claimed || horizontal < 72 || vertical > 64) return;
-      const localBack = new Event("harbor:local-back", { cancelable: true });
-      if (!window.dispatchEvent(localBack)) return;
-      if (canGoBack) goBack();
+      const commit = claimed && vertical <= 64 &&
+        (horizontal >= Math.min(window.innerWidth * 0.32, 140) || velocity > 0.65);
+      if (!commit) {
+        reset();
+        return;
+      }
+      render(window.innerWidth, true);
+      window.setTimeout(() => {
+        const localBack = new Event("harbor:local-back", { cancelable: true });
+        if (window.dispatchEvent(localBack) && canGoBack) goBack();
+        reset();
+      }, 180);
     };
 
     const cancel = () => {
       tracking = false;
       claimed = false;
+      reset();
     };
 
     window.addEventListener("touchstart", onTouchStart, { passive: true, capture: true });
@@ -1332,6 +1374,12 @@ function Shell({ onReady }: { onReady?: () => void }) {
       window.removeEventListener("touchmove", onTouchMove, true);
       window.removeEventListener("touchend", finish, true);
       window.removeEventListener("touchcancel", cancel, true);
+      const el = surface();
+      if (el) {
+        el.style.transition = "";
+        el.style.transform = "";
+        el.style.willChange = "";
+      }
     };
   }, [canGoBack, goBack, immersive, playerActive]);
 
@@ -1520,6 +1568,7 @@ function Shell({ onReady }: { onReady?: () => void }) {
       {!playerActive && <WindowResizeEdges />}
       <HybridTitleBar suppressed={playerActive || immersive || chromeHidden} />
       <div
+        data-back-swipe-surface
         className={`relative flex min-h-0 min-w-0 flex-1 flex-col ${playerActive ? "invisible" : ""}`}
       >
         <div className={parkLayer(homeTop)}>
