@@ -35,6 +35,9 @@ impl<R: Runtime> HarborPlayer<R> {
     pub fn set_subtitle_track(&self, _payload: TrackRequest) -> crate::Result<EmptyResponse> {
         Ok(EmptyResponse {})
     }
+    pub fn add_subtitle(&self, _payload: AddSubtitleRequest) -> crate::Result<EmptyResponse> {
+        Ok(EmptyResponse {})
+    }
     pub fn enter_pip(&self) -> crate::Result<EmptyResponse> {
         Ok(EmptyResponse {})
     }

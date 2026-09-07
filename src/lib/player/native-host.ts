@@ -62,7 +62,7 @@ export function nativeCapabilities(): PlayerCapabilities {
     volume: true,
     subDelay: mpv,
     audioDelay: mpv,
-    addSubtitle: false,
+    addSubtitle: mpv,
     subStyle: false,
     subSync: false,
   };

@@ -10,6 +10,7 @@ permissions = [
     "allow-stop",
     "allow-set-audio-track",
     "allow-set-subtitle-track",
+    "allow-add-subtitle",
     "allow-enter-pip",
     "allow-set-orientation",
     "allow-set-zoom",

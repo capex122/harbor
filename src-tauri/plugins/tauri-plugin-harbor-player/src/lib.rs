@@ -42,6 +42,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::stop,
             commands::set_audio_track,
             commands::set_subtitle_track,
+            commands::add_subtitle,
             commands::enter_pip,
             commands::set_orientation,
             commands::set_zoom,

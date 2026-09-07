@@ -658,6 +658,16 @@ final class HarborMpvViewController: UIViewController, HarborPlayerEngine {
     runSubtitleBatch(batch)
   }
 
+  func addSubtitle(_ url: String, lang: String?, title: String?, select: Bool) {
+    guard !url.isEmpty else { return }
+    var args = [url, select ? "select" : "auto"]
+    if let label = title ?? lang {
+      args.append(label)
+      if let lang = lang { args.append(lang) }
+    }
+    runSubtitleBatch([args])
+  }
+
   // Sequential synchronous sub-adds on the event queue: tracks appear in
   // payload order like Android (an async batch completes in arbitrary order)
   // while a slow subtitle host still never blocks the main thread. Commands

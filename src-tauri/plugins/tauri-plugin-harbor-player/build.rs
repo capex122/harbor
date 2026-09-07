@@ -6,6 +6,7 @@ const COMMANDS: &[&str] = &[
     "stop",
     "set_audio_track",
     "set_subtitle_track",
+    "add_subtitle",
     "enter_pip",
     "set_orientation",
     "set_zoom",

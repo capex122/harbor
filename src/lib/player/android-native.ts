@@ -10,8 +10,12 @@ export function setNativeCanNext(value: boolean): void {
   canNextEpisode = value;
 }
 import type { SubCue } from "@/lib/subtitles/parser";
+import { prepareSubtitle } from "@/lib/subtitles/prepare";
+import { subtitleTrackDownloadHeaders } from "@/lib/subtitles/provider-auth";
+import { isSafeProviderSubtitleUrl } from "@/lib/subtitles/provider-url";
 import {
   nativeCapabilities,
+  nativeEngine,
   nativeInvoke,
   nativeWebChrome,
   setNativeEngine,
@@ -88,6 +92,12 @@ export function createNativeBridge(): PlayerBridge {
   let nativeFill = false;
   let nativeAspect = "-1";
   let nativeStretch = false;
+  let loadId = 0;
+  const subtitleCleanups = new Set<() => void>();
+  const clearSubtitles = () => {
+    for (const cleanup of subtitleCleanups) cleanup();
+    subtitleCleanups.clear();
+  };
   const syncVideoGeometry = () => nativeInvoke("set_zoom", {
     fill: nativeFill,
     aspect: nativeAspect,
@@ -209,6 +219,8 @@ export function createNativeBridge(): PlayerBridge {
     attach: noop,
     detach: noop,
     async load(src: PlayerSource) {
+      loadId += 1;
+      clearSubtitles();
       await ensureListeners();
       snap = { ...emptySnapshot, status: "loading", volume, muted, rate };
       emit();
@@ -290,8 +302,39 @@ export function createNativeBridge(): PlayerBridge {
     },
     setVideoEq: noop,
     setAnime4kShaders: noop,
-    async addSubtitle() {
-      return false;
+    async addSubtitle(url, lang, title, select, metadata) {
+      if (nativeEngine() !== "mpv") return false;
+      const requestLoadId = loadId;
+      const providerDerived = metadata?.providerDerived ?? Boolean(metadata?.provider);
+      if (providerDerived && !isSafeProviderSubtitleUrl(url)) return false;
+      try {
+        const prepared = await prepareSubtitle({
+          url,
+          language: lang,
+          format: metadata?.format,
+          encoding: metadata?.encoding,
+          release: metadata?.release,
+          filename: metadata?.rawFilename,
+          requestHeaders: subtitleTrackDownloadHeaders(metadata?.downloadAuth, url, providerDerived),
+        });
+        if (requestLoadId !== loadId || nativeEngine() !== "mpv") {
+          prepared.cleanup();
+          return false;
+        }
+        await invoke("plugin:harbor-player|add_subtitle", {
+          payload: {
+            url: prepared.playableUrl.replace(/\\/g, "/"),
+            lang: lang ?? null,
+            title: title ?? null,
+            select: select ?? true,
+          },
+        });
+        subtitleCleanups.add(prepared.cleanup);
+        return true;
+      } catch (error) {
+        console.warn("[native-player] subtitle add failed", error);
+        return false;
+      }
     },
     getSelectedTrackCues(): SubCue[] | null {
       return null;
@@ -323,6 +366,7 @@ export function createNativeBridge(): PlayerBridge {
     },
     destroy() {
       disposed = true;
+      clearSubtitles();
       setNativeVideoBehind(false);
       setNativeEngine(null);
       void invoke("plugin:harbor-player|stop").catch(noop);

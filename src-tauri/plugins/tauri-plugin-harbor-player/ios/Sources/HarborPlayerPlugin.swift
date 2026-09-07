@@ -61,6 +61,13 @@ struct TrackArgs: Decodable {
   let trackId: String?
 }
 
+struct AddSubtitleArgs: Decodable {
+  let url: String
+  let lang: String?
+  let title: String?
+  let select: Bool?
+}
+
 struct OrientationArgs: Decodable {
   let mode: String
 }
@@ -321,6 +328,18 @@ class HarborPlayerPlugin: Plugin {
     let args = try invoke.parseArgs(TrackArgs.self)
     DispatchQueue.main.async {
       self.controller?.doSetSubtitleTrack(args.trackId)
+      invoke.resolve(JsonObject())
+    }
+  }
+
+  @objc public func addSubtitle(_ invoke: Invoke) throws {
+    let args = try invoke.parseArgs(AddSubtitleArgs.self)
+    DispatchQueue.main.async {
+      guard let mpv = self.controller as? HarborMpvViewController else {
+        invoke.reject("Runtime subtitles require the MPVKit engine")
+        return
+      }
+      mpv.addSubtitle(args.url, lang: args.lang, title: args.title, select: args.select ?? true)
       invoke.resolve(JsonObject())
     }
   }

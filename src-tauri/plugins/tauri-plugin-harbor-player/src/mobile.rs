@@ -64,6 +64,11 @@ impl<R: Runtime> HarborPlayer<R> {
             .run_mobile_plugin("setSubtitleTrack", payload)
             .map_err(Into::into)
     }
+    pub fn add_subtitle(&self, payload: AddSubtitleRequest) -> crate::Result<EmptyResponse> {
+        self.0
+            .run_mobile_plugin("addSubtitle", payload)
+            .map_err(Into::into)
+    }
     pub fn enter_pip(&self) -> crate::Result<EmptyResponse> {
         self.0
             .run_mobile_plugin("enterPip", ())

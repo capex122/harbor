@@ -51,6 +51,14 @@ pub(crate) async fn set_subtitle_track<R: Runtime>(
 }
 
 #[tauri::command]
+pub(crate) async fn add_subtitle<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AddSubtitleRequest,
+) -> crate::Result<EmptyResponse> {
+    app.harbor_player().add_subtitle(payload)
+}
+
+#[tauri::command]
 pub(crate) async fn enter_pip<R: Runtime>(app: AppHandle<R>) -> crate::Result<EmptyResponse> {
     app.harbor_player().enter_pip()
 }

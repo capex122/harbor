@@ -47,6 +47,22 @@ pub struct TrackRequest {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AddSubtitleRequest {
+    pub url: String,
+    #[serde(default)]
+    pub lang: Option<String>,
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default = "default_true")]
+    pub select: bool,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct OrientationRequest {
     // "landscape" | "portrait" | "auto"; unknown values are treated as "auto" natively.
     pub mode: String,
