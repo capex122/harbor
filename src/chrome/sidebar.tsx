@@ -238,12 +238,13 @@ function MobileNav({
         const current = item(nav.id);
         const active = activeGroup(nav.id);
         const isHome = nav.id === "home";
-        const menu = nav.menu?.filter((id) => {
+        const group = [nav.id, ...(nav.menu ?? [])].filter((id) => {
           const option = item(id);
           return !(locked && option.parentalKey && hiddenTabs[option.parentalKey]);
         });
         const displayed =
-          menu?.map(item).find((option) => option.view === view) ?? current;
+          group.map(item).find((option) => option.view === view) ?? current;
+        const menu = nav.menu ? group.filter((id) => id !== displayed.id) : undefined;
         const displayedLabel = displayed.id === current.id && nav.label ? nav.label : displayed.label;
         return (
           <div key={nav.id} className="relative flex min-w-0 flex-1 justify-center">
