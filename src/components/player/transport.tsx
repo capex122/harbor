@@ -28,6 +28,7 @@ import {
 import { renderControl, type ControlContext } from "./transport/control-renderer";
 import { SongIdToast } from "@/components/song-id-toast";
 import { useCastModalPlay } from "./use-cast-modal-play";
+import { SAFE_TOP } from "./shells/mobile-chrome";
 
 // This is the mouse-era transport. Big Picture suppresses it outright and
 // renders views/big-picture/player instead, so nothing here scales for ten feet.
@@ -432,7 +433,8 @@ export function Transport({
       <SongIdToast />
       <div
         data-tauri-drag-region={fullscreen ? undefined : ""}
-        className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-7 pt-4 pb-8"
+        className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-7 pb-8"
+        style={{ paddingTop: `calc(${SAFE_TOP} + 16px)` }}
       >
         <div
           aria-hidden

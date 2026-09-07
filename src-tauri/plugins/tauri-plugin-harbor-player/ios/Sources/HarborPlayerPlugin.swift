@@ -142,6 +142,8 @@ class HarborPlayerPlugin: Plugin {
   private var controller: (UIViewController & HarborPlayerEngine)?
   private let chromeHost = HarborWebChromeHost()
   private let routePicker = HarborRoutePicker()
+  private weak var safeAreaWebView: WKWebView?
+  private var safeAreaObservers: [NSObjectProtocol] = []
 
   // AVPlayer keeps the containers it is genuinely good at; mpv takes everything
   // else, including extensionless URLs. Reasoning in ios/README.md.
@@ -159,6 +161,24 @@ class HarborPlayerPlugin: Plugin {
     webview.scrollView.maximumZoomScale = 1
     webview.scrollView.setZoomScale(1, animated: false)
     webview.scrollView.pinchGestureRecognizer?.isEnabled = false
+    safeAreaWebView = webview
+    publishSafeArea()
+    if safeAreaObservers.isEmpty {
+      let center = NotificationCenter.default
+      for name in [UIDevice.orientationDidChangeNotification, UIApplication.didBecomeActiveNotification] {
+        safeAreaObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+          self?.publishSafeArea()
+        })
+      }
+    }
+  }
+
+  private func publishSafeArea() {
+    DispatchQueue.main.async { [weak self] in
+      guard let webview = self?.safeAreaWebView else { return }
+      let top = max(webview.safeAreaInsets.top, webview.window?.safeAreaInsets.top ?? 0)
+      webview.evaluateJavaScript("document.documentElement.style.setProperty('--ios-safe-top', '\(Double(top))px')")
+    }
   }
 
   // Plain string inspection, not Foundation URL parsing: Foundation rejects

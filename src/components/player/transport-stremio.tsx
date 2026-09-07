@@ -22,6 +22,7 @@ import {
 } from "./transport/control-renderer-stremio";
 import { useView } from "@/lib/view";
 import { useCastModalPlay } from "./use-cast-modal-play";
+import { SAFE_TOP } from "./shells/mobile-chrome";
 
 export type TransportStremioProps = {
   snap: PlayerSnapshot;
@@ -286,9 +287,10 @@ export function TransportStremio(p: TransportStremioProps) {
       <SongIdToast />
       <div
         data-tauri-drag-region={fullscreen ? undefined : ""}
-        className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[88px] items-center justify-between bg-gradient-to-b from-black/35 via-black/15 to-transparent px-6 transition-opacity duration-200 ${
+        className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/35 via-black/15 to-transparent px-6 transition-opacity duration-200 ${
           visible ? "opacity-100" : "opacity-0"
         }`}
+        style={{ height: `calc(${SAFE_TOP} + 88px)`, paddingTop: SAFE_TOP }}
       >
         <div className="pointer-events-auto flex min-w-0 flex-1 items-center gap-3">
           {renderSlot("top-left")}

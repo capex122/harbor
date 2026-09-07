@@ -16,6 +16,7 @@ import type { PlayerCapabilities, PlayerSnapshot } from "@/lib/player/bridge";
 import { useT } from "@/lib/i18n";
 import { fmtTime } from "./transport/transport-utils";
 import { FullscreenClock } from "./fullscreen-clock";
+import { SAFE_TOP } from "./shells/mobile-chrome";
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
@@ -65,9 +66,10 @@ export function TransportKids({
     <>
       <div
         data-tauri-drag-region={fullscreen ? undefined : ""}
-        className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/65 via-black/20 to-transparent px-7 pb-12 pt-5 transition-opacity duration-300 ${
+        className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/65 via-black/20 to-transparent px-7 pb-12 transition-opacity duration-300 ${
           visible ? "opacity-100" : "opacity-0"
         }`}
+        style={{ paddingTop: `calc(${SAFE_TOP} + 20px)` }}
       >
         <button
           onClick={onBack}

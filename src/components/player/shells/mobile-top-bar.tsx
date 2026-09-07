@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { useT } from "@/lib/i18n";
-import { SAFE_INLINE_20 } from "./mobile-chrome";
+import { SAFE_INLINE_20, SAFE_TOP } from "./mobile-chrome";
 import { MobileButton, MOBILE_GLYPH_SIZE } from "./mobile-button";
 import { MobileGlyph } from "./mobile-glyph";
 import { MOBILE_GLYPH } from "./mobile-icons";
@@ -74,7 +74,7 @@ export function MobileTopBar({
         className={`relative flex h-11 items-center gap-1 ${interactive ? "pointer-events-auto" : "pointer-events-none"}`}
         style={{
           ...zoneStyle,
-          marginTop: "calc(env(safe-area-inset-top, 0px) + 8px)",
+          marginTop: `calc(${SAFE_TOP} + 8px)`,
           paddingInline: SAFE_INLINE_20,
         }}
       >

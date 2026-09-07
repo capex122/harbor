@@ -14,6 +14,7 @@ export const TIME_BEZEL = `${CHROME_SURFACE} rounded-[10px] px-2.5 py-1 font-jak
 // other. Chrome pads BOTH edges by the larger inset so it stays symmetric.
 export const SAFE_X = "max(env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))";
 export const SAFE_INLINE_20 = `calc(${SAFE_X} + 20px)`;
+export const SAFE_TOP = "max(env(safe-area-inset-top, 0px), var(--ios-safe-top, 0px))";
 
 // Bottom inset with a floor. A phone without a home indicator reports
 // safe-area-inset-bottom as 0, so "inset + 12px" left the action row sitting 12px
